@@ -1,0 +1,40 @@
+423.news — Claudia Green live desk
+====================================
+
+Unzip, then drag the CONTENTS of this folder into your GitHub repo.
+Start with START-HERE.md — it is written for someone who has never done this.
+
+Files in this package:
+
+  .github/workflows/desk.yml
+  DEPLOY.md
+  INTEGRATION.md
+  POLICY.md
+  README.md
+  START-HERE.md
+  assets/claudia-category.js
+  assets/conditions.js
+  assets/config.js
+  assets/feed.js
+  assets/onair.js
+  assets/radar.js
+  assets/search.js
+  assets/store.js
+  assets/theme.css
+  category.html
+  claudia-report-20261029-0305.json
+  conditions.html
+  data/feed.json
+  desk.html
+  functions/api/livekit-token.js
+  index.html
+  scanner/claudia.py
+  scanner/config.example.json
+  scanner/config.json
+  scanner/draft-template.md
+  scanner/listen.py
+  scanner/paraphrase.py
+  scanner/supabase_sync.py
+  supabase/schema.sql
+
+30 files.
