@@ -120,7 +120,8 @@
       listPosts({ sections: ['news', 'sports', 'schools', 'outdoors', 'government'], limit: 40 }),
       listPosts({ section: 'community', limit: 4 }),
       listPosts({ section: 'classifieds', limit: 4 }),
-      sb.from('news_reports').select('id,kind,dateline,headline,ts').eq('published', true).order('ts', { ascending: false }).limit(4)
+      sb.from('news_reports').select('id,kind,dateline,headline,ts').eq('published', true).order('ts', { ascending: false }).limit(4),
+      sb.from('news_scores').select('*').eq('status', 'in').order('start_time', { ascending: true }).limit(6)
     ]).then(function (r) {
       var news = r[0], comm = r[1], cls = r[2], wire = (r[3] && r[3].data) || [];
       var out = '';
@@ -141,6 +142,8 @@
           '<div class="row-actions"><button class="btn" data-submit="news">Submit a Story</button><a class="btn dark" href="#/community">Visit the Community</a></div></div>';
       }
       out += quick;
+      var liveG = (r[4] && r[4].data) || [];
+      if (liveG.length) out += '<div class="sech"><h2>Live now</h2><a href="#/scores">All scores →</a></div><div class="games" style="margin-bottom:26px">' + liveG.map(gameCard).join('') + '</div>';
 
       if (wire.length) {
         out += '<div class="sech"><h2>Claudia\'s Wire</h2><a href="category.html">All reports →</a></div><div class="wire">' +
@@ -275,6 +278,84 @@
     });
   };
 
+
+  /* ---------- live sports: scores, headlines, video ---------- */
+  var LEAGUES = [['all', 'All Sports'], ['nfl', 'NFL'], ['nba', 'NBA'], ['ncaaf', 'College Football'], ['ncaab', 'College Basketball'], ['wwe', 'WWE']];
+  var LEAGUE_NAME = { nfl: 'NFL', nba: 'NBA', ncaaf: 'College Football', ncaab: 'College Basketball', wwe: 'WWE', general: 'General' };
+  function logo(u) { return (u && String(u).indexOf('https://a.espncdn.com/') === 0) ? '<img class="tl" src="' + esc(u) + '" alt="" loading="lazy">' : '<span class="tl"></span>'; }
+  function gameCard(g) {
+    var live = g.status === 'in', done = g.status === 'post', pre = g.status === 'pre';
+    var aw = !pre && g.away_score != null && g.home_score != null && g.away_score > g.home_score;
+    var hw = !pre && g.away_score != null && g.home_score != null && g.home_score > g.away_score;
+    var when = pre ? new Date(g.start_time).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : (g.detail || (done ? 'Final' : 'Live'));
+    function row(name, abbr, lg, sc, win) {
+      return '<div class="trow' + (win ? ' win' : '') + '">' + logo(lg) + '<span class="tn">' + esc(name) + '</span><span class="ts">' + (pre || sc == null ? '' : esc(sc)) + '</span></div>';
+    }
+    return '<div class="panel game' + (live ? ' live' : '') + '"><div class="gh"><span class="st ' + (live ? 'published' : '') + '">' + (live ? '● LIVE' : done ? 'Final' : 'Upcoming') + '</span><span class="muted">' + esc(LEAGUE_NAME[g.league] || g.league) + '</span></div>' +
+      row(g.away_name, g.away_abbr, g.away_logo, g.away_score, aw) + row(g.home_name, g.home_abbr, g.home_logo, g.home_score, hw) +
+      '<div class="gf muted">' + esc(when) + (g.broadcast ? ' · ' + esc(g.broadcast) : '') + '</div></div>';
+  }
+  function ytId(input) {
+    var t = String(input || '').trim();
+    var m = t.match(/(?:v=|youtu\.be\/|\/live\/|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/) || t.match(/^([A-Za-z0-9_-]{11})$/);
+    return m ? m[1] : null;
+  }
+  function ytList(input) { var m = String(input || '').match(/[?&]list=([A-Za-z0-9_-]{10,64})/); return m ? m[1] : null; }
+  function embedSrc(st) {
+    var base = 'https://www.youtube-nocookie.com/embed/';
+    return st.kind === 'playlist' ? base + 'videoseries?list=' + encodeURIComponent(st.ref) : base + encodeURIComponent(st.ref) + '?rel=0';
+  }
+  function player(st) {
+    return '<div class="vwrap"><iframe src="' + esc(embedSrc(st)) + '" title="' + esc(st.title) + '" loading="lazy" allow="accelerometer; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
+  }
+  state.streams = [];
+
+  views.scores = function (league) {
+    league = LEAGUE_NAME[league] && league !== 'general' ? league : 'all';
+    var since = new Date(Date.now() - 36 * 3600e3).toISOString();
+    var until = new Date(Date.now() + 4 * 86400e3).toISOString();
+    var sq = sb.from('news_scores').select('*').gte('start_time', since).lte('start_time', until).order('start_time', { ascending: true }).limit(400);
+    var hq = sb.from('news_headlines').select('id,league,title,url,source,published,created_at').order('published', { ascending: false, nullsFirst: false }).limit(30);
+    var vq = sb.from('news_streams').select('*').eq('active', true).order('sort', { ascending: true }).order('created_at', { ascending: false }).limit(30);
+    if (league !== 'all') { sq = sq.eq('league', league); hq = hq.eq('league', league); vq = vq.in('league', [league, 'general']); }
+    return Promise.all([sq, hq, vq]).then(function (r) {
+      var games = r[0].data || [], heads = r[1].data || [], streams = r[2].data || [];
+      state.streams = streams;
+      var live = games.filter(function (g) { return g.status === 'in'; });
+      var upcoming = games.filter(function (g) { return g.status === 'pre'; }).slice(0, league === 'all' ? 12 : 30);
+      var finals = games.filter(function (g) { return g.status === 'post'; }).reverse().slice(0, league === 'all' ? 12 : 30);
+      var tabs = '<div class="tabs">' + LEAGUES.map(function (t) { return '<a class="' + (t[0] === league ? 'on' : '') + '" href="#/scores' + (t[0] === 'all' ? '' : '/' + t[0]) + '">' + t[1] + '</a>'; }).join('') + '</div>';
+      var out = '<div class="chead"><div style="margin-bottom:14px"><span class="badge">Live</span><h1>Scores &amp; Live Sports</h1><p class="muted">Scores update automatically. Local high school results come from stories in the <a href="#/sports" style="text-decoration:underline">Sports</a> section.</p></div></div>' + tabs;
+
+      out += '<div class="sech"><h2>Watch</h2></div>';
+      if (streams.length) {
+        out += '<div id="vplayer">' + player(streams[0]) + '</div><div class="chips" id="vlist">' + streams.map(function (st, i) {
+          return '<span class="chip"><button type="button" class="linkbtn" style="text-decoration:none;color:inherit" data-play="' + i + '">' + (st.kind === 'live' ? '🔴 ' : '▶ ') + esc(st.title) + '</button>' +
+            (isStaff() ? '<button type="button" data-delstream="' + esc(st.id) + '" aria-label="Remove">×</button>' : '') + '</span>';
+        }).join('') + '</div>';
+      } else {
+        out += empty('No video yet', isStaff() ? 'Add a YouTube video, live stream or playlist below.' : 'Live streams and highlights will appear here.');
+      }
+      if (isStaff()) {
+        out += '<form id="streamForm" class="panel pad" style="margin:12px 0 24px"><b>Add video (editors)</b><div class="hint">Paste a YouTube video, live stream or playlist link. Only use streams you have the right to embed.</div>' +
+          '<input name="title" placeholder="Title" maxlength="120" required><input name="url" placeholder="https://www.youtube.com/watch?v=…" required>' +
+          '<select name="league">' + ['general', 'nfl', 'nba', 'ncaaf', 'ncaab', 'wwe'].map(function (l) { return '<option value="' + l + '">' + LEAGUE_NAME[l] + '</option>'; }).join('') + '</select>' +
+          '<select name="kind"><option value="video">Video</option><option value="live">Live stream</option><option value="playlist">Playlist</option></select><button class="btn" type="submit">Add</button></form>';
+      }
+
+      if (live.length) out += '<div class="sech"><h2>Live now</h2></div><div class="games">' + live.map(gameCard).join('') + '</div>';
+      if (league !== 'wwe') {
+        out += '<div class="sech"><h2>Upcoming</h2></div>' + (upcoming.length ? '<div class="games">' + upcoming.map(gameCard).join('') + '</div>' : '<p class="muted" style="margin-bottom:22px">No games scheduled in the next few days.</p>');
+        out += '<div class="sech"><h2>Final scores</h2></div>' + (finals.length ? '<div class="games">' + finals.map(gameCard).join('') + '</div>' : '<p class="muted" style="margin-bottom:22px">No recent finals.</p>');
+      }
+      out += '<div class="sech"><h2>Headlines</h2></div>' + (heads.length ? '<div class="wire">' + heads.map(function (h) {
+        return '<a href="' + esc(h.url) + '" target="_blank" rel="noopener noreferrer"><div><span class="badge">' + esc(LEAGUE_NAME[h.league] || h.league) + '</span></div><div><h3>' + esc(h.title) + '</h3><span class="muted">' + esc(h.source || '') + (h.published ? ' · ' + esc(ago(h.published)) : '') + '</span></div></a>';
+      }).join('') + '</div>' : '<p class="muted">No headlines yet.</p>');
+      out += '<p class="muted" style="margin-top:18px">Scores and headlines from ESPN and other public feeds; links open the original publisher.</p>';
+      return out;
+    });
+  };
+
   views.review = function () {
     if (!isStaff()) return Promise.resolve(empty('Editors only', 'You need an editor account to review submissions.'));
     return sb.from('news_posts').select(POST_COLS).eq('status', 'pending').order('created_at', { ascending: true }).limit(100).then(function (r) {
@@ -300,7 +381,7 @@
     return { name: parts[0] || 'home', a: parts[1], b: parts[2] };
   }
   function setActive(name) {
-    var map = { home: '#/home', news: '#/news', sports: '#/sports', schools: '#/schools', outdoors: '#/outdoors', classifieds: '#/classifieds', community: '#/community', teams: '#/teams', government: '#/government' };
+    var map = { home: '#/home', news: '#/news', sports: '#/sports', scores: '#/scores', schools: '#/schools', outdoors: '#/outdoors', classifieds: '#/classifieds', community: '#/community', teams: '#/teams', government: '#/government' };
     document.querySelectorAll('#nav a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === map[name]); });
   }
   function render() {
@@ -319,6 +400,7 @@
         document.title = SECTIONS[rt.name].label + ' • 423.news';
       } else if (rt.name === 'story') p = views.story(rt.a || '');
       else if (rt.name === 'search') p = views.search(rt.a || '');
+      else if (rt.name === 'scores') { p = views.scores(rt.a); document.title = 'Scores & Live • 423.news'; }
       else if (views[rt.name]) p = views[rt.name]();
       else p = views.home();
     } catch (e) { p = Promise.reject(e); }
@@ -418,10 +500,21 @@
 
   /* ---------- events ---------- */
   document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-submit],[data-auth],[data-close],[data-share],[data-delpost],[data-delcmt],[data-unfollow],[data-setstatus],[data-signout],[data-retry]');
+    var t = e.target.closest('[data-submit],[data-auth],[data-close],[data-share],[data-delpost],[data-delcmt],[data-unfollow],[data-setstatus],[data-signout],[data-retry],[data-play],[data-delstream]');
     if (!t) { if (e.target.id === 'modal') closeModal(); return; }
     if (t.hasAttribute('data-close')) { closeModal(); return; }
     if (t.hasAttribute('data-retry')) { render(); return; }
+    if (t.hasAttribute('data-play')) {
+      var st = state.streams[parseInt(t.getAttribute('data-play'), 10)];
+      var pv = $('#vplayer'); if (st && pv) pv.innerHTML = player(st);
+      return;
+    }
+    if (t.hasAttribute('data-delstream')) {
+      if (!confirm('Remove this video from the site?')) return;
+      sb.from('news_streams').delete().eq('id', t.getAttribute('data-delstream')).then(function (r) { if (r.error) toast(r.error.message); else { scrollTop = false; render(); } });
+      return;
+    }
+
     if (t.hasAttribute('data-submit')) { openSubmit(t.getAttribute('data-submit'), t.getAttribute('data-topic')); return; }
     if (t.hasAttribute('data-auth')) { openAuth(t.getAttribute('data-auth')); return; }
     if (t.hasAttribute('data-signout')) {
@@ -523,6 +616,15 @@
       return;
     }
 
+    if (f.id === 'streamForm') {
+      var sd = new FormData(f), url = (sd.get('url') || '').toString(), kind = sd.get('kind'), ref = kind === 'playlist' ? ytList(url) : ytId(url);
+      if (!ref) { toast('That does not look like a YouTube ' + (kind === 'playlist' ? 'playlist' : 'video') + ' link.'); return; }
+      sb.from('news_streams').insert({ title: (sd.get('title') || '').toString().trim(), league: sd.get('league'), kind: kind, ref: ref }).then(function (r) {
+        if (r.error) toast(r.error.message); else { toast('Added'); scrollTop = false; render(); }
+      });
+      return;
+    }
+
     if (f.id === 'teamForm') {
       var team = (new FormData(f).get('team') || '').toString().trim(); if (!team) return;
       sb.from('news_follows').upsert({ user_id: state.user.id, team: team }, { onConflict: 'user_id,team', ignoreDuplicates: true }).then(function (r) {
@@ -556,7 +658,20 @@
     clearTimeout(rtTimer);
     rtTimer = setTimeout(function () { scrollTop = false; render(); }, 900);
   }
+
+  var scTimer;
+  function onScores() {
+    var rt = state.route || {};
+    if (rt.name !== 'scores' || $('#modal').className) return;
+    var ae = document.activeElement; if (ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName)) return;
+    clearTimeout(scTimer);
+    scTimer = setTimeout(function () { var y = window.scrollY; scrollTop = false; render(); setTimeout(function () { window.scrollTo(0, y); }, 400); }, 1500);
+  }
   try {
+    sb.channel('news-sports')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'news_scores' }, onScores)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'news_streams' }, onScores)
+      .subscribe();
     sb.channel('news-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'news_posts' }, onChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'news_comments' }, onChange)

@@ -203,3 +203,17 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .linkbtn { background:none; border:0; color:var(--accent); cursor:pointer; font:inherit; padding:0; text-decoration:underline; }
 .row-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
 .q-item { padding:14px; margin-bottom:12px; }
+
+/* ---- sports ---- */
+.games { display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); margin-bottom:24px; }
+.game { padding:12px 14px; }
+.game.live { border-color:#166534; }
+.gh { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13px; }
+.trow { display:flex; align-items:center; gap:10px; padding:5px 0; }
+.trow.win .tn, .trow.win .ts { font-weight:800; }
+.tl { width:26px; height:26px; object-fit:contain; flex:0 0 auto; display:inline-block; }
+.tn { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ts { font-size:20px; font-variant-numeric:tabular-nums; min-width:28px; text-align:right; }
+.gf { margin-top:6px; font-size:13px; }
+.vwrap { position:relative; width:100%; aspect-ratio:16/9; background:#000; border-radius:14px; overflow:hidden; border:1px solid var(--line); }
+.vwrap iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }

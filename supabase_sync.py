@@ -28,7 +28,9 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-FEED = ROOT / "data" / "feed.json"
+# works in the full layout (data/feed.json) and in the flat repo (feed.json beside this script)
+FEED = next((c for c in (Path(__file__).resolve().parent / "feed.json", ROOT / "data" / "feed.json") if c.exists()),
+            ROOT / "data" / "feed.json")
 
 URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 KEY = os.environ.get("SUPABASE_SERVICE_KEY", "").strip()
