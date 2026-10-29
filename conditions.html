@@ -1740,7 +1740,7 @@ window.CLAUDIA_CONFIG = {
     var bbox = [place.lon - d, place.lat - d, place.lon + d, place.lat + d].join(',');
     return cached('tt:' + coordKey(place.lat, place.lon), function () {
       var url = 'https://api.tomtom.com/traffic/services/4/incidentDetails/s3/' + bbox +
-        '/-1/-1/json?key=' + encodeURIComponent(tcfg.apiKey) + '&projection=EPSG4326';
+        '/10/-1/json?key=' + encodeURIComponent(tcfg.apiKey) + '&projection=EPSG4326';
       return getJSON(url).then(function (raw) {
         var pois = ((raw.tm || {}).poi) || [];
         var list = pois.map(function (p) {
