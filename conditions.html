@@ -902,8 +902,8 @@ window.CLAUDIA_CONFIG = {
      replaces the 20-second poll entirely. Only the anon key goes here.
      ------------------------------------------------------------ */
   supabase: {
-    url: '',        // https://xxxxxxxx.supabase.co
-    anonKey: ''     // the PUBLIC anon key, never the service key
+    url: 'https://kdiwehqtezlhecxsoysj.supabase.co',        // live 423.news backend
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE'     // the PUBLIC anon key, never the service key
   },
 
   /* ---- on air audio (LiveKit) ----
@@ -1017,10 +1017,10 @@ window.CLAUDIA_CONFIG = {
 
   function loadSupabase() {
     return Promise.all([
-      rest('reports', 'select=*&published=eq.true&order=ts.desc&limit=60'),
-      rest('scanner_feeds', 'select=*&order=priority.asc'),
-      rest('scanner_log', 'select=*&order=ts.desc&limit=24'),
-      rest('areas', 'select=*&order=opening.desc,id.asc')
+      rest('news_reports', 'select=*&published=eq.true&order=ts.desc&limit=60'),
+      rest('news_scanner_feeds', 'select=*&order=priority.asc'),
+      rest('news_scanner_log', 'select=*&order=ts.desc&limit=24'),
+      rest('news_areas', 'select=*&order=opening.desc,id.asc')
     ]).then(function (r) {
       var feed = shape(r[0], r[1], r[2]);
       feed.areas = r[3] || [];
@@ -1040,9 +1040,9 @@ window.CLAUDIA_CONFIG = {
         });
         channel = client
           .channel('desk')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, onChange)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'scanner_log' }, onChange)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'scanner_feeds' }, onChange)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'news_reports' }, onChange)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'news_scanner_log' }, onChange)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'news_scanner_feeds' }, onChange)
           .subscribe(function (status) {
             if (status === 'SUBSCRIBED') {
               window.dispatchEvent(new CustomEvent('claudia:realtime', { detail: 'on' }));
@@ -1060,7 +1060,7 @@ window.CLAUDIA_CONFIG = {
   function fileReport(report, editorKey) {
     if (!enabled) return Promise.reject(new Error('supabase not configured'));
     if (!editorKey) return Promise.reject(new Error('editor key required to file'));
-    var url = SB.url.replace(/\/$/, '') + '/rest/v1/reports';
+    var url = SB.url.replace(/\/$/, '') + '/rest/v1/news_reports';
     return fetch(url, {
       method: 'POST',
       headers: headers({ Prefer: 'return=representation', 'x-editor-key': editorKey }),
@@ -1083,7 +1083,7 @@ window.CLAUDIA_CONFIG = {
     fileReport: fileReport,
     areas: function () {
       if (!enabled) return Promise.resolve([]);
-      return rest('areas', 'select=*&order=opening.desc,id.asc');
+      return rest('news_areas', 'select=*&order=opening.desc,id.asc');
     }
   };
 })();

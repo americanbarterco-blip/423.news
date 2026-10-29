@@ -78,12 +78,12 @@ def sync_feeds(scanner: dict) -> int:
     rows = [r for r in rows if r["name"]]
     if not rows:
         return 0
-    call("POST", "scanner_feeds?on_conflict=name", rows, "resolution=merge-duplicates,return=minimal")
+    call("POST", "news_scanner_feeds?on_conflict=name", rows, "resolution=merge-duplicates,return=minimal")
     return len(rows)
 
 
 def max_log_ts() -> str:
-    rows = call("GET", "scanner_log?select=ts&order=ts.desc&limit=1")
+    rows = call("GET", "news_scanner_log?select=ts&order=ts.desc&limit=1")
     return rows[0]["ts"] if rows else "1970-01-01T00:00:00Z"
 
 
@@ -102,7 +102,7 @@ def sync_log(scanner: dict) -> int:
         })
     if not rows:
         return 0
-    call("POST", "scanner_log", rows, "return=minimal")
+    call("POST", "news_scanner_log", rows, "return=minimal")
     return len(rows)
 
 
@@ -130,7 +130,7 @@ def sync_reports(reports: list) -> int:
         })
     if not rows:
         return 0
-    call("POST", "reports?on_conflict=id", rows, "resolution=merge-duplicates,return=minimal")
+    call("POST", "news_reports?on_conflict=id", rows, "resolution=merge-duplicates,return=minimal")
     return len(rows)
 
 
