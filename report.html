@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report — 423.news</title>
+<meta name="description" content="A report from Claudia Green on 423.news: what happened, what it means for you, and what is still unconfirmed.">
+<style>
+:root { color-scheme: dark; --bg:#050b12; --panel:#081522; --s2:#0c1b2b; --line:#24384a; --text:#f7fafc; --muted:#9eafc0;
+  --accent:#ff5a0a; --ok:#2fd18b; --warn:#ffb020; --blue:#3b9bff; }
+* { box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+body { margin:0; background:var(--bg); color:var(--text); font:16px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+a { color:var(--blue); }
+.wrap { width:100%; max-width:760px; margin:0 auto; padding:0 16px; }
+header.top { border-bottom:1px solid var(--line); background:rgba(5,11,18,.92); position:sticky; top:0; z-index:5; backdrop-filter:blur(8px); }
+.top-in { display:flex; align-items:center; justify-content:space-between; gap:12px; height:56px; }
+.brand { font-weight:900; font-size:22px; color:var(--text); text-decoration:none; letter-spacing:-.02em; }
+.brand b { color:var(--accent); font-weight:900; }
+.top a.back { color:var(--muted); text-decoration:none; font-size:14px; font-weight:600; }
+.top a.back:hover { color:var(--text); }
+main { padding:22px 0 90px; }
+.badges { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+.badge { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:5px 10px; border-radius:999px; border:1px solid var(--line); color:var(--muted); background:var(--panel); }
+.badge i { width:7px; height:7px; border-radius:50%; background:currentColor; display:inline-block; }
+.badge.ok { color:var(--ok); border-color:rgba(47,209,139,.4); background:rgba(47,209,139,.08); }
+.badge.warn { color:var(--warn); border-color:rgba(255,176,32,.4); background:rgba(255,176,32,.08); }
+.badge.hot { color:#fff; background:var(--accent); border-color:var(--accent); }
+h1 { font-size:clamp(26px,6.4vw,38px); line-height:1.15; margin:0 0 14px; letter-spacing:-.02em; font-weight:800; }
+.meta { display:grid; gap:6px; color:var(--muted); font-size:14.5px; margin-bottom:20px; }
+.meta div { display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; }
+.meta svg { width:16px; height:16px; flex:none; transform:translateY(3px); }
+.meta strong { color:var(--text); font-weight:600; }
+.card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px; }
+/* ---- audio ---- */
+.audio { background:linear-gradient(135deg,#0c2036,#14243f 55%,#2a1a2e); border-color:#2a4561; margin-bottom:22px; }
+.a-row { display:flex; align-items:center; gap:14px; }
+.play { width:60px; height:60px; border-radius:50%; border:0; background:#fff; color:#0b1522; cursor:pointer; display:grid; place-items:center; flex:none; }
+.play:hover { background:#e8f0ff; }
+.play:focus-visible, .chip:focus-visible, .btn:focus-visible, .restart:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
+.play svg { width:26px; height:26px; }
+.a-main { flex:1; min-width:0; }
+.a-title { font-weight:800; font-size:16px; line-height:1.3; }
+.a-sub { color:#b9c8da; font-size:13px; margin-top:2px; }
+.bars { display:flex; align-items:flex-end; gap:3px; height:28px; margin:12px 0 8px; }
+.bars span { flex:1; background:rgba(255,255,255,.22); border-radius:2px; height:30%; transition:background .2s; }
+.bars span:nth-child(3n) { height:55%; } .bars span:nth-child(4n+1) { height:75%; } .bars span:nth-child(5n+2) { height:42%; } .bars span:nth-child(7n) { height:90%; }
+.audio.live .bars span { background:var(--accent); animation:pulse 1s ease-in-out infinite; }
+.audio.live .bars span:nth-child(2n) { animation-delay:.18s; } .audio.live .bars span:nth-child(3n) { animation-delay:.36s; }
+@keyframes pulse { 0%,100% { transform:scaleY(.5); } 50% { transform:scaleY(1); } }
+@media (prefers-reduced-motion:reduce) { .audio.live .bars span { animation:none; } }
+.track { height:6px; border-radius:6px; background:rgba(255,255,255,.18); overflow:hidden; }
+.track i { display:block; height:100%; width:0; background:#fff; transition:width .3s; }
+.a-foot { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.speeds { display:flex; gap:6px; }
+.chip { border:1px solid rgba(255,255,255,.28); background:transparent; color:#fff; border-radius:999px; font:inherit; font-size:13px; font-weight:700; padding:5px 12px; cursor:pointer; }
+.chip[aria-pressed="true"] { background:#fff; color:#0b1522; }
+.restart { background:none; border:0; color:#cfe0f5; font:inherit; font-size:13px; font-weight:600; cursor:pointer; text-decoration:underline; padding:4px; }
+.a-note { margin:12px 0 0; font-size:12.5px; color:#b9c8da; line-height:1.5; }
+.a-err { color:#ffd48a; }
+/* ---- body ---- */
+h2 { font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:26px 0 10px; font-weight:800; display:flex; align-items:center; gap:10px; }
+h2::before { content:""; width:4px; height:16px; background:var(--accent); border-radius:2px; }
+.story p { margin:0 0 14px; font-size:17.5px; line-height:1.65; }
+ul.pts { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+ul.pts li { background:var(--s2); border:1px solid var(--line); border-radius:12px; padding:12px 14px 12px 42px; position:relative; line-height:1.5; }
+ul.pts li::before { content:""; position:absolute; left:15px; top:17px; width:14px; height:14px; border-radius:50%; background:var(--ok); }
+ul.pts.unk li::before { background:transparent; border:2px solid var(--warn); }
+.src a { display:block; padding:11px 0; border-bottom:1px solid var(--line); text-decoration:none; font-weight:600; }
+.src a small { display:block; color:var(--muted); font-weight:400; word-break:break-all; }
+.actions { display:flex; flex-wrap:wrap; gap:10px; margin:20px 0 0; }
+.btn { display:inline-flex; align-items:center; gap:8px; background:var(--s2); border:1px solid var(--line); color:var(--text); border-radius:12px; padding:11px 16px; font:inherit; font-weight:700; font-size:14.5px; cursor:pointer; text-decoration:none; }
+.btn:hover { border-color:#3a566e; }
+.btn.pri { background:var(--accent); border-color:var(--accent); color:#fff; }
+.notice { margin-top:28px; border-left:4px solid var(--warn); background:rgba(255,176,32,.07); padding:14px 16px; border-radius:0 12px 12px 0; font-size:14px; color:#e3d5b5; line-height:1.55; }
+.notice b { color:#fff; }
+.more a { display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:13px 14px; margin-bottom:10px; color:var(--text); text-decoration:none; font-weight:700; line-height:1.35; }
+.more a small { display:block; color:var(--muted); font-weight:400; margin-top:3px; }
+.more a:hover { border-color:#3a566e; }
+.state { text-align:center; padding:60px 10px; color:var(--muted); }
+#toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:#f4f4f5; color:#09090b; padding:10px 18px; border-radius:12px; font-weight:600; display:none; z-index:20; max-width:92vw; }
+.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap top-in">
+  <a class="brand" href="index.html">423<b>.</b>news</a>
+  <a class="back" href="claudia-scanner.html">&larr; All reports</a>
+</div></header>
+
+<main class="wrap" id="app"><div class="state">Loading report&hellip;</div></main>
+<div id="toast" role="status"></div>
+
+<script>
+/* ---- settings you can edit ----
+   EXTRA_DISCLOSURE: one more sentence shown in the notice at the bottom, e.g. a line saying how the
+   reports are written. Leave '' to show nothing extra. */
+var SETTINGS = { EXTRA_DISCLOSURE: '', EMERGENCY: 'In an emergency, call 911.' };
+
+(function () {
+'use strict';
+var app = document.getElementById('app');
+var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+var toast = function (m) { var t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(function () { t.style.display = 'none'; }, 2600); };
+var safeUrl = function (u) { try { var x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ''; } catch (e) { return ''; } };
+
+function when(ts) {
+  var d = new Date(ts); if (isNaN(d)) return { abs: '', rel: '' };
+  var abs = d.toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  var m = Math.round((Date.now() - d) / 60000), rel;
+  if (m < 1) rel = 'just now'; else if (m < 60) rel = m + ' min ago'; else if (m < 1440) rel = Math.round(m / 60) + ' hr ago';
+  else rel = Math.round(m / 1440) + ' day' + (Math.round(m / 1440) === 1 ? '' : 's') + ' ago';
+  return { abs: abs, rel: m >= 0 ? rel : '' };
+}
+function paragraphs(text) {
+  var s = String(text || '').trim().split(/(?<=[.!?])\s+(?=[A-Z0-9"“])/), out = [], i;
+  for (i = 0; i < s.length; i += 2) out.push(s.slice(i, i + 2).join(' '));
+  return out;
+}
+function labels(r) {
+  var c = String(r.confidence || '').toLowerCase(), k = String(r.kind || '').toUpperCase(), b = [];
+  if (k === 'BREAKING') b.push('<span class="badge hot"><i></i>Breaking</span>');
+  if (k === 'HEARD' || k === 'SCANNER') b.push('<span class="badge"><i></i>Heard on scanner</span>');
+  if (c === 'confirmed' || k === 'VERIFIED') b.push('<span class="badge ok"><i></i>Confirmed</span>');
+  else if (c === 'developing') b.push('<span class="badge warn"><i></i>Developing</span>');
+  else b.push('<span class="badge warn"><i></i>Unconfirmed</span>');
+  (r.tags || []).filter(function (t) { return !/^(verified|breaking|field|heard|scanner)$/i.test(t); }).slice(0, 3)
+    .forEach(function (t) { b.push('<span class="badge">' + esc(t) + '</span>'); });
+  return b.join('');
+}
+
+/* ---- Claudia's voice: the device's own text-to-speech reading the written report ---- */
+function voice(r, card) {
+  var synth = window.speechSynthesis;
+  var parts = [r.headline].concat(String(r.summary || '').split(/(?<=[.!?])\s+/));
+  if ((r.safety || []).length) parts.push('What it means for you.'), parts = parts.concat(r.safety);
+  if ((r.uncertain || []).length) parts.push('Still unconfirmed.'), parts = parts.concat(r.uncertain);
+  parts = parts.map(function (s) { return String(s).trim(); }).filter(Boolean).map(function (s) { return /[.!?]$/.test(s) ? s : s + '.'; });
+  var words = parts.join(' ').split(/\s+/).length;
+  var idx = 0, playing = false, rate = 1, tok = 0;
+  var el = {
+    play: card.querySelector('.play'), bar: card.querySelector('.track i'), sub: card.querySelector('.a-sub'),
+    err: card.querySelector('.a-err'), speeds: card.querySelectorAll('.chip'), restart: card.querySelector('.restart')
+  };
+  var ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+  var ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
+  var mins = function () { return Math.max(1, Math.round(words / (165 * rate))); };
+  function ui() {
+    el.play.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+    el.play.setAttribute('aria-label', playing ? 'Pause Claudia\'s report' : 'Play Claudia\'s report');
+    card.classList.toggle('live', playing);
+    el.bar.style.width = Math.min(100, Math.round(idx / parts.length * 100)) + '%';
+    el.sub.textContent = playing ? 'Reading now' : (idx > 0 && idx < parts.length ? 'Paused' : 'About ' + mins() + ' min · read aloud');
+  }
+  function fail(msg) { playing = false; el.err.textContent = msg; ui(); }
+  function next(my) {
+    if (my !== tok || !playing) return;
+    if (idx >= parts.length) { playing = false; idx = 0; ui(); el.bar.style.width = '100%'; return; }
+    var u = new SpeechSynthesisUtterance(parts[idx]); u.rate = rate; u.lang = 'en-US';
+    var vs = synth.getVoices().filter(function (v) { return /^en(-|_)US/i.test(v.lang); });
+    if (vs.length) u.voice = vs.find(function (v) { return v.localService; }) || vs[0];
+    u.onend = function () { if (my === tok && playing) { idx++; ui(); next(my); } };
+    u.onerror = function (e) { if (e && (e.error === 'canceled' || e.error === 'interrupted')) return; fail('Voice could not start on this device. You can read the report below.'); };
+    try { synth.speak(u); } catch (e) { fail('Voice could not start on this device. You can read the report below.'); }
+  }
+  function start() { tok++; synth.cancel(); playing = true; el.err.textContent = ''; ui(); next(tok); }
+  function stop() { tok++; playing = false; synth.cancel(); ui(); }
+  if (!synth || typeof SpeechSynthesisUtterance === 'undefined') { el.play.disabled = true; el.play.style.opacity = '.45'; el.err.textContent = 'This browser can’t read aloud. The full report is below.'; return; }
+  el.play.onclick = function () { playing ? stop() : start(); };
+  el.restart.onclick = function () { idx = 0; start(); };
+  Array.prototype.forEach.call(el.speeds, function (b) {
+    b.onclick = function () {
+      rate = parseFloat(b.dataset.rate);
+      Array.prototype.forEach.call(el.speeds, function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      if (playing) start(); else ui();
+    };
+  });
+  window.addEventListener('pagehide', function () { synth.cancel(); });
+  ui();
+}
+
+function render(r, all) {
+  var t = when(r.ts), lat = parseFloat(r.lat), lng = parseFloat(r.lng), hasGeo = isFinite(lat) && isFinite(lng);
+  var url = location.href;
+  document.title = r.headline + ' — 423.news';
+  var paras = paragraphs(r.summary).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('');
+  var list = function (arr, cls) { return arr && arr.length ? '<ul class="pts ' + (cls || '') + '">' + arr.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : ''; };
+  var src = (r.sources || []).map(function (s) {
+    var u = safeUrl(s.url); return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(s.label || u) + '<small>' + esc(u) + '</small></a>' : '';
+  }).join('');
+  var more = all.filter(function (x) { return x.id !== r.id; }).slice(0, 4).map(function (x) {
+    return '<a href="report.html?id=' + encodeURIComponent(x.id) + '">' + esc(x.headline) + '<small>' + esc(x.dateline || '') + ' · ' + esc(when(x.ts).rel) + '</small></a>';
+  }).join('');
+  var heard = String(r.kind || '').toUpperCase() === 'HEARD' || String(r.kind || '').toUpperCase() === 'SCANNER';
+
+  app.innerHTML =
+    '<div class="badges">' + labels(r) + '</div>' +
+    '<h1>' + esc(r.headline) + '</h1>' +
+    '<div class="meta">' +
+      '<div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><strong>' + esc(t.abs) + '</strong>' + (t.rel ? '<span>· ' + esc(t.rel) + '</span>' : '') + '</div>' +
+      (r.dateline ? '<div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><strong>' + esc(r.dateline) + '</strong>' +
+        (hasGeo ? '<a href="https://www.openstreetmap.org/?mlat=' + lat + '&amp;mlon=' + lng + '#map=15/' + lat + '/' + lng + '" target="_blank" rel="noopener noreferrer">View on map</a>' : '<span>· area level only</span>') + '</div>' : '') +
+    '</div>' +
+    '<section class="card audio" aria-label="Listen to this report">' +
+      '<div class="a-row"><button class="play" type="button"></button>' +
+      '<div class="a-main"><div class="a-title">Hear Claudia’s report</div><div class="a-sub" aria-live="polite"></div></div></div>' +
+      '<div class="bars" aria-hidden="true">' + new Array(34).join('<span></span>') + '</div>' +
+      '<div class="track" aria-hidden="true"><i></i></div>' +
+      '<div class="a-foot"><div class="speeds" role="group" aria-label="Reading speed">' +
+        '<button class="chip" type="button" data-rate="0.85" aria-pressed="false">0.85×</button>' +
+        '<button class="chip" type="button" data-rate="1" aria-pressed="true">1×</button>' +
+        '<button class="chip" type="button" data-rate="1.25" aria-pressed="false">1.25×</button>' +
+        '<button class="chip" type="button" data-rate="1.5" aria-pressed="false">1.5×</button></div>' +
+        '<button class="restart" type="button">Start over</button></div>' +
+      '<p class="a-note">An automated voice on your device reads Claudia’s written report. This is not dispatch audio.</p>' +
+      '<p class="a-note a-err" role="status"></p>' +
+    '</section>' +
+    '<section class="story"><h2>What happened</h2>' + (paras || '<p>No summary has been filed yet.</p>') + '</section>' +
+    (r.safety && r.safety.length ? '<section><h2>What it means for you</h2>' + list(r.safety) + '</section>' : '') +
+    (r.uncertain && r.uncertain.length ? '<section><h2>Still unconfirmed</h2>' + list(r.uncertain, 'unk') + '</section>' : '') +
+    (src ? '<section class="src"><h2>Sources</h2>' + src + '</section>' : '') +
+    '<div class="actions"><button class="btn pri" type="button" id="share">Share</button><a class="btn" href="claudia-scanner.html">More reports</a></div>' +
+    '<div class="notice"><b>Not an official report.</b> ' +
+      (heard ? 'This was picked up from public radio traffic and stays unconfirmed until a published record or a second source backs it up. ' : 'Claudia writes from public sources and grades each report for confidence. ') +
+      'Details can change. Check official sources before you act. ' + esc(SETTINGS.EMERGENCY) + (SETTINGS.EXTRA_DISCLOSURE ? ' ' + esc(SETTINGS.EXTRA_DISCLOSURE) : '') + '</div>' +
+    (more ? '<section class="more"><h2>Also on the wire</h2>' + more + '</section>' : '');
+
+  voice(r, app.querySelector('.audio'));
+  document.getElementById('share').onclick = function () {
+    if (navigator.share) { navigator.share({ title: r.headline, url: url }).catch(function () {}); return; }
+    if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { toast('Link copied'); }, function () { toast('Copy the link from the address bar'); });
+    else toast('Copy the link from the address bar');
+  };
+}
+
+function list(all) {
+  document.title = 'Reports — 423.news';
+  app.innerHTML = '<h1>Latest reports</h1><section class="more">' + all.slice(0, 12).map(function (x) {
+    return '<a href="report.html?id=' + encodeURIComponent(x.id) + '">' + esc(x.headline) + '<small>' + esc(x.dateline || '') + ' · ' + esc(when(x.ts).rel) + '</small></a>';
+  }).join('') + '</section>';
+}
+
+var id = new URLSearchParams(location.search).get('id');
+fetch('feed.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('feed ' + r.status); return r.json(); }).then(function (d) {
+  var all = (d.reports || []).slice().sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); });
+  if (!id) return list(all);
+  var r = all.find(function (x) { return String(x.id) === id; });
+  if (!r) { app.innerHTML = '<div class="state"><h1>Report not found</h1><p>It may have been replaced by a newer one.</p><p><a class="btn pri" href="claudia-scanner.html">See the latest reports</a></p></div>'; document.title = 'Report not found — 423.news'; return; }
+  render(r, all);
+}).catch(function () {
+  app.innerHTML = '<div class="state"><h1>Couldn’t load this report</h1><p>The feed file isn’t reachable right now.</p><p><a class="btn pri" href="">Try again</a></p></div>';
+});
+})();
+</script>
+</body>
+</html>

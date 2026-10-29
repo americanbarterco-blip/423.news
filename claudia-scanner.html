@@ -3387,7 +3387,7 @@ function openDetail(id, opener) {
 ${i.demo ? '<p class="cg-warn" style="margin:8px 0">Demo entry. This is not a real incident.</p>' : ''}
 ${i.status === 'unverified' || i.status === 'developing' ? '<p style="color:#ffe19a;font-size:13px;margin:6px 0">Not fully confirmed. Details may change.</p>' : ''}
 <dl><dt>Time</dt><dd>${esc(N().dt(i.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }))}</dd><dt>Location</dt><dd>${esc(i.location)}</dd><dt>Zone</dt><dd>${esc(i.zone)}</dd>${i.units ? `<dt>Units</dt><dd>${esc(i.units)}</dd>` : ''}${i.talkgroup ? `<dt>Talkgroup</dt><dd>${esc(i.talkgroup)}</dd>` : ''}${i.author ? `<dt>Source</dt><dd>${esc(i.author)}</dd>` : ''}</dl>
-<p>${esc(i.details)}</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="cg-btn" id="cgDSay">Read aloud</button>${osm}<button class="cg-btn sec" id="cgDClose">Close</button></div></div>`);
+<p>${esc(i.details)}</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="cg-btn" id="cgDSay">Read aloud</button>${i.demo ? '' : `<a class="cg-btn sec" href="report.html?id=${encodeURIComponent(i.id)}">Open full report</a>`}${osm}<button class="cg-btn sec" id="cgDClose">Close</button></div></div>`);
   const dlg = m.firstChild; dlg.setAttribute('role', 'dialog'); dlg.setAttribute('aria-modal', 'true'); dlg.setAttribute('aria-label', 'Incident details');
   $('#cgDClose').onclick = () => N().closeM(); $('#cgDSay').onclick = () => speak(announceText(i, true));
   $('#cgDClose').focus();
