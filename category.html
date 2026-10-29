@@ -9,7 +9,759 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Claudia Green — 423.news">
 <meta property="og:description" content="Her reporting: what she heard on the scanners, what she verified, and what it means for you.">
-<link rel="stylesheet" href="assets/theme.css">
+<style>
+/* ============================================================
+   423.news — Claudia Green
+   Shared theme for the live homepage and the desk page
+   ============================================================ */
+
+:root {
+  --ink: #0a0d13;
+  --panel: #11151e;
+  --panel-2: #161b26;
+  --panel-3: #1c2230;
+  --line: #232b3a;
+  --line-soft: #1a212d;
+  --paper: #f3eee4;
+  --paper-dim: #c9c3b7;
+  --muted: #8590a4;
+  --muted-2: #5d6779;
+  --live: #e8392f;
+  --live-glow: rgba(232, 57, 47, .35);
+  --signal: #f5a524;
+  --verify: #35c48a;
+  --developing: #4d9fff;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  --r: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, #16202f 0%, transparent 60%),
+    radial-gradient(900px 500px at 95% 0%, #1a1410 0%, transparent 55%),
+    var(--ink);
+  color: var(--paper);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.mono { font-family: var(--mono); }
+.wrap { width: min(1280px, 100% - 48px); margin: 0 auto; }
+
+/* ---------- top bar ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 60;
+  background: rgba(10, 13, 19, .82);
+  backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-in {
+  display: flex; align-items: center; gap: 18px;
+  height: 62px;
+}
+.brand { display: flex; align-items: baseline; gap: 9px; }
+.brand-mark {
+  font-family: var(--serif); font-weight: 700; font-size: 22px;
+  letter-spacing: -.02em;
+}
+.brand-mark em { color: var(--live); font-style: normal; }
+.brand-sub {
+  font-size: 10px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--muted-2);
+}
+.nav { display: flex; gap: 22px; margin-left: 18px; }
+.nav a {
+  font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); padding: 6px 0; border-bottom: 1px solid transparent;
+  transition: color .18s, border-color .18s;
+}
+.nav a:hover { color: var(--paper); border-color: var(--line); }
+.nav a.on { color: var(--paper); border-color: var(--live); }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.clock {
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+  letter-spacing: .04em;
+}
+
+/* ---------- on-air pill ---------- */
+.pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .16em;
+  text-transform: uppercase; padding: 6px 11px; border-radius: 999px;
+  border: 1px solid currentColor; line-height: 1;
+}
+.pill.live { color: var(--live); background: rgba(232,57,47,.09); }
+.pill.monitoring { color: var(--signal); background: rgba(245,165,36,.08); }
+.pill.offair { color: var(--muted-2); }
+.pill .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: currentColor; box-shadow: 0 0 0 0 currentColor;
+}
+.pill.live .dot { animation: pulse 1.7s infinite; }
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 var(--live-glow); }
+  70%  { box-shadow: 0 0 0 9px rgba(232,57,47,0); }
+  100% { box-shadow: 0 0 0 0 rgba(232,57,47,0); }
+}
+
+/* ---------- ticker ---------- */
+.ticker {
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(90deg, rgba(232,57,47,.14), rgba(232,57,47,0) 45%), #0d1017;
+  overflow: hidden; position: relative;
+  display: flex; align-items: center; height: 40px;
+}
+.ticker-tag {
+  flex: none; z-index: 2; display: flex; align-items: center; gap: 8px;
+  height: 100%; padding: 0 14px; font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--live);
+  background: #0d1017; border-right: 1px solid var(--line);
+}
+.ticker-track {
+  display: flex; gap: 44px; white-space: nowrap;
+  animation: slide 48s linear infinite; padding-left: 20px;
+}
+.ticker:hover .ticker-track { animation-play-state: paused; }
+.ticker-item { font-size: 12.5px; color: var(--paper-dim); display: flex; gap: 10px; align-items: center; }
+.ticker-item b { color: var(--paper); font-weight: 600; }
+.ticker-item .t { font-family: var(--mono); font-size: 10.5px; color: var(--muted-2); }
+@keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ---------- layout ---------- */
+.layout {
+  display: grid; grid-template-columns: minmax(0, 1fr) 352px;
+  gap: 30px; padding: 30px 0 70px;
+}
+@media (max-width: 1040px) { .layout { grid-template-columns: 1fr; } }
+
+/* ---------- live hero ---------- */
+.hero {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background:
+    radial-gradient(700px 260px at 0% 0%, rgba(232,57,47,.10), transparent 70%),
+    linear-gradient(180deg, var(--panel-2), var(--panel));
+  padding: 26px 28px 24px;
+  position: relative; overflow: hidden;
+}
+.hero::after {
+  content: ""; position: absolute; inset: 0 0 auto; height: 2px;
+  background: linear-gradient(90deg, var(--live), transparent 65%);
+}
+.hero-head {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.hero-kicker {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--muted-2);
+}
+.hero-kicker b { color: var(--signal); font-weight: 600; }
+.hero h1 {
+  font-family: var(--serif); font-weight: 700;
+  font-size: clamp(27px, 3.1vw, 42px); line-height: 1.1;
+  letter-spacing: -.022em; margin: 0 0 14px; max-width: 22ch;
+}
+.hero-lede {
+  font-size: 15.5px; line-height: 1.66; color: var(--paper-dim);
+  max-width: 62ch; margin: 0 0 20px;
+}
+.hero-meta {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  font-family: var(--mono); font-size: 11px; color: var(--muted-2);
+  border-top: 1px solid var(--line-soft); padding-top: 15px;
+}
+.byline { display: flex; align-items: center; gap: 9px; color: var(--paper-dim); }
+.avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(140deg, #7d9b7a, #3f5c46);
+  display: grid; place-items: center; font-size: 11px; font-weight: 700;
+  color: #0d1310; font-family: var(--sans); letter-spacing: .02em;
+  flex: none;
+}
+.confidence {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .13em;
+  text-transform: uppercase; padding: 4px 8px; border-radius: 4px;
+  border: 1px solid currentColor;
+}
+.confidence.confirmed { color: var(--verify); }
+.confidence.developing { color: var(--developing); }
+.confidence.unconfirmed { color: var(--signal); }
+
+/* ---------- section heads ---------- */
+.sec-head {
+  display: flex; align-items: baseline; gap: 12px;
+  margin: 34px 0 16px;
+  border-bottom: 1px solid var(--line); padding-bottom: 11px;
+}
+.sec-head h2 {
+  font-family: var(--sans); font-size: 11.5px; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase; margin: 0;
+}
+.sec-head .count { font-family: var(--mono); font-size: 11px; color: var(--muted-2); }
+.sec-head .spacer { margin-left: auto; }
+.chip {
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  font-family: var(--sans); font-size: 11px; letter-spacing: .06em;
+  padding: 5px 11px; border-radius: 999px; cursor: pointer;
+  transition: all .16s;
+}
+.chip:hover { color: var(--paper); border-color: var(--muted-2); }
+.chip.on { color: var(--ink); background: var(--paper); border-color: var(--paper); font-weight: 600; }
+
+/* ---------- report stream ---------- */
+.stream { display: flex; flex-direction: column; gap: 14px; }
+.report {
+  border: 1px solid var(--line); border-radius: var(--r);
+  background: var(--panel); padding: 18px 20px;
+  display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 18px;
+  transition: border-color .2s, transform .2s, background .2s;
+}
+.report:hover { border-color: #2f3a4d; background: var(--panel-2); transform: translateX(2px); }
+.report .gutter {
+  font-family: var(--mono); font-size: 10.5px; color: var(--muted-2);
+  display: flex; flex-direction: column; gap: 7px;
+  border-right: 1px solid var(--line-soft); padding-right: 14px;
+}
+.report .gutter .time { color: var(--paper-dim); font-size: 12px; }
+.kind {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .14em;
+  text-transform: uppercase; padding: 3px 0; color: var(--muted);
+}
+.kind.breaking { color: var(--live); }
+.kind.scanner { color: var(--signal); }
+.kind.field { color: var(--developing); }
+.kind.verified { color: var(--verify); }
+.report h3 {
+  font-family: var(--serif); font-size: 19.5px; line-height: 1.24;
+  margin: 0 0 8px; letter-spacing: -.012em; font-weight: 700;
+}
+.report p { margin: 0 0 10px; font-size: 13.6px; line-height: 1.6; color: var(--paper-dim); }
+.report .tags { display: flex; gap: 7px; flex-wrap: wrap; }
+.tag {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted-2);
+  border: 1px solid var(--line); border-radius: 3px; padding: 3px 6px;
+}
+.tag.hot { color: var(--live); border-color: rgba(232,57,47,.35); }
+
+/* ---------- heard on the scanner ---------- */
+.report.heard { border-left: 2px solid var(--signal); }
+.report.heard .gutter { border-right-color: rgba(245,165,36,.18); }
+.kind.heard { color: var(--signal); }
+.heard-line {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 9px;
+  font-family: var(--mono); font-size: 9.6px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--signal);
+}
+.heard-line .sig { font-size: 8px; }
+.safety {
+  border: 1px solid rgba(245,165,36,.24); background: rgba(245,165,36,.05);
+  border-radius: 8px; padding: 11px 13px; margin: 2px 0 11px;
+}
+.safety-h {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--signal); margin-bottom: 7px;
+}
+.safety ul { margin: 0; padding-left: 16px; }
+.safety li { font-size: 12.6px; line-height: 1.6; color: var(--paper-dim); margin-bottom: 3px; }
+.uncertain-line {
+  font-size: 12px; line-height: 1.6; color: var(--muted-2); margin-bottom: 10px;
+  border-left: 2px solid var(--line); padding-left: 9px;
+}
+.uncertain-line b { color: var(--signal); font-weight: 600; }
+
+/* ---------- legal strip ---------- */
+.legal-strip {
+  margin-top: 26px; padding: 13px 15px; border: 1px solid var(--line);
+  border-radius: 10px; background: rgba(255,255,255,.015);
+  font-size: 11.6px; line-height: 1.7; color: var(--muted-2);
+}
+.legal-strip b { color: var(--paper-dim); font-weight: 600; }
+
+/* ---------- right rail ---------- */
+.rail { display: flex; flex-direction: column; gap: 18px; }
+.card {
+  border: 1px solid var(--line); border-radius: var(--r);
+  background: var(--panel); overflow: hidden;
+}
+.card-head {
+  display: flex; align-items: center; gap: 9px;
+  padding: 12px 15px; border-bottom: 1px solid var(--line-soft);
+  font-family: var(--mono); font-size: 10px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted);
+}
+.card-head .spacer { margin-left: auto; }
+.card-body { padding: 14px 15px; }
+
+/* desk CTA card */
+.desk-cta { position: relative; }
+.desk-cta .card-body { padding: 0; }
+.desk-viz {
+  position: relative; height: 132px; overflow: hidden;
+  background: radial-gradient(120% 130% at 50% 0%, #1d2637, #0c1016 70%);
+  border-bottom: 1px solid var(--line-soft);
+}
+.desk-copy { padding: 15px; }
+.desk-copy h3 {
+  font-family: var(--serif); font-size: 17px; margin: 0 0 6px; letter-spacing: -.01em;
+}
+.desk-copy p { margin: 0 0 13px; font-size: 12.6px; line-height: 1.55; color: var(--muted); }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 11px 14px; border-radius: 7px; cursor: pointer;
+  background: var(--paper); color: #0b0e14; border: 1px solid var(--paper);
+  font-family: var(--sans); font-size: 12px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; transition: all .18s;
+}
+.btn:hover { background: #fff; transform: translateY(-1px); }
+.btn.ghost {
+  background: transparent; color: var(--paper); border-color: var(--line);
+}
+.btn.ghost:hover { border-color: var(--muted-2); background: rgba(255,255,255,.03); }
+.btn.live-btn { background: var(--live); border-color: var(--live); color: #fff; }
+.btn.live-btn:hover { background: #f04a40; }
+
+/* scanner list */
+.feed-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 0; border-bottom: 1px solid var(--line-soft);
+  font-size: 12.5px;
+}
+.feed-row:last-child { border-bottom: 0; }
+.feed-row .name { color: var(--paper-dim); flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed-row .cnt {
+  font-family: var(--mono); font-size: 10.5px; color: var(--muted-2);
+  font-variant-numeric: tabular-nums;
+}
+.bars { display: flex; align-items: flex-end; gap: 2px; height: 14px; width: 26px; flex: none; }
+.bars i {
+  flex: 1; background: var(--signal); border-radius: 1px;
+  height: 3px; opacity: .28; transition: height .22s, opacity .22s;
+}
+.bars.hot i { opacity: .95; }
+
+/* scanner log */
+.log {
+  font-family: var(--mono); font-size: 11px; line-height: 1.75;
+  color: var(--muted); max-height: 250px; overflow-y: auto;
+}
+.log div { display: flex; gap: 8px; padding: 3px 0; }
+.log .lt { color: var(--muted-2); flex: none; }
+.log .lf { color: var(--signal); flex: none; }
+.log .lg { color: var(--paper-dim); }
+.log .grade-a { color: var(--verify); }
+.log .grade-b { color: var(--developing); }
+.log .grade-c { color: var(--muted-2); }
+
+/* ---------- footer ---------- */
+.footer {
+  border-top: 1px solid var(--line); padding: 26px 0 44px;
+  color: var(--muted-2); font-size: 11.5px; line-height: 1.7;
+}
+.footer .row { display: flex; gap: 22px; flex-wrap: wrap; justify-content: space-between; }
+
+/* ---------- scrollbar ---------- */
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #202836; border-radius: 9px; }
+::-webkit-scrollbar-thumb:hover { background: #2c3648; }
+
+/* ============================================================
+   DESK PAGE
+   ============================================================ */
+.desk-hero {
+  display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr);
+  gap: 26px; padding: 26px 0 0;
+}
+@media (max-width: 980px) { .desk-hero { grid-template-columns: 1fr; } }
+
+.stage {
+  border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+  background:
+    radial-gradient(900px 400px at 50% -20%, #1b2434, transparent 65%),
+    linear-gradient(180deg, #0d1218, #090c11);
+  position: relative;
+}
+.stage-in { position: relative; }
+.stage-svg { display: block; width: 100%; height: auto; }
+.stage-bar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+  display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--muted-2);
+  background: linear-gradient(180deg, rgba(9,12,17,.9), transparent);
+}
+.stage-bar .spacer { margin-left: auto; }
+.rec {
+  display: inline-flex; align-items: center; gap: 6px; color: var(--live);
+}
+.rec i { width: 6px; height: 6px; border-radius: 50%; background: var(--live);
+  animation: recblink 1.4s infinite; }
+@keyframes recblink { 0%,100% { opacity: 1; } 50% { opacity: .18; } }
+
+/* live console */
+.console {
+  border: 1px solid var(--line); border-radius: 14px; background: var(--panel);
+  display: flex; flex-direction: column; min-height: 100%;
+}
+.console-head {
+  display: flex; align-items: center; gap: 10px; padding: 13px 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.console-head .t {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted);
+}
+.console-body { padding: 20px 18px; flex: 1; }
+.typing {
+  font-family: var(--serif); font-size: 20px; line-height: 1.5;
+  letter-spacing: -.01em; min-height: 120px;
+}
+.typing .caret {
+  display: inline-block; width: 2px; height: 1em; background: var(--signal);
+  margin-left: 2px; vertical-align: -2px; animation: blink 1s steps(1) infinite;
+}
+@keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+.console-foot {
+  border-top: 1px solid var(--line-soft); padding: 13px 16px;
+  display: flex; gap: 10px; align-items: center;
+}
+.console-foot .btn { width: auto; padding: 9px 14px; font-size: 11px; }
+
+/* meter grid */
+.meters { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.meter {
+  border: 1px solid var(--line-soft); border-radius: 8px;
+  background: var(--panel-2); padding: 12px;
+}
+.meter .k {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted-2); margin-bottom: 7px;
+}
+.meter .v { font-family: var(--serif); font-size: 21px; letter-spacing: -.01em; }
+.meter .v.small { font-size: 14px; font-family: var(--mono); }
+.meter .d { font-family: var(--mono); font-size: 10px; color: var(--muted-2); margin-top: 4px; }
+
+/* story queue */
+.queue { display: flex; flex-direction: column; }
+.qitem {
+  display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px;
+  padding: 12px 15px; border-bottom: 1px solid var(--line-soft);
+}
+.qitem:last-child { border-bottom: 0; }
+.qitem .h { font-size: 13.4px; line-height: 1.42; color: var(--paper-dim); margin-bottom: 5px; }
+.qitem .m { font-family: var(--mono); font-size: 9.5px; color: var(--muted-2);
+  letter-spacing: .08em; text-transform: uppercase; }
+.status-tag {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .12em;
+  text-transform: uppercase; padding: 4px 7px; border-radius: 4px;
+  border: 1px solid currentColor; align-self: start; white-space: nowrap;
+}
+.status-tag.filed { color: var(--verify); }
+.status-tag.working { color: var(--signal); }
+.status-tag.watching { color: var(--muted-2); }
+
+.empty {
+  padding: 26px 16px; text-align: center; color: var(--muted-2);
+  font-family: var(--mono); font-size: 11px; letter-spacing: .1em;
+}
+
+/* ============================================================
+   COMMAND BAR (typed or spoken)
+   ============================================================ */
+.search-slot { flex: 1 1 260px; max-width: 420px; min-width: 130px; }
+.cmd { position: relative; width: 100%; }
+.cmd-field {
+  display: flex; align-items: center; gap: 8px; height: 34px;
+  padding: 0 9px 0 11px; border: 1px solid var(--line); border-radius: 8px;
+  background: #0d1117; transition: border-color .18s, box-shadow .18s;
+}
+.cmd-field:focus-within { border-color: var(--signal); box-shadow: 0 0 0 3px rgba(245,165,36,.07); }
+.cmd-ico { width: 14px; height: 14px; color: var(--muted-2); flex: none; }
+.cmd-input {
+  flex: 1; min-width: 0; background: transparent; border: 0; outline: 0;
+  color: var(--paper); font-size: 12.5px; font-family: var(--sans);
+}
+.cmd-input::placeholder { color: var(--muted-2); }
+.mic {
+  width: 26px; height: 26px; flex: none; border-radius: 6px; border: 1px solid transparent;
+  background: transparent; color: var(--muted); display: grid; place-items: center;
+  cursor: pointer; transition: all .16s;
+}
+.mic svg { width: 15px; height: 15px; }
+.mic:hover { color: var(--paper); background: rgba(255,255,255,.05); }
+.mic.on {
+  color: var(--live); border-color: rgba(232,57,47,.45); background: rgba(232,57,47,.1);
+  animation: micpulse 1.3s infinite;
+}
+@keyframes micpulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(232,57,47,.32); }
+  50% { box-shadow: 0 0 0 7px rgba(232,57,47,0); }
+}
+.cmd-hint {
+  color: var(--muted-2); font-size: 10px; border: 1px solid var(--line);
+  border-radius: 4px; padding: 1px 5px;
+}
+.cmd-listen {
+  display: none; align-items: center; gap: 9px; padding: 7px 2px 0;
+  font-family: var(--mono); font-size: 11px; color: var(--live);
+}
+.cmd-listen.on { display: flex; }
+.lbars { display: flex; align-items: flex-end; gap: 2px; height: 12px; }
+.lbars i {
+  width: 2px; height: 4px; background: var(--live); border-radius: 1px;
+  animation: lb 640ms ease-in-out infinite alternate;
+}
+.lbars i:nth-child(2) { animation-delay: .1s }
+.lbars i:nth-child(3) { animation-delay: .2s }
+.lbars i:nth-child(4) { animation-delay: .3s }
+.lbars i:nth-child(5) { animation-delay: .4s }
+@keyframes lb { from { height: 3px } to { height: 12px } }
+
+.cmd-panel {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 90;
+  width: min(580px, calc(100vw - 40px));
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 26px 70px rgba(0,0,0,.6); max-height: 72vh; overflow-y: auto;
+}
+.cmd-answer { padding: 14px; }
+.cmd-answer-head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted);
+}
+.cmd-answer-head .spacer { margin-left: auto; }
+.cmd-results { display: flex; flex-direction: column; gap: 2px; }
+.cmd-row {
+  display: grid; grid-template-columns: 62px minmax(0,1fr); gap: 10px; text-align: left;
+  background: transparent; border: 0; border-radius: 6px; padding: 9px; cursor: pointer; color: inherit;
+}
+.cmd-row:hover, .cmd-row.on { background: rgba(255,255,255,.045); }
+.cmd-row-main { min-width: 0; }
+.cmd-row-t { display: block; font-size: 13px; color: var(--paper); line-height: 1.4; }
+.cmd-row-b {
+  display: block; font-size: 11.5px; color: var(--muted); margin-top: 3px; line-height: 1.45;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px; }
+.cmd-empty { font-size: 12.8px; color: var(--muted); line-height: 1.62; }
+.cmd-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+.cmd-actions .btn { width: auto; padding: 9px 13px; font-size: 10.5px; }
+.cmd-skel {
+  height: 84px; border-radius: 8px;
+  background: linear-gradient(90deg, #151b26, #1e2734, #151b26);
+  background-size: 200% 100%; animation: sk 1.2s linear infinite;
+}
+@keyframes sk { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+
+/* ============================================================
+   AREA CONDITIONS (weather · alerts · traffic)
+   ============================================================ */
+.wx-card {
+  border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); padding: 14px;
+}
+.wx-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted);
+}
+.wx-head .wx-when { margin-left: auto; color: var(--muted-2); letter-spacing: 0; }
+.wx-top { display: flex; align-items: center; gap: 14px; }
+.wx-icon { font-size: 34px; line-height: 1; color: var(--signal); flex: none; }
+.wx-temp { font-family: var(--serif); font-size: 38px; line-height: 1; letter-spacing: -.02em; }
+.wx-temp span { font-size: 15px; color: var(--muted); margin-left: 2px; }
+.wx-cond { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.wx-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+.wx-grid .k {
+  display: block; font-family: var(--mono); font-size: 9px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted-2); margin-bottom: 3px;
+}
+.wx-grid .v { font-family: var(--mono); font-size: 12px; color: var(--paper-dim); }
+.wx-grid em { color: var(--signal); font-style: normal; }
+.wx-hours {
+  display: flex; align-items: flex-end; gap: 3px; height: 46px; margin-top: 14px;
+  border-bottom: 1px solid var(--line-soft); padding-bottom: 2px;
+}
+.wx-hour { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; }
+.wx-hour i { width: 100%; max-width: 9px; background: rgba(77,159,255,.4); border-radius: 1px; }
+.wx-hour i.hi { background: var(--developing); }
+.wx-hour span { font-family: var(--mono); font-size: 8px; color: var(--muted-2); }
+.wx-caption { font-family: var(--mono); font-size: 8.5px; color: var(--muted-2); margin-top: 5px; letter-spacing: .06em; }
+.wx-block { margin-top: 14px; border-top: 1px solid var(--line-soft); padding-top: 11px; }
+.wx-label {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--muted-2);
+}
+.dot-sev { width: 6px; height: 6px; border-radius: 50%; background: var(--live); }
+.alert-row, .tfc-row { display: flex; gap: 8px; font-size: 11.8px; padding: 5px 0; line-height: 1.42; }
+.sev, .tfc-type {
+  flex: none; align-self: flex-start; font-family: var(--mono); font-size: 9.2px;
+  text-transform: uppercase; color: var(--signal); border: 1px solid currentColor;
+  border-radius: 3px; padding: 2px 5px; letter-spacing: .04em;
+}
+.sev.severe, .sev.extreme, .tfc-type.severe { color: var(--live); }
+.sev.minor, .tfc-type { color: var(--developing); }
+.alert-t, .tfc-text { color: var(--muted); }
+.wx-none { font-size: 11.5px; color: var(--muted-2); line-height: 1.55; }
+.wx-empty { padding: 16px 4px; font-size: 12px; color: var(--muted); }
+
+.area-bar {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  margin: 22px 0 18px; padding: 12px; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--panel);
+}
+.area-input {
+  flex: 1 1 200px; height: 38px; padding: 0 12px; border-radius: 8px;
+  border: 1px solid var(--line); background: #0d1117; color: var(--paper);
+  font-size: 13px; font-family: var(--sans); outline: 0; min-width: 0;
+}
+.area-input:focus { border-color: var(--signal); }
+.area-bar .btn { width: auto; padding: 10px 14px; font-size: 10.5px; }
+.chips { display: flex; gap: 7px; flex-wrap: wrap; width: 100%; margin-top: 2px; }
+.cond-grid {
+  display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  gap: 18px; align-items: start;
+}
+@media (max-width: 900px) { .cond-grid { grid-template-columns: 1fr; } }
+.cond-span { grid-column: 1 / -1; }
+.page-pad { padding-bottom: 64px; }
+
+/* ============================================================
+   CRIME RADAR
+   ============================================================ */
+.radar { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); overflow: hidden; }
+.radar-head {
+  display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+  border-bottom: 1px solid var(--line-soft); font-family: var(--mono);
+  font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+}
+.radar-head .spacer { margin-left: auto; }
+.radar-place { color: var(--paper-dim); text-transform: none; letter-spacing: 0; }
+.radar-radius { color: var(--muted-2); letter-spacing: 0; }
+.radar-body { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 14px; padding: 14px; }
+.radar.compact .radar-body { grid-template-columns: minmax(0,1fr); }
+.radar.compact .radar-head { font-size: 9.5px; }
+.scope-svg { width: 100%; height: auto; display: block; }
+.scope-face { stroke: #1f3a2c; stroke-width: 1; }
+.ring { fill: none; stroke: #1e3d2e; stroke-width: 1; }
+.ring-lbl { font-family: var(--mono); font-size: 8px; fill: #3f6b52; }
+.axis { stroke: #183024; stroke-width: 1; }
+.cardinal { font-family: var(--mono); font-size: 9px; fill: #41624f; letter-spacing: 1px; }
+.home-dot { fill: var(--verify); }
+.sweep { animation: spin 4.5s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.blip-dot { fill: var(--signal); }
+.blip-halo {
+  fill: currentColor; opacity: .18; transform-box: fill-box; transform-origin: center;
+  animation: blipPulse 2.6s ease-out infinite;
+}
+.blip-violent { color: var(--live); }
+.blip-violent .blip-dot { fill: var(--live); }
+.blip-property { color: var(--signal); }
+.blip-other { color: var(--developing); }
+.blip-other .blip-dot { fill: var(--developing); }
+@keyframes blipPulse {
+  0% { opacity: .3; transform: scale(.6); }
+  70% { opacity: 0; transform: scale(1.6); }
+  100% { opacity: 0; }
+}
+.radar-counts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.rc {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 9px;
+}
+.rc b { font-family: var(--sans); font-size: 11.5px; margin-right: 4px; color: var(--paper-dim); }
+.rc.violent b { color: var(--live); }
+.rc.property b { color: var(--signal); }
+.rc.other b { color: var(--developing); }
+.radar-list { display: flex; flex-direction: column; max-height: 232px; overflow-y: auto; }
+.radar-item {
+  display: grid; grid-template-columns: 34px minmax(0,1fr) auto; gap: 8px;
+  align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--line-soft);
+  font-size: 11.8px; color: var(--paper-dim);
+}
+.radar-item:last-child { border-bottom: 0; }
+.ri-d { font-family: var(--mono); font-size: 10px; color: var(--signal); }
+.radar-item.violent .ri-d { color: var(--live); }
+.radar-item.other .ri-d { color: var(--developing); }
+.ri-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ri-w { font-size: 9.5px; color: var(--muted-2); }
+.radar-src { font-size: 9.5px; color: var(--muted-2); margin-bottom: 8px; line-height: 1.5; }
+.radar-none { font-size: 11.5px; color: var(--muted-2); line-height: 1.55; }
+.radar-unplotted { border-top: 1px solid var(--line-soft); padding: 12px 14px; }
+.radar-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted-2); margin-bottom: 8px;
+}
+.un-row {
+  display: grid; grid-template-columns: 78px minmax(0,1fr) auto; gap: 8px;
+  padding: 4px 0; font-size: 11.6px; color: var(--paper-dim);
+}
+.un-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.un-s { font-size: 9.5px; color: var(--muted-2); }
+.radar-loading { padding: 24px 16px; font-family: var(--mono); font-size: 11px; color: var(--muted-2); }
+.radar-mini .radar-head { border-radius: 0; }
+
+/* nav/search responsive */
+
+/* ============================================================
+   ON AIR BAR (LiveKit)
+   ============================================================ */
+.onair-bar {
+  position: fixed; left: 18px; bottom: 18px; z-index: 75;
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: rgba(12,16,22,.92);
+  backdrop-filter: blur(12px); box-shadow: 0 14px 40px rgba(0,0,0,.5);
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted);
+}
+.onair-bar[hidden] { display: none; }
+.onair-bar.on { border-color: rgba(232,57,47,.4); color: var(--paper-dim); }
+.onair-bar .oa-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--muted-2); flex: none;
+}
+.onair-bar[data-live="1"] .oa-dot { background: var(--live); animation: pulse 1.7s infinite; }
+.onair-bar.on .oa-dot { background: var(--verify); }
+.oa-meter { display: flex; align-items: flex-end; gap: 2px; height: 14px; }
+.oa-meter i {
+  width: 2px; height: 3px; background: var(--verify); border-radius: 1px;
+  transition: height .12s linear, opacity .12s linear;
+}
+.onair-bar:not(.on) .oa-meter { display: none; }
+.oa-btn {
+  border: 1px solid var(--line); background: transparent; color: var(--paper);
+  font-family: var(--sans); font-size: 10px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; padding: 5px 10px; border-radius: 999px; cursor: pointer;
+}
+.oa-btn:hover { border-color: var(--muted-2); background: rgba(255,255,255,.05); }
+#publishBtn.on { background: var(--live); border-color: var(--live); color: #fff; }
+#onairAudio { position: absolute; width: 1px; height: 1px; opacity: .01; }
+@media (max-width: 620px) {
+  .onair-bar { left: 10px; right: 10px; bottom: 10px; justify-content: center; }
+}
+@media (max-width: 1020px) { .nav { display: none; } }
+@media (max-width: 620px) {
+  .cmd-hint { display: none; }
+  .search-slot { flex-basis: 100px; }
+  .topbar-in { gap: 10px; }
+  .topbar-right .clock { display: none; }
+}
+
+</style>
 <style>
   /* page chrome only — the category block styles itself (assets/claudia-category.js) */
   .cat-hero {
@@ -56,6 +808,7 @@
       <a href="desk.html">Claudia's desk</a>
       <a href="category.html" class="on">Claudia</a>
       <a href="conditions.html">Conditions</a>
+      <a href="claudia-scanner.html">Scanner Wire</a>
       <a href="index.html#scanner">Scanner</a>
     </nav>
     <div class="topbar-right">
@@ -132,13 +885,2320 @@
 }
 </script>
 
-<script src="assets/config.js"></script>
-<script src="assets/store.js"></script>
-<script src="assets/feed.js"></script>
-<script src="assets/conditions.js"></script>
-<script src="assets/radar.js"></script>
-<script src="assets/search.js"></script>
-<script src="assets/onair.js"></script>
-<script src="assets/claudia-category.js"></script>
+<script>
+/* ============================================================
+   423.news — Claudia Green | site configuration
+   Edit this file. No build step, no dependencies.
+   ============================================================ */
+window.CLAUDIA_CONFIG = {
+
+  /* Where the desk looks when it opens. Any place name or "lat,lon". */
+  defaultArea: 'Raleigh, North Carolina',
+
+  /* 'imperial' (°F, mph, in) or 'metric' (°C, km/h, mm) */
+  units: 'imperial',
+
+  /* Weather + alerts need no key (Open-Meteo / NWS).
+     Traffic needs a provider key — TomTom Traffic is the default.
+     Paste your key below or leave empty; the card will say plainly
+     that the traffic feed is not configured instead of inventing it. */
+  traffic: {
+    provider: 'tomtom',
+    apiKey: '',
+    radiusKm: 15,
+    maxIncidents: 8
+  },
+
+  /* ---- live crime radar ----
+     Default source is the desk's own feed: graded scanner traffic and filed
+     reports. Anything without coordinates is listed under the scope, never
+     plotted at an invented position.
+
+     For real plotted incidents, point `openData.datasetUrl` at a city open-data
+     dataset (Socrata). Example — Chicago:
+       "datasetUrl": "https://data.cityofchicago.org/resource/ijzp5-x9u9.json",
+       "dateField": "date", "latField": "latitude", "lonField": "longitude",
+       "typeField": "primary_type"
+     ------------------------------------------------------------ */
+  radar: {
+    radiusKm: 8,
+    lookbackDays: 7,
+    refreshSeconds: 90,
+    openData: {
+      datasetUrl: '',
+      dateField: 'date',
+      latField: 'latitude',
+      lonField: 'longitude',
+      typeField: 'primary_type'
+    }
+  },
+
+  /* ---- backend ----
+     Leave both blank to run from feed.json (static host, offline, demo).
+     Fill them in and the site reads live from Supabase instead — Realtime
+     replaces the 20-second poll entirely. Only the anon key goes here.
+     ------------------------------------------------------------ */
+  supabase: {
+    url: '',        // https://xxxxxxxx.supabase.co
+    anonKey: ''     // the PUBLIC anon key, never the service key
+  },
+
+  /* ---- on air audio (LiveKit) ----
+     tokenEndpoint is the Cloudflare Pages Function; the API secret never
+     reaches the browser. Leave url blank if the function returns it.
+     ------------------------------------------------------------ */
+  livekit: {
+    url: '',                             // wss://your-project.livekit.cloud
+    tokenEndpoint: '/api/livekit-token',
+    room: 'claudia-desk'
+  },
+
+  /* saved "surrounding areas" shown as quick chips (edit freely) */
+  surrounding: [
+    'Durham, North Carolina',
+    'Chapel Hill, North Carolina',
+    'Cary, North Carolina',
+    'Wake Forest, North Carolina'
+  ],
+
+  /* seconds before a cached area lookup is refreshed */
+  refreshSeconds: 300,
+
+  /* speech recognition language for the microphone button */
+  micLanguage: 'en-US'
+};
+
+</script>
+<script>
+/* ============================================================
+   423.news — Claudia Green | storage backend
+   ------------------------------------------------------------
+   Two backends, same shape:
+     • supabase  — when CLAUDIA_CONFIG.supabase.url is set.
+                   Reads via PostgREST, live updates via Realtime.
+     • file      — fallback: feed.json (static host, offline, demo).
+   The rest of the site never knows which one is running.
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var CFG = window.CLAUDIA_CONFIG || {};
+  var SB = CFG.supabase || {};
+  var enabled = !!(SB.url && SB.anonKey);
+  var listeners = [];
+  var client = null;
+  var channel = null;
+
+  function headers(extra) {
+    return Object.assign({
+      apikey: SB.anonKey,
+      Authorization: 'Bearer ' + SB.anonKey,
+      'Content-Type': 'application/json'
+    }, extra || {});
+  }
+
+  function rest(path, query) {
+    var url = SB.url.replace(/\/$/, '') + '/rest/v1/' + path + (query ? '?' + query : '');
+    return fetch(url, { headers: headers(), cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('supabase ' + path + ' → HTTP ' + r.status);
+      return r.json();
+    });
+  }
+
+  function minutesAgo(ts) {
+    var t = ts ? new Date(ts).getTime() : Date.now();
+    return Math.max(0, Math.round((Date.now() - t) / 60000));
+  }
+
+  /* rows -> the exact feed shape the site renders */
+  function shape(rows, feeds, log, meta) {
+    var reports = (rows || []).map(function (r) {
+      return {
+        id: r.id, ts: r.ts, kind: r.kind, dateline: r.dateline,
+        confidence: r.confidence, headline: r.headline, summary: r.summary,
+        tags: r.tags || [], scanner: r.scanner || [], sources: r.sources || [],
+        safety: r.safety || [], uncertain: r.uncertain || [],
+        heard_on: r.heard_on, paraphrase: r.paraphrase,
+        minutesAgo: minutesAgo(r.ts)
+      };
+    });
+
+    var online = (feeds || []).some(function (f) { return f.live_data; });
+
+    return {
+      generated_at: new Date().toISOString(),
+      generator: 'claudia-green/supabase',
+      publication: { name: '423.news', role: 'independent correspondent', byline: 'Claudia Green' },
+      claudia: {
+        status: 'at-desk',
+        on_air: !!(meta && meta.on_air),
+        line: (meta && meta.line) || 'At the desk, monitors open.'
+      },
+      reports: reports,
+      scanner: {
+        provider: 'Broadcastify',
+        connected: online,
+        note: online ? undefined : ((feeds || [])[0] && feeds[0].note) || undefined,
+        feeds: (feeds || []).map(function (f) {
+          return {
+            name: f.name, status: f.status, listeners: f.listeners,
+            live_data: f.live_data, priority: f.priority, tags: f.tags || []
+          };
+        }),
+        log: (log || []).map(function (l) {
+          return { ts: l.ts, feed: l.feed, text: l.line, grade: l.grade, minutesAgo: minutesAgo(l.ts) };
+        })
+      }
+    };
+  }
+
+  function loadSupabase() {
+    return Promise.all([
+      rest('reports', 'select=*&published=eq.true&order=ts.desc&limit=60'),
+      rest('scanner_feeds', 'select=*&order=priority.asc'),
+      rest('scanner_log', 'select=*&order=ts.desc&limit=24'),
+      rest('areas', 'select=*&order=opening.desc,id.asc')
+    ]).then(function (r) {
+      var feed = shape(r[0], r[1], r[2]);
+      feed.areas = r[3] || [];
+      var opening = (r[3] || []).filter(function (a) { return a.opening; })[0];
+      if (opening) feed.openingArea = opening.name;
+      return feed;
+    });
+  }
+
+  /* ---------------- realtime ---------------- */
+  function startRealtime(onChange) {
+    if (!enabled) return false;
+    import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm')
+      .then(function (mod) {
+        client = mod.createClient(SB.url, SB.anonKey, {
+          realtime: { params: { eventsPerSecond: 4 } }
+        });
+        channel = client
+          .channel('desk')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, onChange)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'scanner_log' }, onChange)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'scanner_feeds' }, onChange)
+          .subscribe(function (status) {
+            if (status === 'SUBSCRIBED') {
+              window.dispatchEvent(new CustomEvent('claudia:realtime', { detail: 'on' }));
+            }
+          });
+      })
+      .catch(function () {
+        /* CDN blocked → callers fall back to polling */
+        window.dispatchEvent(new CustomEvent('claudia:realtime', { detail: 'off' }));
+      });
+    return true;
+  }
+
+  /* ---------------- optional: editor write path ---------------- */
+  function fileReport(report, editorKey) {
+    if (!enabled) return Promise.reject(new Error('supabase not configured'));
+    if (!editorKey) return Promise.reject(new Error('editor key required to file'));
+    var url = SB.url.replace(/\/$/, '') + '/rest/v1/reports';
+    return fetch(url, {
+      method: 'POST',
+      headers: headers({ Prefer: 'return=representation', 'x-editor-key': editorKey }),
+      body: JSON.stringify(report)
+    }).then(function (r) {
+      if (!r.ok) throw new Error('file failed: HTTP ' + r.status);
+      return r.json();
+    });
+  }
+
+  /* ---------------- public API ---------------- */
+  window.ClaudiaStore = {
+    backend: enabled ? 'supabase' : 'file',
+    ready: true,
+    loadFeed: function () {
+      if (!enabled) return Promise.reject(new Error('file backend'));
+      return loadSupabase();
+    },
+    subscribe: startRealtime,
+    fileReport: fileReport,
+    areas: function () {
+      if (!enabled) return Promise.resolve([]);
+      return rest('areas', 'select=*&order=opening.desc,id.asc');
+    }
+  };
+})();
+
+</script>
+<script>
+/* ============================================================
+   423.news — Claudia Green | shared feed engine
+   Reads feed.json (written by the Claudia agent / scanner),
+   falls back to an embedded seed so pages never render empty.
+   Drop-in for any static host. No dependencies.
+   ============================================================ */
+(function () {
+  'use strict';
+
+  /* ---------------- embedded seed (used when feed.json is absent) --------- */
+  var SEED = {
+    generated_at: null,
+    claudia: {
+      status: 'at-desk',
+      on_air: false,
+      line: 'Monitoring overnight feeds. Nothing on air — two items in the queue.'
+    },
+    reports: [
+      {
+        id: 'seed-1', minutesAgo: 12, kind: 'BREAKING',
+        dateline: 'MULTI-COUNTY',
+        headline: 'Structure fire on the east corridor draws three departments',
+        summary: 'Dispatch traffic indicates a working fire in a commercial block, with a second alarm requested eight minutes in. No casualty figures confirmed. Claudia is holding the item on scanner corroboration only until a public information officer responds.',
+        confidence: 'unconfirmed',
+        tags: ['scanner', 'fire', 'developing'],
+        scanner: ['East corridor — Fire Ops 1']
+      },
+      {
+        id: 'seed-2', minutesAgo: 48, kind: 'SCANNER',
+        dateline: 'CITY DESK',
+        headline: 'Long overnight pursuit ends without injury, records show',
+        summary: 'Radio traffic across two channels described a low-speed pursuit that terminated near a retail park. Local records confirm a single arrest. The sheriff\'s office has not issued a release; this item is filed as scanner-sourced and marked for follow-up.',
+        confidence: 'developing',
+        tags: ['scanner', 'police'],
+        scanner: ['County Sheriff — Dispatch B']
+      },
+      {
+        id: 'seed-3', minutesAgo: 96, kind: 'VERIFIED',
+        dateline: 'STATEHOUSE',
+        headline: 'Transit authority confirms fare change takes effect next quarter',
+        summary: 'Verified against the board agenda and a signed notice posted to the authority website. The change moves the base fare for the first time in four years; public comment closes in three weeks.',
+        confidence: 'confirmed',
+        tags: ['verified', 'transit', 'policy'],
+        scanner: []
+      },
+      {
+        id: 'seed-4', minutesAgo: 165, kind: 'FIELD',
+        dateline: 'RIVER DISTRICT',
+        headline: 'Flood watch extended as upstream gauges climb past action stage',
+        summary: 'Two gauges upstream crossed action stage overnight. Crews are staging pumps at the low crossing. No evacuations ordered. Claudia is watching the 6 a.m. briefing before filing a full report.',
+        confidence: 'developing',
+        tags: ['weather', 'field'],
+        scanner: ['County EM — Operations']
+      },
+      {
+        id: 'seed-5', minutesAgo: 240, kind: 'VERIFIED',
+        dateline: '423.NEWS DESK',
+        headline: 'City council agenda adds late item on warehouse rezoning',
+        summary: 'Agenda published 14 hours before the meeting with a single added item. Documents are consistent across the clerk\'s portal and the public calendar. Hearing is open to comment.',
+        confidence: 'confirmed',
+        tags: ['verified', 'civic'],
+        scanner: []
+      }
+    ],
+    scanner: {
+      feeds: [
+        { name: 'County Fire — Ops 1', status: 'hot', listeners: 214 },
+        { name: 'County Sheriff — Dispatch B', status: 'active', listeners: 96 },
+        { name: 'City PD — Channel 2', status: 'active', listeners: 61 },
+        { name: 'County EMS — Med 1', status: 'idle', listeners: 12 },
+        { name: 'State Patrol — Post 7', status: 'idle', listeners: 7 }
+      ],
+      log: [
+        { minutesAgo: 3, feed: 'FIRE1', text: 'Second alarm requested, 1400 block commercial', grade: 'A' },
+        { minutesAgo: 11, feed: 'SO-B', text: 'Unit 21 clearing, report number issued', grade: 'C' },
+        { minutesAgo: 26, feed: 'FIRE1', text: 'Ventilation complete, primary search negative', grade: 'A' },
+        { minutesAgo: 40, feed: 'PD-2', text: 'Traffic stop, no further, code 4', grade: 'C' },
+        { minutesAgo: 58, feed: 'EMS1', text: 'Medic 4 transporting one, priority 2', grade: 'B' }
+      ]
+    }
+  };
+
+  var OVERLAY_KEY = 'claudia.feed.overlay.v1';
+  var state = { feed: null, filter: 'ALL', onAir: false };
+
+  /* ---------------- helpers ---------------- */
+  function ago(iso) {
+    if (iso == null) return 0;
+    return Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  }
+  function rel(min) {
+    if (min < 1) return 'now';
+    if (min < 60) return min + 'm';
+    var h = Math.floor(min / 60);
+    if (h < 24) return h + 'h';
+    return Math.floor(h / 24) + 'd';
+  }
+  function hhmm(d) {
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function el(sel) { return document.querySelector(sel); }
+
+  function loadOverlay() {
+    try { return JSON.parse(localStorage.getItem(OVERLAY_KEY) || '{}') || {}; }
+    catch (e) { return {}; }
+  }
+  function saveOverlay(o) {
+    try { localStorage.setItem(OVERLAY_KEY, JSON.stringify(o)); } catch (e) {}
+  }
+
+  function normalize(feed) {
+    var out = JSON.parse(JSON.stringify(feed || SEED));
+    out.reports = (out.reports || []).map(function (r, i) {
+      var min = r.minutesAgo != null ? r.minutesAgo : ago(r.ts);
+      if (r.ts == null) r.ts = new Date(Date.now() - min * 60000).toISOString();
+      r.minutesAgo = min;
+      r.kind = (r.kind || 'FIELD').toUpperCase();
+      r.confidence = (r.confidence || 'developing').toLowerCase();
+      r.id = r.id || 'r' + i;
+      return r;
+    }).sort(function (a, b) { return b.minutesAgo != null && a.minutesAgo != null ? a.minutesAgo - b.minutesAgo : 0; });
+
+    out.scanner = out.scanner || { feeds: [], log: [] };
+    (out.scanner.log || []).forEach(function (l) {
+      var min = l.minutesAgo != null ? l.minutesAgo : ago(l.ts);
+      if (l.ts == null) l.ts = new Date(Date.now() - min * 60000).toISOString();
+      l.minutesAgo = min;
+    });
+    return out;
+  }
+
+  function mergeOverlay(feed) {
+    var o = loadOverlay();
+    if (o.reports && o.reports.length) {
+      feed.reports = o.reports.map(function (r) { return normalize({ reports: [r] }).reports[0]; })
+        .concat(feed.reports)
+        .sort(function (a, b) { return a.minutesAgo - b.minutesAgo; });
+    }
+    if (o.onAir != null) feed.claudia.on_air = o.onAir;
+    if (o.line) feed.claudia.line = o.line;
+    return feed;
+  }
+
+  /* ---------------- render: ticker ---------------- */
+  function renderTicker(feed) {
+    var track = el('#tickerTrack');
+    if (!track) return;
+    var items = feed.reports.slice(0, 8).map(function (r) {
+      return '<span class="ticker-item"><span class="t">' + rel(r.minutesAgo).toUpperCase() +
+        '</span><b>' + esc(r.headline) + '</b></span>';
+    }).join('');
+    track.innerHTML = items + items; /* duplicated for seamless loop */
+  }
+
+  /* ---------------- render: hero ---------------- */
+  function renderHero(feed) {
+    var host = el('#hero');
+    if (!host) return;
+    var top = feed.reports.filter(function (r) { return r.kind === 'BREAKING'; })[0] || feed.reports[0];
+    if (!top) { host.innerHTML = '<div class="empty">No live item on the wire.</div>'; return; }
+    host.innerHTML =
+      '<div class="hero-head">' +
+        '<span class="pill ' + (top.kind === 'HEARD' ? 'monitoring' : 'live') + '"><span class="dot"></span>' +
+          (top.kind === 'HEARD' ? 'Heard on scanner' : 'Live') + '</span>' +
+        '<span class="hero-kicker">423.news &middot; <b>' + esc(top.dateline || 'LIVE DESK') + '</b></span>' +
+        '<span class="hero-kicker" style="margin-left:auto" data-clock-abs></span>' +
+      '</div>' +
+      '<h1>' + esc(top.headline) + '</h1>' +
+      '<p class="hero-lede">' + esc(top.summary) + '</p>' +
+      (top.safety && top.safety.length
+        ? '<div class="safety"><div class="safety-h">What it means for you</div><ul>' +
+          top.safety.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul></div>'
+        : '') +
+      '<div class="hero-meta">' +
+        '<span class="byline"><span class="avatar">CG</span>Claudia Green &middot; independent correspondent</span>' +
+        '<span class="confidence ' + esc(top.confidence) + '">' + esc(top.confidence) + '</span>' +
+        '<span>' + rel(top.minutesAgo) + ' ago</span>' +
+        (top.heard_on || (top.scanner && top.scanner.length)
+          ? '<span style="color:var(--signal)">&#9679; ' + esc(top.heard_on || top.scanner[0]) + '</span>' : '') +
+      '</div>';
+  }
+
+  /* ---------------- render: stream ---------------- */
+  function renderStream(feed) {
+    var host = el('#stream');
+    if (!host) return;
+    var list = feed.reports.filter(function (r) {
+      return state.filter === 'ALL' || r.kind === state.filter;
+    });
+    if (!list.length) { host.innerHTML = '<div class="empty">Nothing filed in this category yet.</div>'; return; }
+    host.innerHTML = list.map(function (r) {
+      var heard = r.kind === 'HEARD';
+      return '<article class="report' + (heard ? ' heard' : '') + '">' +
+        '<div class="gutter">' +
+          '<span class="time">' + rel(r.minutesAgo) + '</span>' +
+          '<span class="kind ' + esc(r.kind.toLowerCase()) + '">' + esc(r.kind) + '</span>' +
+          '<span class="kind" style="color:var(--muted-2)">' + esc(r.confidence) + '</span>' +
+        '</div>' +
+        '<div>' +
+          (heard ? '<div class="heard-line"><span class="sig">&#9679;</span>Heard on ' +
+            esc(r.heard_on || (r.scanner || [])[0] || 'the scanner') +
+            ' &middot; her own account, not a transcript</div>' : '') +
+          '<h3>' + esc(r.headline) + '</h3>' +
+          '<p>' + esc(r.summary) + '</p>' +
+          (r.safety && r.safety.length
+            ? '<div class="safety"><div class="safety-h">What it means for you</div><ul>' +
+              r.safety.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul></div>'
+            : '') +
+          (r.uncertain && r.uncertain.length
+            ? '<div class="uncertain-line"><b>Still unconfirmed:</b> ' +
+              r.uncertain.map(esc).join(' &middot; ') + '</div>'
+            : '') +
+          '<div class="tags">' +
+            '<span class="tag hot">' + esc(r.dateline || 'DESK') + '</span>' +
+            (r.tags || []).map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') +
+          '</div>' +
+        '</div>' +
+      '</article>';
+    }).join('');
+    var c = el('#streamCount');
+    if (c) c.textContent = list.length + ' item' + (list.length === 1 ? '' : 's');
+  }
+
+  /* ---------------- render: scanner ---------------- */
+  function renderScanner(feed) {
+    var fh = el('#feedList');
+    if (fh) {
+      fh.innerHTML = feed.scanner.feeds.map(function (f) {
+        var hot = f.status === 'hot' || f.status === 'active';
+        return '<div class="feed-row">' +
+          '<span class="bars' + (hot ? ' hot' : '') + '">' +
+            '<i></i><i></i><i></i><i></i><i></i><i></i></span>' +
+          '<span class="name">' + esc(f.name) + '</span>' +
+          '<span class="cnt">' + (f.listeners != null ? f.listeners : '—') + '</span>' +
+        '</div>';
+      }).join('');
+      animateBars(fh);
+    }
+    var lh = el('#scanLog');
+    if (lh) {
+      lh.innerHTML = (feed.scanner.log || []).slice(0, 12).map(function (l) {
+        return '<div><span class="lt">' + rel(l.minutesAgo) + '</span>' +
+          '<span class="lf">' + esc(l.feed) + '</span>' +
+          '<span class="lg grade-' + esc((l.grade || 'c').toLowerCase()) + '">' + esc(l.text) + '</span></div>';
+      }).join('') || '<div style="color:var(--muted-2)">No traffic logged.</div>';
+    }
+  }
+
+  function animateBars(host) {
+    var all = host.querySelectorAll('.bars.hot i');
+    all.forEach(function (b) {
+      var tick = function () {
+        b.style.height = (3 + Math.random() * 11).toFixed(1) + 'px';
+        b.style.opacity = (0.45 + Math.random() * 0.55).toFixed(2);
+        setTimeout(tick, 260 + Math.random() * 700);
+      };
+      tick();
+    });
+  }
+
+  /* ---------------- render: status ---------------- */
+  function renderStatus(feed) {
+    var onAir = !!feed.claudia.on_air;
+    document.querySelectorAll('[data-claudia-status]').forEach(function (n) {
+      n.className = 'pill ' + (onAir ? 'live' : 'monitoring');
+      n.innerHTML = '<span class="dot"></span>' + (onAir ? 'Live now' : 'At her desk');
+    });
+    document.querySelectorAll('[data-claudia-line]').forEach(function (n) {
+      n.textContent = feed.claudia.line || '';
+    });
+    document.body.setAttribute('data-onair', onAir ? '1' : '0');
+  }
+
+  /* ---------------- render: queue (desk page) ---------------- */
+  function renderQueue(feed) {
+    var host = el('#queue');
+    if (!host) return;
+    var list = feed.reports.slice(0, 6);
+    host.innerHTML = list.map(function (r) {
+      var st = r.kind === 'VERIFIED' ? 'filed' : (r.confidence === 'confirmed' ? 'filed' : 'working');
+      return '<div class="qitem"><div>' +
+        '<div class="h">' + esc(r.headline) + '</div>' +
+        '<div class="m">' + esc(r.dateline || 'DESK') + ' &middot; ' + rel(r.minutesAgo) + ' ago &middot; ' + esc(r.kind) + '</div>' +
+        '</div><span class="status-tag ' + st + '">' + st + '</span></div>';
+    }).join('') || '<div class="empty">Queue empty — monitors clear.</div>';
+  }
+
+  function renderMeters(feed) {
+    var host = el('#meters');
+    if (!host) return;
+    var onAir = !!feed.claudia.on_air;
+    var open = feed.reports.filter(function (r) { return r.confidence !== 'confirmed'; }).length;
+    var active = feed.scanner.feeds.filter(function (f) { return f.status === 'hot' || f.status === 'active'; }).length;
+    var listeners = feed.scanner.feeds.reduce(function (s, f) { return s + (f.listeners || 0); }, 0);
+    var m = [
+      ['Feed status', onAir ? 'ON AIR' : 'MONITORING', onAir ? 'transmitting' : 'ready to report', true],
+      ['Open items', String(open), 'awaiting verification', false],
+      ['Scanner feeds', active + '/' + feed.scanner.feeds.length, 'receiving', false],
+      ['Listeners on scanners', String(listeners), 'across all feeds', false]
+    ];
+    host.innerHTML = m.map(function (x) {
+      return '<div class="meter"><div class="k">' + x[0] + '</div>' +
+        '<div class="v' + (x[3] ? ' small' : '') + '"' +
+        (x[3] ? ' style="color:' + (onAir ? 'var(--live)' : 'var(--signal)') + '"' : '') + '>' +
+        esc(x[1]) + '</div><div class="d">' + x[2] + '</div></div>';
+    }).join('');
+  }
+
+  /* ---------------- typing console ---------------- */
+  var typer = { text: '', i: 0, timer: null };
+  function typeLine(text) {
+    var host = el('#typing');
+    if (!host) return;
+    if (typer.timer) clearInterval(typer.timer);
+    typer.text = text || '';
+    typer.i = 0;
+    host.innerHTML = '<span class="caret"></span>';
+    typer.timer = setInterval(function () {
+      typer.i += 2;
+      host.innerHTML = esc(typer.text.slice(0, typer.i)) + '<span class="caret"></span>';
+      if (typer.i >= typer.text.length) clearInterval(typer.timer);
+    }, 22);
+  }
+
+  /* ---------------- clocks ---------------- */
+  function startClock() {
+    var tick = function () {
+      var d = new Date();
+      document.querySelectorAll('[data-clock]').forEach(function (n) {
+        n.textContent = d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) +
+          ' · ' + hhmm(d) + ' local';
+      });
+      document.querySelectorAll('[data-clock-abs]').forEach(function (n) {
+        n.textContent = hhmm(d) + ' local';
+      });
+    };
+    tick(); setInterval(tick, 1000);
+  }
+
+  /* ---------------- public API ---------------- */
+  var api = {
+    get feed() { return state.feed; },
+    refresh: function () { load().then(paint); },
+    filter: function (f) {
+      state.filter = f;
+      document.querySelectorAll('[data-filter]').forEach(function (b) {
+        b.classList.toggle('on', b.getAttribute('data-filter') === f);
+      });
+      if (state.feed) renderStream(state.feed);
+    },
+    /* the desk "go live" control — also how a human editor can cut in */
+    goLive: function () {
+      var o = loadOverlay();
+      o.onAir = true;
+      o.line = 'On air now — reading the ' + (new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })) + ' update.';
+      saveOverlay(o);
+      api.refresh();
+    },
+    standDown: function () {
+      var o = loadOverlay();
+      o.onAir = false;
+      o.line = 'Off air. Back at the desk, feeds still open.';
+      saveOverlay(o);
+      api.refresh();
+    },
+    /* called by the agent bridge / ingest script to push a report in-page */
+    pushReport: function (r) {
+      var o = loadOverlay();
+      o.reports = (o.reports || []).concat([Object.assign({ ts: new Date().toISOString() }, r)]);
+      o.onAir = true;
+      saveOverlay(o);
+      api.refresh();
+    }
+  };
+  window.ClaudiaFeed = api;
+
+  /* ---------------- boot ---------------- */
+  function paint() {
+    var feed = mergeOverlay(state.feed);
+    renderStatus(feed);
+    renderTicker(feed);
+    renderHero(feed);
+    renderStream(feed);
+    renderScanner(feed);
+    renderQueue(feed);
+    renderMeters(feed);
+    var top = feed.reports[0];
+    if (top) typeLine(top.summary);
+    document.querySelectorAll('[data-updated]').forEach(function (n) {
+      n.textContent = 'synced ' + hhmm(new Date());
+    });
+  }
+
+  function fetchFeed() {
+    return fetch('feed.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('no feed'); return r.json(); })
+      .catch(function () { return normalize(SEED); });
+  }
+
+  function load() {
+    var store = window.ClaudiaStore;
+    if (store && store.backend === 'supabase') {
+      return store.loadFeed()
+        .then(normalize)
+        .catch(function () { return fetchFeed(); })   // fall back quietly
+        .then(function (f) { state.feed = f; return f; });
+    }
+    return fetchFeed().then(function (f) { state.feed = f; return f; });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    startClock();
+    load().then(function () {
+      paint();
+      document.querySelectorAll('[data-filter]').forEach(function (b) {
+        b.addEventListener('click', function () { api.filter(b.getAttribute('data-filter')); });
+      });
+
+      /* realtime when Supabase is the backend, polling otherwise */
+      var store = window.ClaudiaStore;
+      var polling = true;
+      if (store && store.backend === 'supabase' && store.subscribe) {
+        store.subscribe(function () { load().then(paint); });
+        window.addEventListener('claudia:realtime', function (e) {
+          if (e.detail === 'on') polling = false;   // Realtime took over
+        });
+      }
+      setInterval(function () {
+        if (polling) load().then(paint);
+      }, 20000);
+    });
+  });
+})();
+
+</script>
+<script>
+/* ============================================================
+   423.news — Claudia Green | live conditions engine
+   Weather  : Open-Meteo (no key, CORS-open)
+   Alerts   : api.weather.gov (US, no key)
+   Geocoding: Open-Meteo geocoding (no key)
+   Traffic  : TomTom Traffic incidents (needs key in assets/config.js)
+   ------------------------------------------------------------
+   Nothing is invented. If a provider is unreachable or unkeyed the
+   card says so, and only published alerts are shown as road advisories.
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var CFG = window.CLAUDIA_CONFIG || {};
+  var TTL = (CFG.refreshSeconds || 300) * 1000;
+  var imperial = (CFG.units || 'imperial') !== 'metric';
+
+  /* ---------------- tiny helpers ---------------- */
+  function el(sel) { return document.querySelector(sel); }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function num(n, d) {
+    if (n == null || isNaN(n)) return '—';
+    return (Math.round(n * Math.pow(10, d || 0)) / Math.pow(10, d || 0)).toString();
+  }
+  function coordKey(lat, lon) { return lat.toFixed(2) + ',' + lon.toFixed(2); }
+
+  function cached(key, producer) {
+    var store = {};
+    try { store = JSON.parse(sessionStorage.getItem('claudia.cache') || '{}'); } catch (e) {}
+    var hit = store[key];
+    if (hit && Date.now() - hit.t < TTL) return Promise.resolve(hit.v);
+    return producer().then(function (v) {
+      store[key] = { t: Date.now(), v: v };
+      try { sessionStorage.setItem('claudia.cache', JSON.stringify(store)); } catch (e) {}
+      return v;
+    });
+  }
+
+  function getJSON(url, headers) {
+    return fetch(url, { headers: headers || {}, cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error(url.split('?')[0] + ' → HTTP ' + r.status);
+      return r.json();
+    });
+  }
+
+  /* ---------------- WMO weather codes ---------------- */
+  var WMO = {
+    0: ['Clear', '☀'], 1: ['Mainly clear', '☀'], 2: ['Partly cloudy', '⛅'], 3: ['Overcast', '☁'],
+    45: ['Fog', '≋'], 48: ['Freezing fog', '≋'],
+    51: ['Light drizzle', '☂'], 53: ['Drizzle', '☂'], 55: ['Heavy drizzle', '☂'],
+    56: ['Freezing drizzle', '☂'], 57: ['Freezing drizzle', '☂'],
+    61: ['Light rain', '☂'], 63: ['Rain', '☂'], 65: ['Heavy rain', '☂'],
+    66: ['Freezing rain', '☂'], 67: ['Freezing rain', '☂'],
+    71: ['Light snow', '❄'], 73: ['Snow', '❄'], 75: ['Heavy snow', '❄'], 77: ['Snow grains', '❄'],
+    80: ['Rain showers', '☂'], 81: ['Rain showers', '☂'], 82: ['Violent showers', '☂'],
+    85: ['Snow showers', '❄'], 86: ['Heavy snow showers', '❄'],
+    95: ['Thunderstorm', '⛈'], 96: ['Thunderstorm, hail', '⛈'], 99: ['Severe thunderstorm', '⛈']
+  };
+  function codeInfo(c) {
+    var pair = WMO[c] || ['—', '·'];
+    return { text: pair[0], icon: pair[1] };
+  }
+
+  /* ---------------- geocoding ---------------- */
+  function geocode(query) {
+    var q = String(query || '').trim();
+    if (!q) return Promise.reject(new Error('no area given'));
+
+    var m = q.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+    if (m) {
+      var lat = parseFloat(m[1]), lon = parseFloat(m[2]);
+      return cached('rev:' + coordKey(lat, lon), function () { return reverse(lat, lon); });
+    }
+
+    return cached('geo:' + q.toLowerCase(), function () {
+      var url = 'https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&format=json&name=' +
+        encodeURIComponent(q);
+      return getJSON(url).then(function (d) {
+        var r = (d.results || [])[0];
+        if (!r) throw new Error('No such place: “' + q + '”');
+        return {
+          name: r.name,
+          admin1: r.admin1 || '',
+          country: r.country_code || r.country || '',
+          lat: r.latitude,
+          lon: r.longitude,
+          label: [r.name, r.admin1, r.country_code].filter(Boolean).join(', ')
+        };
+      });
+    });
+  }
+
+  /* reverse geocode for "use my location" (Nominatim, best effort) */
+  function reverse(lat, lon) {
+    var fallback = { name: 'Current location', admin1: '', country: '', lat: lat, lon: lon,
+      label: 'Current location (' + num(lat, 2) + ', ' + num(lon, 2) + ')' };
+    return getJSON('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&lat=' + lat + '&lon=' + lon)
+      .then(function (d) {
+        var a = d.address || {};
+        var city = a.city || a.town || a.village || a.county || a.state || fallback.name;
+        var place = {
+          name: city, admin1: a.state || a.county || '', country: a.country_code || '',
+          lat: lat, lon: lon,
+          label: [city, a.state, (a.country_code || '').toUpperCase()].filter(Boolean).join(', ')
+        };
+        return place;
+      })
+      .catch(function () { return fallback; });
+  }
+
+  /* ---------------- weather ---------------- */
+  function weather(place) {
+    return cached('wx:' + coordKey(place.lat, place.lon), function () {
+      var p = [
+        'latitude=' + place.lat, 'longitude=' + place.lon,
+        'current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,visibility,cloud_cover',
+        'hourly=precipitation_probability,precipitation,temperature_2m',
+        'daily=temperature_2m_max,temperature_2m_min,sunrise,sunset',
+        'forecast_days=2', 'timezone=auto'
+      ];
+      if (imperial) {
+        p.push('temperature_unit=fahrenheit', 'wind_speed_unit=mph', 'precipitation_unit=inch');
+      }
+      return getJSON('https://api.open-meteo.com/v1/forecast?' + p.join('&')).then(function (d) {
+        var c = d.current || {};
+        var info = codeInfo(c.weather_code);
+        var hourly = d.hourly || {};
+        var times = hourly.time || [];
+        var now = (c.time || '').slice(0, 13);
+        var start = Math.max(0, times.findIndex(function (t) { return t.slice(0, 13) >= now; }));
+        var next12 = [];
+        for (var i = start; i < Math.min(start + 12, times.length); i++) {
+          next12.push({
+            t: times[i],
+            pop: (hourly.precipitation_probability || [])[i],
+            mm: (hourly.precipitation || [])[i],
+            temp: (hourly.temperature_2m || [])[i]
+          });
+        }
+        return {
+          ok: true,
+          temp: c.temperature_2m,
+          feels: c.apparent_temperature,
+          humidity: c.relative_humidity_2m,
+          wind: c.wind_speed_10m,
+          gust: c.wind_gusts_10m,
+          precip: c.precipitation,
+          visibility: c.visibility,
+          cloud: c.cloud_cover,
+          code: c.weather_code,
+          text: info.text, icon: info.icon,
+          high: ((d.daily || {}).temperature_2m_max || [])[0],
+          low: ((d.daily || {}).temperature_2m_min || [])[0],
+          sunrise: ((d.daily || {}).sunrise || [])[0],
+          sunset: ((d.daily || {}).sunset || [])[0],
+          next12: next12,
+          observed: c.time,
+          units: imperial ? { t: '°F', w: 'mph', p: 'in', v: 'mi' } : { t: '°C', w: 'km/h', p: 'mm', v: 'km' }
+        };
+      });
+    });
+  }
+
+  /* ---------------- alerts (NWS, US) ---------------- */
+  function alerts(place) {
+    var lat = place.lat, lon = place.lon;
+    return cached('nws:' + coordKey(lat, lon), function () {
+      return getJSON('https://api.weather.gov/alerts/active?point=' + lat + ',' + lon, {
+        Accept: 'application/geo+json'
+      }).then(function (d) {
+        var list = (d.features || []).map(function (f) {
+          var p = f.properties || {};
+          return {
+            event: p.event,
+            severity: p.severity,
+            urgency: p.urgency,
+            headline: p.headline,
+            area: p.areaDesc,
+            ends: p.ends || p.expires
+          };
+        });
+        return { ok: true, supported: true, list: list };
+      }).catch(function (e) {
+        return { ok: false, supported: false, list: [], error: String(e.message || e) };
+      });
+    });
+  }
+
+  /* ---------------- traffic (TomTom) ---------------- */
+  var TOMTOM_TYPES = {
+    0: 'Unknown', 1: 'Accident', 2: 'Fog', 3: 'Dangerous conditions', 4: 'Rain',
+    5: 'Ice', 6: 'Jam', 7: 'Lane closed', 8: 'Road closed', 9: 'Road works',
+    10: 'Wind', 11: 'Flooding', 14: 'Broken down vehicle'
+  };
+  var SEVERE_TYPES = { 1: 1, 5: 1, 6: 1, 7: 1, 8: 1, 11: 1 };
+
+  function traffic(place) {
+    var tcfg = CFG.traffic || {};
+    if (!tcfg.apiKey) {
+      return Promise.resolve({ ok: false, configured: false, list: [] });
+    }
+    var d = (tcfg.radiusKm || 15) / 111;
+    var bbox = [place.lon - d, place.lat - d, place.lon + d, place.lat + d].join(',');
+    return cached('tt:' + coordKey(place.lat, place.lon), function () {
+      var url = 'https://api.tomtom.com/traffic/services/4/incidentDetails/s3/' + bbox +
+        '/-1/-1/json?key=' + encodeURIComponent(tcfg.apiKey) + '&projection=EPSG4326';
+      return getJSON(url).then(function (raw) {
+        var pois = ((raw.tm || {}).poi) || [];
+        var list = pois.map(function (p) {
+          var desc = (p.d && (p.d.description && p.d.description.value)) || (typeof p.d === 'string' ? p.d : '');
+          var type = TOMTOM_TYPES[p.ic] || TOMTOM_TYPES[p.ty] || 'Incident';
+          return {
+            type: type,
+            text: desc || type,
+            severe: !!SEVERE_TYPES[p.ty] || p.c === 1,
+            delay: p.dl || null,
+            length: p.l || null,
+            from: p.f || null,
+            to: p.t || null
+          };
+        });
+        // severe first, then the rest
+        list.sort(function (a, b) { return (b.severe ? 1 : 0) - (a.severe ? 1 : 0); });
+        return { ok: true, configured: true, list: list.slice(0, tcfg.maxIncidents || 8) };
+      }).catch(function (e) {
+        return { ok: false, configured: true, list: [], error: String(e.message || e) };
+      });
+    });
+  }
+
+  /* alerts that have road consequences — used when no traffic key exists */
+  var ROAD_ALERTS = /flood|ice|icy|snow|winter|wind|fog|storm|hurricane|tornado|heat|fire/i;
+  function roadAlerts(alertList) {
+    return (alertList || []).filter(function (a) {
+      return ROAD_ALERTS.test((a.event || '') + ' ' + (a.headline || ''));
+    });
+  }
+
+  /* ---------------- bundle ---------------- */
+  function bundle(queryOrPlace) {
+    var p = (queryOrPlace && typeof queryOrPlace === 'object')
+      ? Promise.resolve(queryOrPlace)
+      : geocode(queryOrPlace || CFG.defaultArea);
+
+    return p.then(function (place) {
+      return Promise.all([
+        weather(place).catch(function (e) { return { ok: false, error: String(e.message || e) }; }),
+        alerts(place),
+        traffic(place)
+      ]).then(function (r) {
+        return {
+          place: place,
+          weather: r[0],
+          alerts: r[1],
+          traffic: r[2],
+          roadAlerts: roadAlerts(r[1].list),
+          fetched_at: new Date().toISOString()
+        };
+      });
+    });
+  }
+
+  /* ---------------- rendering ---------------- */
+  function windDir(t) { return t == null ? '—' : num(t, 0); }
+
+  function renderCard(b, opts) {
+    opts = opts || {};
+    var wx = b.weather || {};
+    var alertsList = (b.alerts && b.alerts.list) || [];
+    var tfc = b.traffic || {};
+    var u = wx.units || { t: '°F', w: 'mph', p: 'in' };
+
+    var headline = wx.ok
+      ? '<div class="wx-top">' +
+          '<div class="wx-icon">' + esc(wx.icon) + '</div>' +
+          '<div>' +
+            '<div class="wx-temp">' + num(wx.temp, 0) + '<span>' + u.t + '</span></div>' +
+            '<div class="wx-cond">' + esc(wx.text) + ' · feels ' + num(wx.feels, 0) + u.t + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="wx-grid">' +
+          '<div><span class="k">Wind</span><span class="v">' + num(wx.wind, 0) + ' ' + u.w +
+            (wx.gust != null ? ' <em>g' + num(wx.gust, 0) + '</em>' : '') + '</span></div>' +
+          '<div><span class="k">Rain now</span><span class="v">' + num(wx.precip, 2) + ' ' + u.p + '</span></div>' +
+          '<div><span class="k">Humidity</span><span class="v">' + num(wx.humidity, 0) + '%</span></div>' +
+          '<div><span class="k">Hi / Lo</span><span class="v">' + num(wx.high, 0) + ' / ' + num(wx.low, 0) + '</span></div>' +
+        '</div>' +
+        (wx.next12 && wx.next12.length
+          ? '<div class="wx-hours">' + wx.next12.map(function (h) {
+              var pop = h.pop == null ? 0 : h.pop;
+              return '<div class="wx-hour" title="' + esc(h.t) + '">' +
+                '<i style="height:' + Math.max(3, Math.round(pop * 0.42)) + 'px" class="' + (pop > 60 ? 'hi' : '') + '"></i>' +
+                '<span>' + esc(h.t.slice(11, 13)) + '</span></div>';
+            }).join('') + '</div>' +
+            '<div class="wx-caption">precipitation chance, next 12 hours</div>'
+          : '')
+      : '<div class="wx-empty">Weather feed unavailable' +
+        (wx.error ? ' — ' + esc(wx.error) : '') + '</div>';
+
+    var alertHtml = '';
+    if (alertsList.length) {
+      alertHtml = '<div class="wx-block">' +
+        '<div class="wx-label"><span class="dot-sev"></span>Active alerts · ' + alertsList.length + '</div>' +
+        alertsList.slice(0, 4).map(function (a) {
+          return '<div class="alert-row">' +
+            '<span class="sev ' + esc((a.severity || '').toLowerCase()) + '">' + esc(a.event || 'Alert') + '</span>' +
+            '<span class="alert-t">' + esc(a.headline || a.area || '') + '</span></div>';
+        }).join('') + '</div>';
+    } else if (b.alerts && b.alerts.supported) {
+      alertHtml = '<div class="wx-block"><div class="wx-label">Active alerts</div>' +
+        '<div class="wx-none">No active NWS alerts for this area.</div></div>';
+    } else {
+      alertHtml = '<div class="wx-block"><div class="wx-label">Active alerts</div>' +
+        '<div class="wx-none">Alert feed covers US locations only.</div></div>';
+    }
+
+    var trafficHtml;
+    if (tfc.configured && tfc.ok && tfc.list.length) {
+      trafficHtml = '<div class="wx-block">' +
+        '<div class="wx-label">Traffic incidents · ' + tfc.list.length + '</div>' +
+        tfc.list.map(function (t) {
+          return '<div class="tfc-row">' +
+            '<span class="tfc-type ' + (t.severe ? 'severe' : '') + '">' + esc(t.type) + '</span>' +
+            '<span class="tfc-text">' + esc(t.text) + '</span></div>';
+        }).join('') + '</div>';
+    } else if (tfc.configured && tfc.ok && !tfc.list.length) {
+      trafficHtml = '<div class="wx-block"><div class="wx-label">Traffic</div>' +
+        '<div class="wx-none">No incidents reported in the ' + (CFG.traffic.radiusKm || 15) + ' km search box.</div></div>';
+    } else if (tfc.configured && !tfc.ok) {
+      trafficHtml = '<div class="wx-block"><div class="wx-label">Traffic</div>' +
+        '<div class="wx-none">Traffic provider error — ' + esc(tfc.error || 'unavailable') + '</div></div>';
+    } else {
+      trafficHtml = '<div class="wx-block"><div class="wx-label">Traffic</div>' +
+        '<div class="wx-none">Traffic feed not configured — add a TomTom key in <span class="mono">assets/config.js</span>.' +
+        (b.roadAlerts.length
+          ? ' Weather-related road advisories from NWS: ' + b.roadAlerts.length + '.'
+          : '') +
+        '</div></div>';
+    }
+
+    return '<div class="wx-card' + (opts.compact ? ' compact' : '') + '">' +
+      '<div class="wx-head">' +
+        '<span class="wx-place">' + esc(b.place.label) + '</span>' +
+        '<span class="wx-when mono">' + esc((wx.observed || '').replace('T', ' ').slice(0, 16)) + '</span>' +
+      '</div>' +
+      (opts.only === 'traffic' ? '' : headline + alertHtml) +
+      (opts.only === 'weather' ? '' : trafficHtml) +
+    '</div>';
+  }
+
+  /* traffic-only card, for the conditions page */
+  function renderTrafficCard(b) {
+    var tfc = b.traffic || {};
+    var inner;
+    if (tfc.configured && tfc.ok && tfc.list.length) {
+      inner = tfc.list.map(function (t) {
+        return '<div class="tfc-row">' +
+          '<span class="tfc-type ' + (t.severe ? 'severe' : '') + '">' + esc(t.type) + '</span>' +
+          '<span class="tfc-text">' + esc(t.text) + '</span></div>';
+      }).join('');
+    } else if (tfc.configured && tfc.ok) {
+      inner = '<div class="wx-none">No incidents reported inside the ' +
+        (CFG.traffic.radiusKm || 15) + ' km search box.</div>';
+    } else if (tfc.configured) {
+      inner = '<div class="wx-none">Traffic provider error — ' + esc(tfc.error || 'unavailable') + '</div>';
+    } else {
+      inner = '<div class="wx-none">Traffic feed not configured. Add a TomTom key in ' +
+        '<span class="mono">assets/config.js</span> to plot incidents here.</div>';
+    }
+
+    var road = (b.roadAlerts || []).length
+      ? '<div class="wx-block"><div class="wx-label"><span class="dot-sev"></span>' +
+        'Weather-related road advisories</div>' +
+        b.roadAlerts.map(function (a) {
+          return '<div class="alert-row"><span class="sev">' + esc(a.event || 'Alert') + '</span>' +
+            '<span class="alert-t">' + esc(a.headline || a.area || '') + '</span></div>';
+        }).join('') + '</div>'
+      : '';
+
+    return '<div class="wx-card">' +
+      '<div class="wx-head"><span>Traffic</span>' +
+        '<span class="wx-when mono">' + esc(b.place.label) + '</span></div>' +
+      '<div class="wx-label">Incidents</div>' + inner + road +
+    '</div>';
+  }
+
+  /* ---------------- public API ---------------- */
+  window.ClaudiaConditions = {
+    config: CFG,
+    geocode: geocode,
+    reverse: reverse,
+    bundle: bundle,
+    weather: weather,
+    alerts: alerts,
+    traffic: traffic,
+    renderCard: renderCard,
+    renderTrafficCard: renderTrafficCard,
+    codeInfo: codeInfo,
+    locate: function () {
+      return new Promise(function (resolve, reject) {
+        if (!navigator.geolocation) return reject(new Error('Geolocation not available'));
+        navigator.geolocation.getCurrentPosition(function (pos) {
+          resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        }, function (err) { reject(new Error(err.message || 'location denied')); },
+        { timeout: 8000, maximumAge: 120000 });
+      });
+    }
+  };
+})();
+
+</script>
+<script>
+/* ============================================================
+   423.news — Claudia Green | live crime radar
+   ------------------------------------------------------------
+   Two sources, both honest:
+     1. City open data (Socrata) — real coordinates, when configured
+     2. Claudia's own desk feed — reports and graded scanner traffic
+        that have no coordinates are listed under the scope, never
+        plotted at a made-up position.
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var CFG = window.CLAUDIA_CONFIG || {};
+  var RCFG = CFG.radar || {};
+  var RADIUS_KM = RCFG.radiusKm || 8;
+  var LOOKBACK_DAYS = RCFG.lookbackDays || 7;
+  var timers = {};
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function kmToUnit(km) {
+    return (CFG.units || 'imperial') === 'metric' ? km : km * 0.621371;
+  }
+  function unitLabel() { return (CFG.units || 'imperial') === 'metric' ? 'km' : 'mi'; }
+  function fmtDist(km) { return kmToUnit(km).toFixed(kmToUnit(km) < 10 ? 1 : 0); }
+
+  function haversine(a, b, c, d) {
+    var R = 6371, toRad = Math.PI / 180;
+    var dLat = (c - a) * toRad, dLon = (d - b) * toRad;
+    var s = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(a * toRad) * Math.cos(c * toRad) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+  }
+  function bearing(a, b, c, d) {
+    var toRad = Math.PI / 180;
+    var y = Math.sin((d - b) * toRad) * Math.cos(c * toRad);
+    var x = Math.cos(a * toRad) * Math.sin(c * toRad) -
+      Math.sin(a * toRad) * Math.cos(c * toRad) * Math.cos((d - b) * toRad);
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+  }
+
+  var VIOLENT = /homicide|murder|shoot|assault|robbery|rape|sexual|kidnap|carjack|weapon|battery|arson/i;
+  var PROPERTY = /theft|burglar|robbery|stolen|larceny|property|vandal|criminal damage|fraud|shoplift/i;
+
+  function categorize(text) {
+    var t = String(text || '');
+    if (VIOLENT.test(t)) return 'violent';
+    if (PROPERTY.test(t)) return 'property';
+    return 'other';
+  }
+
+  /* ---------------- source 1: city open data ---------------- */
+  function loadOpenData(place) {
+    var od = (RCFG.openData || {});
+    if (!od.datasetUrl) return Promise.resolve({ ok: false, configured: false, points: [] });
+
+    var url = od.datasetUrl +
+      '?$limit=400&$order=' + encodeURIComponent((od.dateField || 'date') + ' DESC');
+
+    return fetch(url, { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('open data → HTTP ' + r.status);
+      return r.json();
+    }).then(function (rows) {
+      var cutoff = Date.now() - LOOKBACK_DAYS * 86400000;
+      var points = [];
+      rows.forEach(function (row) {
+        var lat = parseFloat(row[od.latField || 'latitude']);
+        var lon = parseFloat(row[od.lonField || 'longitude']);
+        if (isNaN(lat) || isNaN(lon)) return;
+        var when = row[od.dateField || 'date'];
+        var whenMs = when ? new Date(when).getTime() : NaN;
+        if (!isNaN(whenMs) && whenMs < cutoff) return;
+        var dist = haversine(place.lat, place.lon, lat, lon);
+        if (dist > RADIUS_KM) return;
+        var label = row[od.typeField || 'primary_type'] || row[od.descField || 'description'] || 'Incident';
+        points.push({
+          title: String(label),
+          category: categorize(label),
+          distanceKm: dist,
+          bearing: bearing(place.lat, place.lon, lat, lon),
+          when: when,
+          lat: lat, lon: lon,
+          source: 'open data'
+        });
+      });
+      points.sort(function (a, b) { return a.distanceKm - b.distanceKm; });
+      return { ok: true, configured: true, points: points };
+    }).catch(function (e) {
+      return { ok: false, configured: true, points: [], error: String(e.message || e) };
+    });
+  }
+
+  /* ---------------- source 2: the desk feed ---------------- */
+  function loadDeskSignals(place) {
+    var feed = (window.ClaudiaFeed && window.ClaudiaFeed.feed) || {};
+    var points = [], unplotted = [];
+
+    (feed.reports || []).forEach(function (r) {
+      var tags = (r.tags || []).join(' ').toLowerCase();
+      var scanner = (r.scanner || []).join(' ').toLowerCase();
+      var crimeish = /police|crime|sheriff|shoot|robber|burgl|theft|assault|pursuit|arrest|fire|ems/.test(tags + ' ' + scanner);
+      if (!crimeish) return;
+      var hasCoords = r.lat != null && r.lon != null;
+      if (hasCoords) {
+        var dist = haversine(place.lat, place.lon, r.lat, r.lon);
+        if (dist > RADIUS_KM) return;
+        points.push({
+          title: r.headline, category: categorize(r.headline + ' ' + tags),
+          distanceKm: dist, bearing: bearing(place.lat, place.lon, r.lat, r.lon),
+          when: r.ts, lat: r.lat, lon: r.lon, source: 'desk report', id: r.id
+        });
+      } else {
+        unplotted.push({
+          title: r.headline, kind: r.kind || 'REPORT',
+          confidence: r.confidence || 'developing', when: r.ts, source: (r.scanner || [])[0] || 'desk'
+        });
+      }
+    });
+
+    ((feed.scanner || {}).log || []).forEach(function (l) {
+      if (!/^[AB]$/i.test(String(l.grade || ''))) return;
+      unplotted.push({
+        title: l.text, kind: 'SCANNER ' + l.grade, confidence: 'unconfirmed',
+        when: l.ts, source: l.feed || 'scanner'
+      });
+    });
+
+    return { points: points, unplotted: unplotted.slice(0, 10) };
+  }
+
+  /* ---------------- scope drawing ---------------- */
+  function scope(points, compact) {
+    var S = compact ? 250 : 380;
+    var c = S / 2, maxR = S / 2 - 18;
+    var rings = [0.25, 0.5, 0.75, 1];
+
+    var ringSvg = rings.map(function (f) {
+      var r = maxR * f;
+      var lbl = fmtDist(RADIUS_KM * f);
+      return '<circle cx="' + c + '" cy="' + c + '" r="' + r + '" class="ring"/>' +
+        '<text x="' + (c + 4) + '" y="' + (c - r + 10) + '" class="ring-lbl">' + lbl + '</text>';
+    }).join('');
+
+    var blips = points.map(function (p, i) {
+      var r = (Math.min(p.distanceKm, RADIUS_KM) / RADIUS_KM) * maxR;
+      var a = (p.bearing - 90) * Math.PI / 180;
+      var x = c + r * Math.cos(a), y = c + r * Math.sin(a);
+      var cls = p.category === 'violent' ? 'blip-violent' : (p.category === 'property' ? 'blip-property' : 'blip-other');
+      return '<g class="blip ' + cls + '" style="animation-delay:' + (i * 90) + 'ms">' +
+        '<title>' + esc(p.title) + ' — ' + fmtDist(p.distanceKm) + ' ' + unitLabel() + '</title>' +
+        '<circle cx="' + x + '" cy="' + y + '" r="' + (compact ? 9 : 11) + '" class="blip-halo"/>' +
+        '<circle cx="' + x + '" cy="' + y + '" r="' + (compact ? 3.2 : 4) + '" class="blip-dot"/>' +
+      '</g>';
+    }).join('');
+
+    return '<svg class="scope-svg" viewBox="0 0 ' + S + ' ' + S + '" role="img" aria-label="Crime radar scope">' +
+      '<defs>' +
+        '<radialGradient id="scopeG" cx="50%" cy="50%" r="50%">' +
+          '<stop offset="0%" stop-color="#12251a" stop-opacity=".9"/>' +
+          '<stop offset="100%" stop-color="#0a0f14" stop-opacity=".9"/>' +
+        '</radialGradient>' +
+        '<linearGradient id="sweepG" x1="0" y1="0" x2="1" y2="0">' +
+          '<stop offset="0%" stop-color="#35c48a" stop-opacity=".38"/>' +
+          '<stop offset="100%" stop-color="#35c48a" stop-opacity="0"/>' +
+        '</linearGradient>' +
+      '</defs>' +
+      '<circle cx="' + c + '" cy="' + c + '" r="' + maxR + '" fill="url(#scopeG)" class="scope-face"/>' +
+      ringSvg +
+      '<line x1="' + c + '" y1="' + (c - maxR) + '" x2="' + c + '" y2="' + (c + maxR) + '" class="axis"/>' +
+      '<line x1="' + (c - maxR) + '" y1="' + c + '" x2="' + (c + maxR) + '" y2="' + c + '" class="axis"/>' +
+      '<g class="sweep" style="transform-origin:' + c + 'px ' + c + 'px">' +
+        '<path d="M' + c + ' ' + c + ' L' + c + ' ' + (c - maxR) +
+          ' A' + maxR + ' ' + maxR + ' 0 0 1 ' + (c + maxR * 0.5) + ' ' + (c - maxR * 0.866) + ' Z" fill="url(#sweepG)"/>' +
+      '</g>' +
+      blips +
+      '<circle cx="' + c + '" cy="' + c + '" r="3" class="home-dot"/>' +
+      '<text x="' + c + '" y="14" text-anchor="middle" class="cardinal">N</text>' +
+      '<text x="' + (S - 8) + '" y="' + (c + 4) + '" text-anchor="end" class="cardinal">E</text>' +
+      '<text x="' + c + '" y="' + (S - 6) + '" text-anchor="middle" class="cardinal">S</text>' +
+      '<text x="8" y="' + (c + 4) + '" class="cardinal">W</text>' +
+    '</svg>';
+  }
+
+  function render(host, place, data, compact) {
+    var pts = data.points || [];
+    var counts = { violent: 0, property: 0, other: 0 };
+    pts.forEach(function (p) { counts[p.category] = (counts[p.category] || 0) + 1; });
+    var un = data.unplotted || [];
+
+    var html = '<div class="radar' + (compact ? ' compact' : '') + '">' +
+      '<div class="radar-head">' +
+        '<span class="pill live"><span class="dot"></span>Live crime radar</span>' +
+        '<span class="mono radar-place">' + esc(place.label) + '</span>' +
+        '<span class="spacer"></span>' +
+        '<span class="mono radar-radius">' + fmtDist(RADIUS_KM) + ' ' + unitLabel() + ' · ' + LOOKBACK_DAYS + 'd</span>' +
+      '</div>' +
+      '<div class="radar-body">' +
+        '<div class="radar-scope">' + scope(pts, compact) + '</div>' +
+        '<div class="radar-side">' +
+          '<div class="radar-counts">' +
+            '<span class="rc violent"><b>' + counts.violent + '</b>violent</span>' +
+            '<span class="rc property"><b>' + counts.property + '</b>property</span>' +
+            '<span class="rc other"><b>' + counts.other + '</b>other</span>' +
+          '</div>' +
+          (data.sourceNote ? '<div class="radar-src mono">' + esc(data.sourceNote) + '</div>' : '') +
+          (pts.length
+            ? '<div class="radar-list">' + pts.slice(0, compact ? 4 : 9).map(function (p) {
+                var t = p.when ? new Date(p.when) : null;
+                var ago = t && !isNaN(t) ? Math.round((Date.now() - t.getTime()) / 60000) : null;
+                var agoTxt = ago == null ? '' : (ago < 60 ? ago + 'm' : Math.round(ago / 60) + 'h');
+                return '<div class="radar-item ' + p.category + '">' +
+                  '<span class="ri-d">' + fmtDist(p.distanceKm) + '</span>' +
+                  '<span class="ri-t">' + esc(p.title) + '</span>' +
+                  '<span class="ri-w mono">' + esc(agoTxt) + '</span>' +
+                '</div>';
+              }).join('') + '</div>'
+            : '<div class="radar-none">No geocoded incidents inside the ring. ' +
+              (data.configured === false ? 'City open data is not configured.' : '') + '</div>') +
+        '</div>' +
+      '</div>' +
+      (un.length
+        ? '<div class="radar-unplotted">' +
+            '<div class="radar-label">Live signals without coordinates · from the desk feed</div>' +
+            un.map(function (u) {
+              return '<div class="un-row"><span class="kind">' + esc(u.kind) + '</span>' +
+                '<span class="un-t">' + esc(u.title) + '</span>' +
+                '<span class="un-s mono">' + esc(u.source) + '</span></div>';
+            }).join('') +
+          '</div>'
+        : '') +
+      '</div>';
+
+    host.innerHTML = html;
+  }
+
+  /* ---------------- mount ---------------- */
+  function mount(host, opts) {
+    if (!host) return;
+    opts = opts || {};
+    var compact = !!opts.compact;
+    host.innerHTML = '<div class="radar-loading mono">sweeping ' + esc(opts.area || '') + '…</div>';
+
+    var cond = window.ClaudiaConditions;
+    if (!cond) { host.innerHTML = '<div class="wx-empty">conditions engine not loaded</div>'; return; }
+
+    var id = host.id || 'radar' + Math.random().toString(36).slice(2);
+    host.id = id;
+    if (timers[id]) clearInterval(timers[id]);
+
+    function load() {
+      cond.geocode(opts.area || CFG.defaultArea).then(function (place) {
+        return Promise.all([loadOpenData(place), Promise.resolve(loadDeskSignals(place))])
+          .then(function (r) {
+            var open = r[0], desk = r[1];
+            var data = {
+              points: open.points.concat(desk.points).sort(function (a, b) { return a.distanceKm - b.distanceKm; }),
+              unplotted: desk.unplotted,
+              configured: open.configured,
+              sourceNote: open.configured
+                ? (open.ok ? 'city open data · ' + (open.points.length) + ' rows geo-filtered'
+                           : 'open data error — ' + (open.error || ''))
+                : 'no open-data endpoint set (assets/config.js → radar.openData)'
+            };
+            render(host, place, data, compact);
+            if (opts.onPlace) opts.onPlace(place, data);
+          });
+      }).catch(function (e) {
+        host.innerHTML = '<div class="wx-empty">' + esc(e.message || e) + '</div>';
+      });
+    }
+
+    load();
+    timers[id] = setInterval(load, (RCFG.refreshSeconds || 90) * 1000);
+  }
+
+  window.ClaudiaRadar = { mount: mount };
+})();
+
+</script>
+<script>
+/* ============================================================
+   423.news — Claudia Green | command bar (typed or spoken)
+   Search the wire, run a live area lookup, or put her on air.
+   Injects its own markup into [data-search-host].
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var state = { open: false, results: [], active: 0, listening: false, rec: null };
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function hl(text, term) {
+    if (!term) return esc(text);
+    var re = new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
+    return esc(text).replace(re, '<mark>$1</mark>');
+  }
+
+  /* ---------------- markup ---------------- */
+  function build(host) {
+    host.innerHTML =
+      '<div class="cmd" id="cmdRoot">' +
+        '<div class="cmd-field">' +
+          '<svg class="cmd-ico" viewBox="0 0 20 20" aria-hidden="true">' +
+            '<circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/>' +
+            '<path d="M12.8 12.8 17 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' +
+          '</svg>' +
+          '<input id="cmdInput" class="cmd-input" type="text" autocomplete="off" spellcheck="false" ' +
+            'placeholder="Search the wire, or ask: weather raleigh · traffic durham · radar cary" ' +
+            'aria-label="Search or command">' +
+          '<button class="mic" id="cmdMic" type="button" title="Speak a command" aria-label="Speak a command">' +
+            '<svg viewBox="0 0 20 20" aria-hidden="true">' +
+              '<rect x="7.6" y="2.6" width="4.8" height="9" rx="2.4" fill="currentColor"/>' +
+              '<path d="M4.6 9.4a5.4 5.4 0 0 0 10.8 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' +
+              '<path d="M10 14.8V17.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' +
+            '</svg>' +
+          '</button>' +
+          '<span class="cmd-hint mono">/</span>' +
+        '</div>' +
+        '<div class="cmd-listen" id="cmdListen"><span class="lbars"><i></i><i></i><i></i><i></i><i></i></span>' +
+          '<span id="cmdHeard">Listening…</span></div>' +
+        '<div class="cmd-panel" id="cmdPanel" hidden></div>' +
+      '</div>';
+  }
+
+  /* ---------------- search index ---------------- */
+  function index(feed) {
+    var items = [];
+    ((feed && feed.reports) || []).forEach(function (r) {
+      items.push({
+        type: 'report',
+        kind: r.kind,
+        title: r.headline,
+        body: (r.summary || '') + ' ' + (r.dateline || '') + ' ' + (r.tags || []).join(' '),
+        dateline: r.dateline,
+        id: r.id,
+        ts: r.ts
+      });
+    });
+    (((feed || {}).scanner || {}).log || []).forEach(function (l, i) {
+      items.push({
+        type: 'scanner',
+        kind: 'SCANNER ' + (l.grade || ''),
+        title: l.text,
+        body: l.feed || '',
+        id: 'scan-' + i,
+        ts: l.ts
+      });
+    });
+    (((feed || {}).scanner || {}).feeds || []).forEach(function (f) {
+      items.push({
+        type: 'feed', kind: 'FEED', title: f.name,
+        body: (f.status || '') + ' ' + (f.listeners != null ? f.listeners + ' listeners' : ''),
+        id: 'feed-' + f.name
+      });
+    });
+    return items;
+  }
+
+  function search(feed, q) {
+    var terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.length) return [];
+    var out = [];
+    index(feed).forEach(function (it) {
+      var hay = (it.title + ' ' + it.body).toLowerCase();
+      var score = 0;
+      terms.forEach(function (t) {
+        if (it.title.toLowerCase().indexOf(t) >= 0) score += 3;
+        if (hay.indexOf(t) >= 0) score += 1;
+      });
+      if (score > 0) out.push({ item: it, score: score });
+    });
+    out.sort(function (a, b) { return b.score - a.score; });
+    return out.slice(0, 9);
+  }
+
+  /* ---------------- command parsing ---------------- */
+  function parse(q) {
+    var s = q.trim();
+    var low = s.toLowerCase();
+    var m;
+
+    if (/^(live|go live|on air|put her on air)$/.test(low)) return { type: 'live' };
+    if (/^(stand down|off air|standdown)$/.test(low)) return { type: 'standdown' };
+
+    if ((m = low.match(/^(?:weather|wx)\b(?:\s+(?:in|for|at))?\s*(.*)$/))) return { type: 'weather', area: m[1] || '' };
+    if ((m = low.match(/^(?:traffic|roads?|driving)\b(?:\s+(?:in|for|at))?\s*(.*)$/))) return { type: 'traffic', area: m[1] || '' };
+    if ((m = low.match(/^(?:radar|crime|crime radar|incidents?)\b(?:\s+(?:in|for|at|near))?\s*(.*)$/))) return { type: 'radar', area: m[1] || '' };
+    if ((m = low.match(/^(?:area|conditions|lookup|look up|scan)\b(?:\s+(?:in|for|at|near))?\s*(.*)$/))) return { type: 'area', area: m[1] || '' };
+
+    return { type: 'search', q: s };
+  }
+
+  /* ---------------- panel rendering ---------------- */
+  var panel, input;
+
+  function showPanel(html) {
+    panel.innerHTML = html;
+    panel.hidden = false;
+    state.open = true;
+    document.body.classList.add('cmd-open');
+  }
+  function hidePanel() {
+    panel.hidden = true;
+    state.open = false;
+    document.body.classList.remove('cmd-open');
+  }
+
+  function areaPlaceholder(kind, area) {
+    return '<div class="cmd-answer"><div class="cmd-answer-head">' +
+      '<span class="pill monitoring"><span class="dot"></span>' + kind + '</span>' +
+      '<span class="mono">' + esc(area) + '</span>' +
+      '<span class="spacer"></span><span class="mono spin">working…</span>' +
+      '</div><div id="cmdAnswerBody"><div class="cmd-skel"></div></div></div>';
+  }
+
+  function runArea(kind, area) {
+    var q = area || (window.CLAUDIA_CONFIG || {}).defaultArea || '';
+    showPanel(areaPlaceholder(kind.toUpperCase(), q));
+    window.ClaudiaConditions.bundle(q).then(function (b) {
+      var body = '';
+      var C = window.ClaudiaConditions;
+      if (kind === 'weather') body = C.renderCard(b, { only: 'weather' });
+      else if (kind === 'traffic') body = C.renderTrafficCard(b);
+      else body = C.renderCard(b, { only: 'weather' }) + C.renderTrafficCard(b);
+      var el = document.getElementById('cmdAnswerBody');
+      if (el) {
+        el.innerHTML = body +
+          '<div class="cmd-actions">' +
+          '<a class="btn ghost" href="conditions.html?area=' + encodeURIComponent(q) + '">Open full conditions page</a>' +
+          '</div>';
+      }
+    }).catch(function (e) {
+      var el = document.getElementById('cmdAnswerBody');
+      if (el) el.innerHTML = '<div class="wx-empty">' + esc(e.message || e) + '</div>';
+    });
+  }
+
+  function runRadar(area) {
+    var q = area || (window.CLAUDIA_CONFIG || {}).defaultArea || '';
+    showPanel(areaPlaceholder('CRIME RADAR', q));
+    var body = document.getElementById('cmdAnswerBody');
+    if (body) body.innerHTML = '<div id="cmdRadar" class="radar-mini"></div>';
+    if (window.ClaudiaRadar) {
+      window.ClaudiaRadar.mount(document.getElementById('cmdRadar'), { area: q, compact: true });
+    }
+  }
+
+  function runSearch(q, feed) {
+    var hits = search(feed, q);
+    if (!hits.length) {
+      showPanel('<div class="cmd-answer"><div class="cmd-answer-head">' +
+        '<span class="pill offair"><span class="dot"></span>No match</span>' +
+        '<span class="mono">' + esc(q) + '</span></div>' +
+        '<div class="cmd-empty">Nothing filed under that. Try <b>area ' + esc(q) + '</b> for a live lookup, ' +
+        'or <b>radar ' + esc(q) + '</b> for crime activity.</div>' +
+        '<div class="cmd-actions">' +
+          '<button class="btn ghost" data-cmd="area ' + esc(q) + '">Live lookup: ' + esc(q) + '</button>' +
+        '</div></div>');
+      return;
+    }
+    showPanel('<div class="cmd-answer"><div class="cmd-answer-head">' +
+      '<span class="pill monitoring"><span class="dot"></span>' + hits.length + ' hits</span>' +
+      '<span class="mono">' + esc(q) + '</span></div>' +
+      '<div class="cmd-results">' + hits.map(function (h, i) {
+        var it = h.item;
+        return '<button class="cmd-row' + (i === 0 ? ' on' : '') + '" data-i="' + i + '">' +
+          '<span class="kind ' + esc(String(it.kind || '').toLowerCase().split(' ')[0]) + '">' + esc(it.kind) + '</span>' +
+          '<span class="cmd-row-main"><span class="cmd-row-t">' + hl(it.title, q) + '</span>' +
+          '<span class="cmd-row-b">' + hl(String(it.body).slice(0, 120), q) + '</span></span>' +
+        '</button>';
+      }).join('') + '</div></div>');
+  }
+
+  function dispatch(q) {
+    var cmd = parse(q);
+    var feed = window.ClaudiaFeed && window.ClaudiaFeed.feed;
+    if (cmd.type === 'live') {
+      if (window.ClaudiaFeed) window.ClaudiaFeed.goLive();
+      showPanel('<div class="cmd-answer"><div class="cmd-answer-head"><span class="pill live">' +
+        '<span class="dot"></span>On air</span></div><div class="cmd-empty">Claudia is live on the desk.</div></div>');
+      return;
+    }
+    if (cmd.type === 'standdown') {
+      if (window.ClaudiaFeed) window.ClaudiaFeed.standDown();
+      showPanel('<div class="cmd-answer"><div class="cmd-answer-head"><span class="pill monitoring">' +
+        '<span class="dot"></span>Off air</span></div><div class="cmd-empty">Back at the desk, feeds open.</div></div>');
+      return;
+    }
+    if (cmd.type === 'radar') return runRadar(cmd.area);
+    if (cmd.type === 'area' || cmd.type === 'weather' || cmd.type === 'traffic') return runArea(cmd.type, cmd.area);
+    return runSearch(cmd.q, feed);
+  }
+
+  /* ---------------- microphone ---------------- */
+  function setListening(on, heard) {
+    state.listening = on;
+    var box = document.getElementById('cmdListen');
+    var mic = document.getElementById('cmdMic');
+    if (box) box.classList.toggle('on', on);
+    if (mic) mic.classList.toggle('on', on);
+    var h = document.getElementById('cmdHeard');
+    if (h && heard != null) h.textContent = heard || 'Listening…';
+  }
+
+  function startMic() {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      showPanel('<div class="cmd-answer"><div class="cmd-answer-head"><span class="pill offair">' +
+        '<span class="dot"></span>No microphone support</span></div><div class="cmd-empty">' +
+        'This browser can\'t do speech recognition. Chrome, Edge and Safari support it — or just type the command.</div></div>');
+      return;
+    }
+    if (state.listening) { if (state.rec) state.rec.stop(); setListening(false); return; }
+
+    var rec = new SR();
+    rec.lang = (window.CLAUDIA_CONFIG || {}).micLanguage || 'en-US';
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.maxAlternatives = 1;
+    state.rec = rec;
+
+    rec.onstart = function () { setListening(true, 'Listening…'); input.focus(); };
+    rec.onresult = function (ev) {
+      var txt = '';
+      for (var i = ev.resultIndex; i < ev.results.length; i++) txt += ev.results[i][0].transcript;
+      txt = txt.trim();
+      input.value = txt;
+      setListening(true, txt || 'Listening…');
+      if (ev.results[ev.results.length - 1].isFinal) {
+        setListening(false);
+        dispatch(txt);
+      }
+    };
+    rec.onerror = function (ev) {
+      setListening(false);
+      if (ev.error === 'no-speech') return;
+      showPanel('<div class="cmd-answer"><div class="cmd-answer-head"><span class="pill offair">' +
+        '<span class="dot"></span>Mic error</span></div><div class="cmd-empty">' + esc(ev.error) +
+        ' — allowing microphone access in the browser fixes most of these.</div></div>');
+    };
+    rec.onend = function () { setListening(false); };
+    try { rec.start(); } catch (e) { setListening(false); }
+  }
+
+  /* ---------------- wiring ---------------- */
+  function init() {
+    var host = document.querySelector('[data-search-host]');
+    if (!host) return;
+    build(host);
+    input = document.getElementById('cmdInput');
+    panel = document.getElementById('cmdPanel');
+
+    input.addEventListener('input', function () {
+      var q = input.value.trim();
+      if (!q) { hidePanel(); return; }
+      var cmd = parse(q);
+      if (cmd.type === 'search') runSearch(cmd.q, window.ClaudiaFeed && window.ClaudiaFeed.feed);
+      else hidePanel();
+    });
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        var q = input.value.trim();
+        if (q) dispatch(q);
+      } else if (e.key === 'Escape') {
+        hidePanel(); input.blur();
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        var rows = panel ? Array.prototype.slice.call(panel.querySelectorAll('.cmd-row')) : [];
+        if (!rows.length) return;
+        e.preventDefault();
+        state.active = Math.max(0, Math.min(rows.length - 1, state.active + (e.key === 'ArrowDown' ? 1 : -1)));
+        rows.forEach(function (r, i) { r.classList.toggle('on', i === state.active); });
+      }
+    });
+
+    document.getElementById('cmdMic').addEventListener('click', function (e) {
+      e.preventDefault();
+      startMic();
+    });
+
+    panel.addEventListener('click', function (e) {
+      var row = e.target.closest('.cmd-row');
+      if (row) {
+        var feed = window.ClaudiaFeed && window.ClaudiaFeed.feed;
+        var hits = search(feed, input.value.trim());
+        var hit = hits[parseInt(row.getAttribute('data-i'), 10)];
+        if (hit) {
+          var t = hit.item.title;
+          input.value = t;
+          runSearch(t, feed);
+        }
+        return;
+      }
+      var b = e.target.closest('[data-cmd]');
+      if (b) { input.value = b.getAttribute('data-cmd'); dispatch(input.value); }
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!state.open) return;
+      if (e.target.closest('#cmdRoot')) return;
+      hidePanel();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === '/' && document.activeElement !== input) {
+        e.preventDefault(); input.focus();
+      }
+      if (e.key === 'Escape' && state.open) hidePanel();
+    });
+
+    if (window.ClaudiaFeed) window.ClaudiaFeed.refresh();
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+
+  window.ClaudiaSearch = { dispatch: dispatch, focus: function () { if (input) input.focus(); } };
+})();
+
+</script>
+<script>
+/* ============================================================
+   423.news — Claudia Green | "on air" audio via LiveKit
+   ------------------------------------------------------------
+   Her voice, not the scanner's. Broadcastify audio is never
+   restreamed or rebroadcast — LiveKit carries Claudia reading her
+   own account, in her own words, which is the whole point.
+
+   Room roles:
+     listener   — any visitor: subscribe to her audio
+     publisher  — the desk, gated by an editor key
+
+   Config (assets/config.js):
+     livekit: { url, tokenEndpoint: '/api/livekit-token', room: 'claudia-desk' }
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var CFG = window.CLAUDIA_CONFIG || {};
+  var LK = CFG.livekit || {};
+  var state = {
+    connected: false,
+    listening: false,
+    publishing: false,
+    room: null,
+    track: null,
+    live: false
+  };
+  var mod = null;
+
+  function cfgOk() { return !!(LK.tokenEndpoint && (LK.url || LK.tokenEndpoint)); }
+
+  function loadClient() {
+    if (mod) return Promise.resolve(mod);
+    return import('https://cdn.jsdelivr.net/npm/livekit-client@2/+esm').then(function (m) {
+      mod = m;
+      return m;
+    });
+  }
+
+  function token(role, editorKey) {
+    var qs = '?role=' + encodeURIComponent(role) + '&room=' + encodeURIComponent(LK.room || 'claudia-desk');
+    var init = { headers: {} };
+    if (editorKey) init.headers['x-editor-key'] = editorKey;
+    return fetch(LK.tokenEndpoint + qs, init).then(function (r) {
+      if (!r.ok) throw new Error('token ' + r.status);
+      return r.json();
+    });
+  }
+
+  /* ---------------- UI ---------------- */
+  function bar() { return document.getElementById('onairBar'); }
+
+  function paint() {
+    var b = bar();
+    if (!b) return;
+    b.classList.toggle('on', state.listening || state.publishing);
+    b.setAttribute('data-live', state.live ? '1' : '0');
+    var label = document.querySelector('#onairBar .oa-label');
+    if (label) {
+      label.textContent = state.publishing
+        ? 'On air — you are transmitting'
+        : state.listening ? 'Listening to Claudia'
+          : state.live ? 'Claudia is on air' : 'Claudia is at her desk';
+    }
+    var btn = document.querySelector('#onairBar .oa-btn');
+    if (btn) btn.textContent = state.listening ? 'Stop' : 'Listen';
+    if (btn) btn.hidden = state.publishing;
+  }
+
+  function meter(level) {
+    var bars = document.querySelectorAll('#onairBar .oa-meter i');
+    for (var i = 0; i < bars.length; i++) {
+      bars[i].style.height = Math.max(2, Math.round(level * 14 * (0.5 + Math.random()))) + 'px';
+      bars[i].style.opacity = 0.4 + level * 0.6;
+    }
+  }
+
+  function trackLevel(track) {
+    try {
+      var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var media = new MediaStream([track.mediaStreamTrack]);
+      var src = audioCtx.createMediaStreamSource(media);
+      var an = audioCtx.createAnalyser();
+      an.fftSize = 128;
+      src.connect(an);
+      var buf = new Uint8Array(an.frequencyBinCount);
+      var loop = function () {
+        if (!state.listening && !state.publishing) return;
+        an.getByteFrequencyData(buf);
+        var sum = 0;
+        for (var i = 0; i < buf.length; i++) sum += buf[i];
+        meter(Math.min(1, sum / buf.length / 90));
+        requestAnimationFrame(loop);
+      };
+      loop();
+    } catch (e) { /* meter is cosmetic */ }
+  }
+
+  /* ---------------- listen ---------------- */
+  function listen() {
+    if (!cfgOk()) return Promise.reject(new Error('livekit not configured'));
+    if (state.listening) return stop();
+    if (state.publishing) return Promise.resolve();
+
+    return loadClient().then(function (m) {
+      return token('listener').then(function (t) {
+        var room = new m.Room({ adaptiveStream: true, dynacast: true });
+        state.room = room;
+        room.on(m.RoomEvent.TrackSubscribed, function (track) {
+          if (track.kind !== m.Track.Kind.Audio) return;
+          var el = track.attach();
+          el.id = 'onairAudio';
+          el.autoplay = true;
+          document.body.appendChild(el);
+          state.listening = true;
+          state.live = true;
+          paint();
+          trackLevel(track);
+        });
+        room.on(m.RoomEvent.TrackUnsubscribed, function (track) {
+          track.detach().forEach(function (e) { e.remove(); });
+          state.listening = false;
+          paint();
+        });
+        room.on(m.RoomEvent.ParticipantConnected, function () {
+          state.live = true;
+          paint();
+        });
+        room.on(m.RoomEvent.Disconnected, function () {
+          state.connected = false; state.listening = false; paint();
+        });
+        return room.connect(t.url || LK.url, t.token).then(function () {
+          state.connected = true;
+          state.live = room.remoteParticipants.size > 0;
+          paint();
+          return { ok: true };
+        });
+      });
+    });
+  }
+
+  /* ---------------- publish (the desk) ---------------- */
+  function publish(editorKey) {
+    if (!cfgOk()) return Promise.reject(new Error('livekit not configured'));
+
+    return loadClient().then(function (m) {
+      return token('publisher', editorKey).then(function (t) {
+        var room = new m.Room();
+        state.room = room;
+        room.on(m.RoomEvent.LocalTrackPublished, function () {
+          state.publishing = true; state.live = true; paint();
+        });
+        room.on(m.RoomEvent.Disconnected, function () {
+          state.publishing = false; paint();
+        });
+        return room.connect(t.url || LK.url, t.token)
+          .then(function () { return m.createLocalAudioTrack({ echoCancellation: true, noiseSuppression: true }); })
+          .then(function (track) {
+            state.track = track;
+            return room.localParticipant.publishTrack(track);
+          })
+          .then(function () {
+            state.publishing = true; state.live = true; paint();
+            trackLevel(state.track);
+            return { ok: true };
+          });
+      });
+    });
+  }
+
+  function stop() {
+    try {
+      if (state.track) state.track.stop();
+      if (state.room) state.room.disconnect();
+    } catch (e) { /* ignore */ }
+    var el = document.getElementById('onairAudio');
+    if (el) el.remove();
+    state.room = null; state.track = null;
+    state.listening = false; state.publishing = false;
+    paint();
+    return Promise.resolve({ ok: true });
+  }
+
+  /* ---------------- probe: is she on air? ---------------- */
+  function probe() {
+    if (!cfgOk()) return Promise.resolve(false);
+    return fetch(LK.tokenEndpoint + '?role=probe&room=' + encodeURIComponent(LK.room || 'claudia-desk'))
+      .then(function (r) { return r.ok ? r.json() : { live: false }; })
+      .then(function (d) {
+        state.live = !!d.live;
+        paint();
+        return state.live;
+      })
+      .catch(function () { return false; });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var b = bar();
+    if (!b) return;
+    b.hidden = !cfgOk();
+    paint();
+    probe();
+    setInterval(probe, 30000);
+    var btn = b.querySelector('.oa-btn');
+    if (btn) btn.addEventListener('click', function () {
+      if (state.listening) stop(); else listen().catch(function (e) { alert(e.message); });
+    });
+
+    var desk = document.getElementById('publishBtn');
+    var down = document.getElementById('publishStop');
+    if (desk) desk.hidden = !cfgOk();
+    if (down) down.hidden = !cfgOk();
+    if (desk) desk.addEventListener('click', function () {
+      if (state.publishing) { stop(); return; }
+      var key = prompt('Editor key for the desk microphone:');
+      if (!key) return;
+      publish(key).then(function () {
+        try { localStorage.setItem('claudia.editor', key); } catch (e) {}
+      }).catch(function (e) { alert('Could not go live: ' + e.message); });
+    });
+    var down = document.getElementById('publishStop');
+    if (down) down.addEventListener('click', stop);
+  });
+  window.ClaudiaOnAir = {
+    state: state,
+    listen: listen,
+    publish: publish,
+    stop: stop,
+    probe: probe,
+    configured: cfgOk
+  };
+})();
+
+</script>
+<script>
+/* ============================================================
+   423.news — "Claudia Green" category block (drop-in, zero deps)
+   ------------------------------------------------------------
+   Paste anywhere on your index and it renders her category:
+
+     <div data-claudia-category data-mode="grid" data-limit="3"></div>
+     <script src="/embed/claudia-category.js" async><\/script>
+
+   Modes
+     strip  one line — latest headline, for a nav or index band
+     grid   cards (default)
+     full   cards + kind filters + search (use on the category page)
+     nav    a single nav link with a live count
+
+   Options (attributes on the mount element)
+     data-mode      strip | grid | full | nav     (default grid)
+     data-limit     number of items                (default 3, full=30)
+     data-theme     dark | light                   (default dark)
+     data-source    auto | <url to feed.json> | supabase
+     data-href      where "all reporting" links    (default /category.html)
+     data-kinds     filter chip list, e.g. "HEARD,BREAKING,VERIFIED,FIELD"
+     data-title     heading text                   (default "Claudia Green")
+
+   Data: Supabase when window.CLAUDIA_CONFIG.supabase is set or
+   data-source="supabase", otherwise the site's own JSON.
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var SCRIPT = document.currentScript;
+  var ROOT = location.href.replace(/[^\/]*([?#].*)?$/, '');
+
+  var esc = function (s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  };
+  var rel = function (ts) {
+    var m = Math.max(0, Math.round((Date.now() - new Date(ts).getTime()) / 60000));
+    if (m < 1) return 'now';
+    if (m < 60) return m + 'm ago';
+    var h = Math.round(m / 60);
+    if (h < 24) return h + 'h ago';
+    return Math.round(h / 24) + 'd ago';
+  };
+  var KIND_LABEL = { HEARD: 'Heard', BREAKING: 'Breaking', SCANNER: 'Scanner', FIELD: 'Field', VERIFIED: 'Verified', DESK: 'Desk' };
+
+  /* ---------------- css (injected once, fully scoped) ---------------- */
+  var CSS = [
+    '[data-claudia-category]{',
+    '  --cg-bg:#0f131a; --cg-panel:#151b26; --cg-line:#232b3a; --cg-ink:#f3eee4;',
+    '  --cg-muted:#8590a4; --cg-dim:#5d6779; --cg-accent:#f5a524; --cg-heard:#f5a524;',
+    '  --cg-live:#e8392f; --cg-verify:#35c48a; --cg-r:12px;',
+    '  font-family:inherit; color:var(--cg-ink); display:block;',
+    '}',
+    '[data-claudia-category][data-theme="light"]{',
+    '  --cg-bg:#fff; --cg-panel:#f7f5f0; --cg-line:#e2ddd3; --cg-ink:#16181d;',
+    '  --cg-muted:#5b6270; --cg-dim:#8b909c; --cg-accent:#a9700c; --cg-heard:#a9700c;',
+    '}',
+    '.cg-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 14px}',
+    '.cg-title{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;margin:0;color:var(--cg-ink)}',
+    '.cg-sub{font-size:12px;color:var(--cg-muted)}',
+    '.cg-more{margin-left:auto;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--cg-accent);text-decoration:none;border-bottom:1px solid transparent}',
+    '.cg-more:hover{border-bottom-color:currentColor}',
+    '.cg-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}',
+    '.cg-card{background:var(--cg-panel);border:1px solid var(--cg-line);border-left:2px solid var(--cg-line);border-radius:var(--cg-r);padding:15px 16px;display:flex;flex-direction:column;gap:9px;min-width:0}',
+    '.cg-card[data-kind="HEARD"]{border-left-color:var(--cg-heard)}',
+    '.cg-card[data-kind="BREAKING"]{border-left-color:var(--cg-live)}',
+    '.cg-card[data-kind="VERIFIED"]{border-left-color:var(--cg-verify)}',
+    '.cg-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--cg-dim)}',
+    '.cg-badge{font-weight:700;letter-spacing:.14em;color:var(--cg-muted);border:1px solid currentColor;border-radius:3px;padding:2px 5px}',
+    '.cg-badge[data-k="HEARD"]{color:var(--cg-heard)}',
+    '.cg-badge[data-k="BREAKING"]{color:var(--cg-live)}',
+    '.cg-badge[data-k="VERIFIED"]{color:var(--cg-verify)}',
+    '.cg-badge[data-k="FIELD"]{color:#4d9fff}',
+    '.cg-h{font-size:17px;line-height:1.3;margin:0;letter-spacing:-.01em;font-weight:700}',
+    '.cg-dek{font-size:13px;line-height:1.6;color:var(--cg-muted);margin:0}',
+    '.cg-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}',
+    '.cg-tag{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--cg-dim);border:1px solid var(--cg-line);border-radius:3px;padding:2px 5px}',
+    '.cg-btn{align-self:flex-start;background:none;border:0;padding:0;color:var(--cg-accent);font:inherit;font-size:11.5px;font-weight:600;letter-spacing:.02em;cursor:pointer}',
+    '.cg-btn:hover{text-decoration:underline}',
+    '.cg-body{border-top:1px solid var(--cg-line);padding-top:10px;margin-top:2px;display:flex;flex-direction:column;gap:10px}',
+    '.cg-full{font-size:13px;line-height:1.68;color:var(--cg-muted);white-space:pre-line}',
+    '.cg-safety{border:1px solid rgba(245,165,36,.26);background:rgba(245,165,36,.05);border-radius:8px;padding:10px 12px}',
+    '.cg-safety h4{margin:0 0 6px;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cg-heard)}',
+    '.cg-safety ul,.cg-unc ul{margin:0;padding-left:16px}',
+    '.cg-safety li,.cg-unc li{font-size:12.5px;line-height:1.55;color:var(--cg-muted);margin-bottom:3px}',
+    '.cg-unc{border-left:2px solid var(--cg-line);padding-left:9px;font-size:12px;color:var(--cg-dim)}',
+    '.cg-unc b{color:var(--cg-accent);font-weight:600}',
+    '.cg-src{font-size:10px;color:var(--cg-dim);line-height:1.5}',
+    '.cg-strip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--cg-line);background:var(--cg-panel);border-radius:999px;padding:8px 14px;font-size:12.5px}',
+    '.cg-strip .cg-dot{width:7px;height:7px;border-radius:50%;background:var(--cg-heard);flex:none}',
+    '.cg-strip a{color:var(--cg-ink);text-decoration:none;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.cg-strip a:hover{color:var(--cg-accent)}',
+    '.cg-strip .cg-more{font-weight:700;color:var(--cg-accent);white-space:nowrap;flex:none}',
+    '.cg-strip .cg-more:hover{text-decoration:underline}',
+    '.cg-strip time{margin-left:auto;font-size:10.5px;color:var(--cg-dim);text-transform:uppercase;letter-spacing:.1em}',
+    '.cg-nav{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:inherit;text-decoration:none}',
+    '.cg-nav .cg-count{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cg-dim);border:1px solid var(--cg-line);border-radius:999px;padding:1px 6px}',
+    '.cg-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 16px}',
+    '.cg-chip{background:none;border:1px solid var(--cg-line);color:var(--cg-muted);font:inherit;font-size:11px;padding:5px 11px;border-radius:999px;cursor:pointer}',
+    '.cg-chip:hover{color:var(--cg-ink);border-color:var(--cg-muted)}',
+    '.cg-chip[aria-pressed="true"]{background:var(--cg-ink);border-color:var(--cg-ink);color:var(--cg-bg);font-weight:700}',
+    '.cg-search{flex:1 1 180px;min-width:0;background:var(--cg-bg);border:1px solid var(--cg-line);color:var(--cg-ink);border-radius:999px;padding:7px 13px;font:inherit;font-size:12.5px;outline:0}',
+    '.cg-search:focus{border-color:var(--cg-accent)}',
+    '.cg-empty{font-size:12.5px;color:var(--cg-dim);padding:20px 2px}',
+    '@media(max-width:520px){.cg-grid{grid-template-columns:1fr}.cg-h{font-size:16px}}'
+  ].join('');
+
+  function css() {
+    if (document.getElementById('cg-cat-css')) return;
+    var s = document.createElement('style');
+    s.id = 'cg-cat-css';
+    s.textContent = CSS;
+    document.head.appendChild(s);
+  }
+
+  /* ---------------- data ---------------- */
+  function normalise(r) {
+    return {
+      id: r.id,
+      ts: r.ts,
+      kind: String(r.kind || 'FIELD').toUpperCase(),
+      dateline: r.dateline || '',
+      confidence: (r.confidence || 'developing').toLowerCase(),
+      headline: r.headline || '',
+      summary: r.summary || '',
+      tags: r.tags || [],
+      safety: r.safety || [],
+      uncertain: r.uncertain || [],
+      heard_on: r.heard_on || (r.scanner || [])[0] || '',
+      sources: r.sources || []
+    };
+  }
+
+  function loadFromJson(url) {
+    return fetch(url, { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('feed ' + r.status);
+      return r.json();
+    }).then(function (d) { return (d.reports || d || []).map(normalise); });
+  }
+
+  function loadFromSupabase(el) {
+    var cfg = (window.CLAUDIA_CONFIG || {}).supabase || {};
+    var url = el.getAttribute('data-supabase-url') || cfg.url;
+    var key = el.getAttribute('data-supabase-key') || cfg.anonKey;
+    if (!url || !key) return Promise.reject(new Error('supabase not configured'));
+    var kind = el.getAttribute('data-kinds');
+    var q = '/rest/v1/reports?select=*&published=eq.true&order=ts.desc&limit=' +
+      (parseInt(el.getAttribute('data-limit'), 10) || 30);
+    return fetch(url.replace(/\/$/, '') + q, {
+      headers: { apikey: key, Authorization: 'Bearer ' + key },
+      cache: 'no-store'
+    }).then(function (r) {
+      if (!r.ok) throw new Error('supabase ' + r.status);
+      return r.json();
+    }).then(function (rows) {
+      var list = rows.map(normalise);
+      if (kind) {
+        var keep = kind.split(',').map(function (k) { return k.trim().toUpperCase(); });
+        list = list.filter(function (r) { return keep.indexOf(r.kind) >= 0; });
+      }
+      return list;
+    });
+  }
+
+  function load(el) {
+    var mode = el.getAttribute('data-source') || 'auto';
+    if (mode === 'supabase') return loadFromSupabase(el);
+    if (mode !== 'auto') return loadFromJson(mode);
+    var cfg = (window.CLAUDIA_CONFIG || {}).supabase || {};
+    if (cfg.url && cfg.anonKey) return loadFromSupabase(el);
+    return loadFromJson(ROOT + 'feed.json').catch(function () {
+      return loadFromJson(ROOT + 'feed.json?t=' + Date.now());
+    });
+  }
+
+  /* ---------------- render ---------------- */
+  function card(r) {
+    var body =
+      '<div class="cg-body" hidden>' +
+        '<div class="cg-full">' + esc(r.summary) + '</div>' +
+        (r.safety.length
+          ? '<div class="cg-safety"><h4>What it means for you</h4><ul>' +
+            r.safety.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul></div>'
+          : '') +
+        (r.uncertain.length
+          ? '<div class="cg-unc"><b>Still unconfirmed:</b> ' + r.uncertain.map(esc).join(' · ') + '</div>'
+          : '') +
+        '<div class="cg-src">' +
+          (r.heard_on ? 'Heard on ' + esc(r.heard_on) + ' — her own account, not a transcript. ' : '') +
+          'Filed ' + esc(new Date(r.ts).toLocaleString()) + '.' +
+        '</div>' +
+      '</div>';
+
+    return '<article class="cg-card" data-kind="' + esc(r.kind) + '">' +
+      '<div class="cg-meta">' +
+        '<span class="cg-badge" data-k="' + esc(r.kind) + '">' + esc(KIND_LABEL[r.kind] || r.kind) + '</span>' +
+        '<span>' + esc(r.confidence) + '</span>' +
+        '<span>' + esc(rel(r.ts)) + '</span>' +
+        (r.dateline ? '<span>· ' + esc(r.dateline) + '</span>' : '') +
+      '</div>' +
+      '<h3 class="cg-h">' + esc(r.headline) + '</h3>' +
+      '<p class="cg-dek">' + esc(r.summary.slice(0, 170)) + (r.summary.length > 170 ? '…' : '') + '</p>' +
+      '<div class="cg-tags">' +
+        r.tags.slice(0, 3).map(function (t) { return '<span class="cg-tag">' + esc(t) + '</span>'; }).join('') +
+      '</div>' +
+      '<button class="cg-btn" type="button" aria-expanded="false">Read her account →</button>' +
+      body +
+    '</article>';
+  }
+
+  function head(el, count) {
+    var title = el.getAttribute('data-title') || 'Claudia Green';
+    var href = el.getAttribute('data-href') || 'category.html';
+    return '<div class="cg-head">' +
+      '<h2 class="cg-title">' + esc(title) + '</h2>' +
+      '<span class="cg-sub">Independent correspondent · ' + count + ' report' + (count === 1 ? '' : 's') + '</span>' +
+      '<a class="cg-more" href="' + esc(href) + '">All her reporting →</a>' +
+    '</div>';
+  }
+
+  function render(el, list) {
+    var mode = el.getAttribute('data-mode') || 'grid';
+    var limit = parseInt(el.getAttribute('data-limit'), 10) || (mode === 'full' ? 30 : 3);
+
+    if (mode === 'nav') {
+      var href = el.getAttribute('data-href') || 'category.html';
+      el.innerHTML = '<a class="cg-nav" href="' + esc(href) + '">' +
+        (el.getAttribute('data-label') || 'Claudia Green') +
+        '<span class="cg-count">' + list.length + '</span></a>';
+      return;
+    }
+
+    if (mode === 'strip') {
+      var top = list[0];
+      if (!top) { el.innerHTML = ''; return; }
+      el.innerHTML = '<div class="cg-strip">' +
+        '<span class="cg-dot"></span>' +
+        '<span style="font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cg-heard)">' +
+          esc(KIND_LABEL[top.kind] || top.kind) + '</span>' +
+        '<a href="' + esc(el.getAttribute('data-href') || 'category.html') + '">' + esc(top.headline) + '</a>' +
+        '<time>' + esc(rel(top.ts)) + '</time>' +
+        '<a class="cg-more" href="' + esc(el.getAttribute('data-href') || 'category.html') + '">All →</a>' +
+      '</div>';
+      return;
+    }
+
+    if (mode === 'full') {
+      var kinds = (el.getAttribute('data-kinds') || 'ALL,HEARD,BREAKING,VERIFIED,FIELD').split(',');
+      el.innerHTML = head(el, list.length) +
+        '<div class="cg-toolbar">' +
+          kinds.map(function (k) {
+            var kk = k.trim().toUpperCase();
+            return '<button class="cg-chip" type="button" data-filter="' + esc(kk) + '" aria-pressed="' +
+              (kk === 'ALL' ? 'true' : 'false') + '">' + esc(kk === 'ALL' ? 'All' : (KIND_LABEL[kk] || kk)) + '</button>';
+          }).join('') +
+          '<input class="cg-search" type="search" placeholder="Search her reporting…" aria-label="Search">' +
+        '</div>' +
+        '<div class="cg-grid" data-grid></div>';
+      paint(el, list, 'ALL', '');
+      return;
+    }
+
+    el.innerHTML = head(el, list.length) + '<div class="cg-grid">' +
+      list.slice(0, limit).map(card).join('') + '</div>';
+  }
+
+  function paint(el, list, filter, query) {
+    var grid = el.querySelector('[data-grid]');
+    if (!grid) return;
+    var q = (query || '').toLowerCase();
+    var out = list.filter(function (r) {
+      if (filter !== 'ALL' && r.kind !== filter) return false;
+      if (!q) return true;
+      return (r.headline + ' ' + r.summary + ' ' + r.tags.join(' ') + ' ' + r.dateline)
+        .toLowerCase().indexOf(q) >= 0;
+    });
+    var limit = parseInt(el.getAttribute('data-limit'), 10) || 30;
+    grid.innerHTML = out.length
+      ? out.slice(0, limit).map(card).join('')
+      : '<div class="cg-empty">Nothing filed under that yet.</div>';
+  }
+
+  function wire(el, list) {
+    var mode = el.getAttribute('data-mode') || 'grid';
+    if (mode !== 'full') return;
+    if (el.__cgWired) return;            // listeners live on el, so attach once
+    el.__cgWired = true;
+    var filter = 'ALL', query = '';
+    el.addEventListener('click', function (e) {
+      var chip = e.target.closest('.cg-chip');
+      if (chip) {
+        filter = chip.getAttribute('data-filter');
+        el.querySelectorAll('.cg-chip').forEach(function (c) {
+          c.setAttribute('aria-pressed', c === chip ? 'true' : 'false');
+        });
+        paint(el, list, filter, query);
+      }
+    });
+    var search = el.querySelector('.cg-search');
+    if (search) search.addEventListener('input', function () {
+      query = search.value;
+      paint(el, list, filter, query);
+    });
+  }
+
+  /* expand / collapse, delegated once for the whole document */
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.cg-btn');
+    if (!btn) return;
+    var body = btn.parentNode.querySelector('.cg-body');
+    if (!body) return;
+    var open = !body.hidden;
+    body.hidden = open;
+    btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+    btn.textContent = open ? 'Read her account →' : 'Close ↑';
+  });
+
+  /* ---------------- boot ---------------- */
+  function mount(el) {
+    el.setAttribute('aria-live', 'polite');
+    if (!el.getAttribute('data-theme') && !el.closest('[data-cg-inherit]')) {
+      el.setAttribute('data-theme', 'dark');
+    }
+    load(el).then(function (list) {
+      render(el, list);
+      wire(el, list);
+
+      var cfg = (window.CLAUDIA_CONFIG || {}).supabase || {};
+      var realtime = el.getAttribute('data-realtime') !== 'off';
+      if (realtime && cfg.url && cfg.anonKey && window.ClaudiaStore && window.ClaudiaStore.subscribe) {
+        window.ClaudiaStore.subscribe(function () {
+          load(el).then(function (l) { render(el, l); wire(el, l); });
+        });
+      } else if (realtime) {
+        setInterval(function () {
+          load(el).then(function (l) { render(el, l); });
+        }, 60000);
+      }
+    }).catch(function (err) {
+      el.innerHTML = '<div class="cg-empty">Claudia\'s category is not loading — ' + esc(err.message || err) + '</div>';
+    });
+  }
+
+  css();
+  function boot() {
+    document.querySelectorAll('[data-claudia-category]').forEach(mount);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+
+</script>
 </body>
 </html>
