@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claudia Green — the desk | 423.news</title>
+<meta name="description" content="Claudia Green's desk at 423.news. Live studio, scanner rack, story queue and open microphones.">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .wavebar { animation: eq 900ms ease-in-out infinite alternate; transform-origin: center bottom; }
+  .wavebar:nth-child(2) { animation-delay: .1s }
+  .wavebar:nth-child(3) { animation-delay: .22s }
+  .wavebar:nth-child(4) { animation-delay: .34s }
+  .wavebar:nth-child(5) { animation-delay: .46s }
+  .wavebar:nth-child(6) { animation-delay: .58s }
+  .wavebar:nth-child(7) { animation-delay: .7s }
+  @keyframes eq { from { transform: scaleY(.25) } to { transform: scaleY(1) } }
+
+  .onair { animation: onairPulse 2.4s ease-in-out infinite; }
+  @keyframes onairPulse { 0%,100% { opacity:.35 } 50% { opacity:1 } }
+
+  .body-2 { display:grid; grid-template-columns:minmax(0,1fr) 352px; gap:30px; padding-bottom:70px; }
+  @media (max-width:1040px){ .body-2 { grid-template-columns:1fr } }
+  .stack { display:flex; flex-direction:column; gap:18px }
+  .desk-note {
+    border-left:2px solid var(--signal); padding:2px 0 2px 13px;
+    font-size:12.6px; line-height:1.65; color:var(--muted); margin:0;
+  }
+  body[data-onair="1"] .stage { box-shadow: inset 0 0 90px rgba(232,57,47,.13); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">423<em>.</em>news</span>
+      <span class="brand-sub">Live desk</span>
+    </a>
+    <div class="search-slot" data-search-host></div>
+    <nav class="nav">
+      <a href="index.html">Live</a>
+      <a href="desk.html" class="on">Claudia's desk</a>
+      <a href="conditions.html">Conditions</a>
+      <a href="claudia-scanner.html">Scanner Wire</a>
+      <a href="index.html#stream">Wire</a>
+      <a href="index.html#scanner">Scanner</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="clock" data-clock></span>
+      <span class="pill monitoring" data-claudia-status><span class="dot"></span>At her desk</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="desk-hero">
+    <!-- ===================== studio stage ===================== -->
+    <section class="stage">
+      <div class="stage-in">
+        <div class="stage-bar">
+          <span class="rec"><i></i>Studio A</span>
+          <span>423.news live desk</span>
+          <span class="spacer"></span>
+          <span style="color:var(--muted-2)" data-updated>—</span>
+        </div>
+
+        <svg class="stage-svg" viewBox="0 0 900 500" role="img"
+             aria-label="Illustration of Claudia Green seated at her newsroom desk with monitors, microphone and a scanner radio">
+          <defs>
+            <linearGradient id="room" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#141c28"/>
+              <stop offset="100%" stop-color="#0a0d13"/>
+            </linearGradient>
+            <radialGradient id="desklamp" cx="50%" cy="0%" r="80%">
+              <stop offset="0%" stop-color="#f5a524" stop-opacity=".16"/>
+              <stop offset="100%" stop-color="#f5a524" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="screenG" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#1e2c40"/>
+              <stop offset="100%" stop-color="#101823"/>
+            </linearGradient>
+            <linearGradient id="desktop" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#2b3648"/>
+              <stop offset="100%" stop-color="#1b2331"/>
+            </linearGradient>
+            <linearGradient id="blazer" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#2f4a38"/>
+              <stop offset="100%" stop-color="#1c2f24"/>
+            </linearGradient>
+            <filter id="soft"><feGaussianBlur stdDeviation="16"/></filter>
+          </defs>
+
+          <!-- room -->
+          <rect width="900" height="500" fill="url(#room)"/>
+          <rect y="384" width="900" height="116" fill="#070a0f"/>
+          <ellipse cx="470" cy="120" rx="360" ry="180" fill="url(#desklamp)"/>
+
+          <!-- background: soft pinboard of wires -->
+          <g opacity=".18" stroke="#4a5b78" stroke-width="1">
+            <path d="M0 250 H900" />
+            <path d="M0 300 H900" />
+          </g>
+
+          <!-- desk -->
+          <rect x="30" y="386" width="840" height="114" fill="#0c1016"/>
+          <rect x="30" y="356" width="840" height="30" rx="3" fill="url(#desktop)"/>
+          <rect x="30" y="356" width="840" height="4" fill="#3b4a63" opacity=".55"/>
+
+          <!-- ============ main monitor ============ -->
+          <g>
+            <rect x="300" y="112" width="336" height="216" rx="8" fill="#0e1420" stroke="#33415a" stroke-width="2"/>
+            <rect x="310" y="122" width="316" height="188" rx="3" fill="url(#screenG)"/>
+            <!-- screen content -->
+            <rect x="322" y="134" width="46" height="12" rx="3" fill="#e8392f"/>
+            <text x="330" y="143.5" font-family="ui-monospace,monospace" font-size="8" fill="#fff" letter-spacing="1.2">LIVE</text>
+            <rect x="376" y="137" width="90" height="5" rx="2.5" fill="#42536f"/>
+            <rect x="322" y="158" width="272" height="9" rx="3" fill="#c9c3b7" opacity=".82"/>
+            <rect x="322" y="174" width="236" height="9" rx="3" fill="#c9c3b7" opacity=".6"/>
+            <rect x="322" y="196" width="256" height="5" rx="2.5" fill="#3f4d66"/>
+            <rect x="322" y="208" width="244" height="5" rx="2.5" fill="#3f4d66"/>
+            <rect x="322" y="220" width="200" height="5" rx="2.5" fill="#33415a"/>
+            <!-- waveform panel on screen -->
+            <rect x="322" y="240" width="272" height="56" rx="4" fill="#0c1420" stroke="#26364d"/>
+            <g fill="#f5a524">
+              <rect x="334" y="266" width="4" height="16" rx="2" opacity=".8"/>
+              <rect x="344" y="258" width="4" height="32" rx="2" opacity=".55"/>
+              <rect x="354" y="270" width="4" height="10" rx="2" opacity=".7"/>
+              <rect x="364" y="252" width="4" height="40" rx="2" opacity=".9"/>
+              <rect x="374" y="264" width="4" height="20" rx="2" opacity=".5"/>
+              <rect x="384" y="272" width="4" height="8"  rx="2" opacity=".65"/>
+              <rect x="394" y="256" width="4" height="34" rx="2" opacity=".75"/>
+              <rect x="404" y="268" width="4" height="14" rx="2" opacity=".45"/>
+            </g>
+            <rect x="424" y="248" width="158" height="4" rx="2" fill="#3f4d66"/>
+            <rect x="424" y="258" width="130" height="4" rx="2" fill="#33415a"/>
+            <rect x="424" y="276" width="60" height="4" rx="2" fill="#35c48a" opacity=".7"/>
+            <!-- stand -->
+            <rect x="456" y="328" width="24" height="22" fill="#26334a"/>
+            <rect x="414" y="348" width="108" height="8" rx="3" fill="#33415a"/>
+          </g>
+
+          <!-- ============ secondary monitor ============ -->
+          <g>
+            <rect x="656" y="168" width="176" height="130" rx="6" fill="#0e1420" stroke="#2b384e" stroke-width="2"/>
+            <rect x="664" y="176" width="160" height="108" rx="3" fill="#131c28"/>
+            <rect x="674" y="186" width="34" height="4" rx="2" fill="#f5a524" opacity=".85"/>
+            <g stroke="#2f3f57" stroke-width="1">
+              <path d="M674 210 H814"/><path d="M674 228 H814"/><path d="M674 246 H814"/><path d="M674 264 H814"/>
+            </g>
+            <g fill="#4d9fff" opacity=".75">
+              <rect x="674" y="256" width="14" height="8" rx="1.5"/>
+              <rect x="694" y="248" width="14" height="16" rx="1.5"/>
+              <rect x="714" y="238" width="14" height="26" rx="1.5"/>
+              <rect x="734" y="244" width="14" height="20" rx="1.5"/>
+              <rect x="754" y="228" width="14" height="36" rx="1.5"/>
+              <rect x="774" y="234" width="14" height="30" rx="1.5"/>
+            </g>
+            <rect x="726" y="298" width="36" height="6" fill="#26334a"/>
+          </g>
+
+          <!-- ============ Claudia (three-quarter, from behind) ============ -->
+          <g>
+            <!-- chair back -->
+            <rect x="86" y="252" width="176" height="196" rx="26" fill="#161d29" stroke="#232e40"/>
+            <rect x="120" y="286" width="108" height="120" rx="14" fill="#1b2432"/>
+            <!-- torso / blazer -->
+            <path d="M112 452
+                     C112 372 140 316 174 300
+                     C208 316 236 372 236 452 Z" fill="url(#blazer)"/>
+            <!-- collar -->
+            <path d="M158 302 L174 336 L190 302 L182 296 L174 306 L166 296 Z" fill="#d9d3c6" opacity=".85"/>
+            <!-- neck -->
+            <rect x="164" y="272" width="20" height="26" rx="8" fill="#c9a481"/>
+            <!-- head -->
+            <ellipse cx="174" cy="246" rx="33" ry="37" fill="#d8b493"/>
+            <!-- hair -->
+            <path d="M141 244
+                     C138 206 156 190 176 190
+                     C198 190 212 208 208 240
+                     C204 224 196 214 176 214
+                     C158 214 146 224 141 244 Z" fill="#3a2b22"/>
+            <path d="M139 240 C132 262 132 288 137 300 L146 300 C141 284 141 258 147 240 Z" fill="#3a2b22"/>
+            <!-- headset -->
+            <path d="M141 232 q34 -30 68 0" stroke="#4b5d7c" stroke-width="4" fill="none"/>
+            <rect x="134" y="234" width="10" height="18" rx="4" fill="#4b5d7c"/>
+            <rect x="204" y="234" width="10" height="18" rx="4" fill="#4b5d7c"/>
+            <path d="M139 248 q10 22 34 26" stroke="#4b5d7c" stroke-width="2.5" fill="none"/>
+            <circle cx="176" cy="275" r="3.5" fill="#4b5d7c"/>
+            <!-- arm to desk -->
+            <path d="M232 400 q26 8 34 26" stroke="#2b432f" stroke-width="16" stroke-linecap="round" fill="none"/>
+          </g>
+
+          <!-- ============ microphone on boom ============ -->
+          <g>
+            <rect x="252" y="344" width="52" height="26" rx="4" fill="#1d2634" stroke="#33415a"/>
+            <path d="M278 344 L278 296" stroke="#3b4a63" stroke-width="4"/>
+            <path d="M278 296 q0 -22 26 -26" stroke="#4b5d7c" stroke-width="4" fill="none"/>
+            <ellipse cx="316" cy="262" rx="14" ry="10" transform="rotate(-14 316 262)" fill="#4b5d7c"/>
+            <ellipse cx="316" cy="262" rx="8" ry="5" transform="rotate(-14 316 262)" fill="#151c27"/>
+            <rect x="300" y="250" width="34" height="4" rx="2" fill="#3b4a63" transform="rotate(-14 316 252)"/>
+          </g>
+
+          <!-- ============ coffee ============ -->
+          <g>
+            <path d="M78 368 h30 v-26 a4 4 0 0 0 -4 -4 h-22 a4 4 0 0 0 -4 4 z" fill="#222c3c" stroke="#3b4a63"/>
+            <path d="M108 352 c10 3 10 7 0 10" stroke="#3b4a63" stroke-width="3" fill="none"/>
+            <path d="M86 334 q3 -10 -2 -16 M96 334 q3 -10 -2 -16" stroke="#4a5b78" stroke-width="1.6" fill="none" opacity=".5"/>
+          </g>
+
+          <!-- ============ scanner radio + waveform ============ -->
+          <g>
+            <rect x="664" y="326" width="132" height="58" rx="5" fill="#1a2331" stroke="#33415a"/>
+            <rect x="672" y="334" width="52" height="26" rx="2" fill="#0c1420"/>
+            <g fill="#f5a524">
+              <rect class="wavebar" x="676" y="344" width="3" height="14" rx="1.5"/>
+              <rect class="wavebar" x="682" y="340" width="3" height="20" rx="1.5"/>
+              <rect class="wavebar" x="688" y="346" width="3" height="11" rx="1.5"/>
+              <rect class="wavebar" x="694" y="336" width="3" height="26" rx="1.5"/>
+              <rect class="wavebar" x="700" y="343" width="3" height="16" rx="1.5"/>
+              <rect class="wavebar" x="706" y="347" width="3" height="9"  rx="1.5"/>
+              <rect class="wavebar" x="712" y="342" width="3" height="18" rx="1.5"/>
+            </g>
+            <g fill="#3b4a63">
+              <circle cx="742" cy="342" r="4"/><circle cx="756" cy="342" r="4"/>
+              <circle cx="742" cy="356" r="4"/><circle cx="756" cy="356" r="4"/>
+            </g>
+            <rect x="672" y="366" width="116" height="3" rx="1.5" fill="#33415a"/>
+            <rect x="672" y="373" width="76" height="3" rx="1.5" fill="#2b384e"/>
+            <rect x="786" y="326" width="4" height="16" rx="2" fill="#3b4a63"/>
+          </g>
+
+          <!-- ============ papers / notebook ============ -->
+          <g>
+            <rect x="366" y="372" width="86" height="10" rx="2" fill="#c9c3b7" opacity=".22" transform="rotate(-3 409 377)"/>
+            <rect x="374" y="366" width="70" height="8" rx="2" fill="#c9c3b7" opacity=".14" transform="rotate(2 409 370)"/>
+            <rect x="470" y="374" width="66" height="5" rx="2.5" fill="#6b6c62" transform="rotate(-8 503 376)"/>
+          </g>
+
+          <!-- ============ on-air lamp ============ -->
+          <g>
+            <rect x="736" y="52" width="118" height="34" rx="6" fill="#150f0f" stroke="#3a1f1d"/>
+            <text x="795" y="75" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif"
+                  font-size="14" font-weight="700" letter-spacing="3" fill="#e8392f" class="onair">ON AIR</text>
+            <rect x="792" y="86" width="6" height="16" fill="#2b384e"/>
+          </g>
+
+          <!-- floor light pool -->
+          <ellipse cx="470" cy="452" rx="300" ry="26" fill="#f5a524" opacity=".05" filter="url(#soft)"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- ===================== live console ===================== -->
+    <section class="console">
+      <div class="console-head">
+        <span style="color:var(--signal)">&#9679;</span>
+        <span class="t">Open microphone</span>
+        <span class="spacer" style="margin-left:auto"></span>
+        <span class="pill monitoring" data-claudia-status><span class="dot"></span>At her desk</span>
+      </div>
+      <div class="console-body">
+        <div class="k mono" style="font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted-2); margin-bottom:10px">
+          What she is saying right now
+        </div>
+        <div class="typing" id="typing"><span class="caret"></span></div>
+      </div>
+      <div class="console-body" style="padding-top:0">
+        <div class="meters" id="meters"></div>
+      </div>
+      <div class="console-foot">
+        <button class="btn live-btn" id="goLive">&#9654; Go live</button>
+        <button class="btn ghost" id="standDown">Stand down</button>
+        <button class="btn ghost" id="publishBtn" hidden style="margin-left:auto">&#9679; Desk mic</button>
+        <button class="btn ghost" id="publishStop" hidden>Cut</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="body-2">
+    <div class="stack">
+      <div class="card">
+        <div class="card-head">Story queue <span class="spacer"></span><span style="color:var(--muted-2)" data-updated>—</span></div>
+        <div class="queue" id="queue"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Standing orders</div>
+        <div class="card-body">
+          <p class="desk-note">
+            Scanner traffic is never printed as fact. Every radio-sourced item is filed as
+            <em>unconfirmed</em> until a published record, an official release, or a second
+            independent source corroborates it — then it is re-filed as <em>verified</em>.
+          </p>
+          <p class="desk-note" style="margin-top:12px">
+            And it is never printed as <em>audio</em>. She opens the feed, listens, and writes her own
+            account: no transcript, no quotes, no names, no street numbers, no medical detail. The
+            <span class="mono" style="font-size:11px">paraphrase.py</span> gate rejects any draft that keeps six
+            consecutive words from the source.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <aside class="stack">
+      <div class="card">
+        <div class="card-head"><span style="color:var(--signal)">&#9679;</span> Scanner rack</div>
+        <div class="card-body" style="padding:8px 15px"><div id="feedList"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head">Scanner log <span class="spacer"></span>
+          <span style="color:var(--verify)">graded</span></div>
+        <div class="card-body" style="padding:8px 15px"><div class="log" id="scanLog"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head">Area conditions <span class="spacer"></span>
+          <a href="conditions.html" style="color:var(--signal)">any area &rarr;</a></div>
+        <div class="card-body" id="wxDesk" style="padding:10px">
+          <div class="radar-loading mono">reading the sky&hellip;</div>
+        </div>
+      </div>
+      <div id="radarDesk"></div>
+
+      <div class="card">
+        <div class="card-head">Filing rules</div>
+        <div class="card-body">
+          <p style="margin:0; font-size:12.3px; line-height:1.65; color:var(--muted)">
+            Two-source minimum for anything that names a person. No address-level detail from
+            scanner audio. Corrections are appended, never deleted.
+          </p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="legal-strip">
+    <b>Heard, then described — not reproduced.</b> Broadcastify feeds are opened and monitored as a listener.
+    What reaches the page is Claudia's own summary plus safety guidance. Audio is not rebroadcast, transcripts
+    are not published, and identifiers are withheld. Every heard item stays <b>unconfirmed</b> until corroborated.
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="wrap row">
+    <div><strong style="color:var(--paper)">Claudia Green</strong> &middot; independent correspondent<br>
+      Contracted by 423.news &middot; desk operates continuously</div>
+    <div class="mono" style="max-width:420px">
+      Studio feed &mdash; <span style="color:var(--paper-dim)">data/feed.json</span>.
+      Scanner module: <span style="color:var(--paper-dim)">scanner/broadcastify.py</span>.
+    </div>
+  </div>
+</footer>
+
+<div id="onairBar" class="onair-bar" hidden>
+  <span class="oa-dot"></span>
+  <span class="oa-label">Claudia is at her desk</span>
+  <span class="oa-meter"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+  <button class="oa-btn" type="button">Listen</button>
+</div>
+
+<script src="assets/config.js"></script>
+<script src="assets/store.js"></script>
+<script src="assets/feed.js"></script>
+<script src="assets/conditions.js"></script>
+<script src="assets/radar.js"></script>
+<script src="assets/search.js"></script>
+<script src="assets/onair.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var CFG = window.CLAUDIA_CONFIG || {};
+    var area = CFG.defaultArea || 'Raleigh, North Carolina';
+
+    var g = document.getElementById('goLive');
+    var s = document.getElementById('standDown');
+    if (g) g.addEventListener('click', function () { window.ClaudiaFeed.goLive(); });
+    if (s) s.addEventListener('click', function () { window.ClaudiaFeed.standDown(); });
+
+    if (window.ClaudiaConditions) {
+      window.ClaudiaConditions.bundle(area).then(function (b) {
+        var host = document.getElementById('wxDesk');
+        if (host) host.innerHTML = window.ClaudiaConditions.renderCard(b, { compact: true });
+      }).catch(function (e) {
+        var host = document.getElementById('wxDesk');
+        if (host) host.innerHTML = '<div class="wx-empty">' + (e.message || e) + '</div>';
+      });
+    }
+    if (window.ClaudiaRadar) {
+      window.ClaudiaRadar.mount(document.getElementById('radarDesk'), { area: area, compact: true });
+    }
+  });
+</script>
+</body>
+</html>

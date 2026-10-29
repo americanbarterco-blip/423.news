@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live conditions &amp; crime radar — 423.news</title>
+<meta name="description" content="Live weather, alerts, traffic and crime radar for any area, from Claudia Green's desk at 423.news.">
+<link rel="stylesheet" href="assets/theme.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">423<em>.</em>news</span>
+      <span class="brand-sub">Live desk</span>
+    </a>
+    <div class="search-slot" data-search-host></div>
+    <nav class="nav">
+      <a href="index.html">Live</a>
+      <a href="desk.html">Claudia's desk</a>
+      <a href="conditions.html" class="on">Conditions</a>
+      <a href="claudia-scanner.html">Scanner Wire</a>
+      <a href="index.html#stream">Wire</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="clock" data-clock></span>
+      <span class="pill monitoring" data-claudia-status><span class="dot"></span>At her desk</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap page-pad">
+
+  <div class="sec-head" style="margin-top:26px">
+    <h2>Live conditions</h2>
+    <span class="count">any area &middot; weather &middot; alerts &middot; traffic &middot; crime</span>
+    <span class="spacer"></span>
+    <span class="mono" style="font-size:10px;color:var(--muted-2)" data-updated>—</span>
+  </div>
+
+  <!-- ============ area picker ============ -->
+  <div class="area-bar">
+    <input class="area-input" id="areaInput" type="text" placeholder="Any area — city, county, postcode, or lat,lon"
+           autocomplete="off" aria-label="Area to look up">
+    <button class="btn" id="areaGo">Look up area</button>
+    <button class="btn ghost" id="areaHere">&#9678; Use my location</button>
+    <div class="chips" id="areaChips"></div>
+  </div>
+
+  <!-- ============ conditions grid ============ -->
+  <div class="cond-grid">
+    <div id="wxMount">
+      <div class="wx-card"><div class="radar-loading mono">reading the sky over <span id="wxArea">…</span>&hellip;</div></div>
+    </div>
+    <div id="tfMount">
+      <div class="wx-card"><div class="radar-loading mono">checking the roads&hellip;</div></div>
+    </div>
+
+    <!-- ============ radar ============ -->
+    <div class="cond-span" id="radarMount">
+      <div class="radar"><div class="radar-loading">sweeping&hellip;</div></div>
+    </div>
+
+    <div class="cond-span">
+      <div class="card">
+        <div class="card-head">What she is watching</div>
+        <div class="card-body">
+          <p class="desk-note" style="border-left:2px solid var(--signal);padding:2px 0 2px 13px;font-size:12.6px;line-height:1.65;color:var(--muted);margin:0">
+            Weather and alerts come from Open-Meteo and the National Weather Service. Traffic incidents come
+            from a TomTom feed when a key is configured. The radar plots geocoded incidents from city open data;
+            anything from the desk's own scanner feed that has no coordinates is listed under the scope rather
+            than dropped at a guessed position. Scanner-derived signals are always unconfirmed.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="wrap row">
+    <div><strong style="color:var(--paper)">423.news</strong> &middot; live desk<br>
+      Claudia Green — independent correspondent, contracted by 423.news.</div>
+    <div class="mono" style="max-width:440px">
+      Type a command anywhere with <span style="color:var(--paper-dim)">/</span> — or press the mic and say
+      “weather durham”, “traffic cary”, “radar raleigh”.
+    </div>
+  </div>
+</footer>
+
+<div id="onairBar" class="onair-bar" hidden>
+  <span class="oa-dot"></span>
+  <span class="oa-label">Claudia is at her desk</span>
+  <span class="oa-meter"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+  <button class="oa-btn" type="button">Listen</button>
+</div>
+
+<script src="assets/config.js"></script>
+<script src="assets/store.js"></script>
+<script src="assets/feed.js"></script>
+<script src="assets/conditions.js"></script>
+<script src="assets/radar.js"></script>
+<script src="assets/search.js"></script>
+<script src="assets/onair.js"></script>
+<script>
+(function () {
+  var CFG = window.CLAUDIA_CONFIG || {};
+  var input = document.getElementById('areaInput');
+  var chips = document.getElementById('areaChips');
+
+  function load(area) {
+    input.value = area;
+    var wa = document.getElementById('wxArea');
+    if (wa) wa.textContent = area;
+    document.getElementById('wxMount').innerHTML =
+      '<div class="wx-card"><div class="radar-loading mono">reading the sky over ' + area + '&hellip;</div></div>';
+    document.getElementById('tfMount').innerHTML =
+      '<div class="wx-card"><div class="radar-loading mono">checking the roads&hellip;</div></div>';
+
+    window.ClaudiaConditions.bundle(area).then(function (b) {
+      document.getElementById('wxMount').innerHTML = window.ClaudiaConditions.renderCard(b);
+      document.getElementById('tfMount').innerHTML = window.ClaudiaConditions.renderTrafficCard(b);
+      document.querySelectorAll('[data-updated]').forEach(function (n) {
+        n.textContent = 'synced ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      });
+      if (history.replaceState) {
+        var u = new URL(location.href);
+        u.searchParams.set('area', area);
+        history.replaceState(null, '', u);
+      }
+    }).catch(function (e) {
+      document.getElementById('wxMount').innerHTML =
+        '<div class="wx-card"><div class="wx-empty">' + (e.message || e) + '</div></div>';
+      document.getElementById('tfMount').innerHTML = '';
+    });
+
+    window.ClaudiaRadar.mount(document.getElementById('radarMount'), { area: area });
+    try { localStorage.setItem('claudia.area', area); } catch (e) {}
+  }
+
+  chips.innerHTML = (CFG.surrounding || []).map(function (a) {
+    return '<button class="chip" data-area="' + a.replace(/"/g, '&quot;') + '">' + a + '</button>';
+  }).join('');
+
+  chips.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-area]');
+    if (b) load(b.getAttribute('data-area'));
+  });
+
+  document.getElementById('areaGo').addEventListener('click', function () {
+    if (input.value.trim()) load(input.value.trim());
+  });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && input.value.trim()) load(input.value.trim());
+  });
+
+  document.getElementById('areaHere').addEventListener('click', function () {
+    var btn = this;
+    btn.textContent = 'Locating…';
+    window.ClaudiaConditions.locate().then(function (c) {
+      return window.ClaudiaConditions.reverse(c.lat, c.lon);
+    }).then(function (place) {
+      btn.innerHTML = '&#9678; Use my location';
+      load(place.label);
+    }).catch(function (err) {
+      btn.innerHTML = '&#9678; Use my location';
+      alert('Location unavailable: ' + (err.message || err));
+    });
+  });
+
+  var start = new URLSearchParams(location.search).get('area');
+  if (!start) { try { start = localStorage.getItem('claudia.area'); } catch (e) {} }
+  load(start || CFG.defaultArea || 'Raleigh, North Carolina');
+})();
+</script>
+</body>
+</html>

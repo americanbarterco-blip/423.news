@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claudia Green Live Scanner Wire — 423.news</title>
+<meta name="description" content="Claudia Green's Live Scanner Wire: filed reports, confidence labels and what they mean for you. Not an emergency service.">
+<link rel="canonical" href="./claudia-scanner.html">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+/* Claudia Green Live Scanner Wire — scoped to .cg so the rest of 423.news is untouched. */
+.cg {
+  --cg-bg: #020d19; --cg-panel: #041729; --cg-panel2: #071d32; --cg-line: #123b59;
+  --cg-blue: #087fff; --cg-cyan: #00cfff; --cg-text: #f5f8ff; --cg-muted: #a9bed2;
+  --cg-live: #f3263d; --cg-police: #1f7aff; --cg-fire: #ff303a; --cg-ems: #f4b000;
+  --cg-traffic: #11c879; --cg-weather: #8055ff; --cg-community: #00cfff; --cg-demo: #f4b000;
+  color: var(--cg-text);
+}
+body.cg-page .wrap { max-width: 1440px; }
+body.cg-page main { padding-top: 16px; }
+body.cg-page #nav a.on, body.cg-page #nav a:hover { border-bottom-color: var(--cg-blue); }
+
+.cg * { box-sizing: border-box; }
+.cg button { font: inherit; color: inherit; cursor: pointer; }
+.cg button:disabled, .cg [aria-disabled="true"] { cursor: not-allowed; }
+.cg h1, .cg h2, .cg h3, .cg p { margin: 0; }
+.cg input[type="search"], .cg select {
+  margin: 0; width: 100%; background: var(--cg-bg); color: var(--cg-text);
+  border: 1px solid var(--cg-line); border-radius: 10px; padding: 10px 12px; min-height: 44px;
+}
+.cg :focus-visible { outline: 2px solid var(--cg-cyan); outline-offset: 2px; }
+.cg-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- hero ---------- */
+.cg-hero {
+  position: relative; display: grid; grid-template-columns: minmax(150px, 24%) 1fr minmax(180px, 25%);
+  min-height: 220px; border: 1px solid var(--cg-line); border-radius: 14px; overflow: hidden;
+  background: linear-gradient(100deg, #06223d 0%, #020d19 55%, #04162a 100%); margin-bottom: 14px;
+}
+.cg-hero-portrait { position: relative; min-height: 220px; }
+.cg-hero-portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 72% 20%; }
+.cg-hero-portrait::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 55%, #05182b 100%); }
+.cg-illus { position: absolute; left: 8px; bottom: 8px; z-index: 1; font-size: 11px; padding: 2px 8px; border-radius: 99px; background: rgba(2,13,25,.8); color: var(--cg-muted); }
+.cg-hero-copy { position: relative; z-index: 1; padding: 22px 22px 18px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.cg-hero-copy h1 { font-size: clamp(28px, 3.5vw, 50px); line-height: 1; font-weight: 900; letter-spacing: -.015em; text-transform: uppercase; }
+.cg-hero-copy h1 span { display: block; background: linear-gradient(90deg, var(--cg-blue), var(--cg-cyan)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cg-hero-tag { font-weight: 700; letter-spacing: .06em; font-size: clamp(11px, 1.4vw, 15px); color: var(--cg-text); }
+.cg-hero-room { position: relative; }
+.cg-hero-room img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 40% 40%; opacity: .9; }
+.cg-hero-room::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, #04162a 0%, rgba(4,22,42,0) 45%), linear-gradient(0deg, rgba(2,13,25,.85), rgba(2,13,25,0) 55%); }
+.cg-hero-brand { position: absolute; z-index: 2; right: 18px; bottom: 14px; text-align: right; font-weight: 800; line-height: 1.15; }
+.cg-hero-brand p { font-size: clamp(13px, 1.6vw, 20px); }
+.cg-hero-brand b { display: block; margin-top: 4px; font-size: clamp(20px, 2.6vw, 34px); letter-spacing: -.02em; }
+.cg-hero-brand b i { color: var(--cg-live); font-style: normal; }
+.cg-hero-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cg-hero-wx { font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: rgba(2,13,25,.75); border: 1px solid var(--cg-line); }
+.cg-hero-wx[hidden] { display: none; }
+
+/* state pill: LIVE / DEMO / PAUSED / OFFLINE — always text + color */
+.cg-pill { display: inline-flex; align-items: center; gap: 7px; align-self: flex-start; font-weight: 800; font-size: 13px; letter-spacing: .05em; padding: 5px 12px; border-radius: 8px; color: #fff; background: var(--cg-live); text-transform: uppercase; }
+.cg-pill::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #fff; }
+.cg-pill[data-s="live"]::before { animation: cgPulse 1.8s ease-in-out infinite; }
+.cg-pill[data-s="demo"] { background: var(--cg-demo); color: #1b1300; }
+.cg-pill[data-s="demo"]::before { background: #1b1300; }
+.cg-pill[data-s="paused"], .cg-pill[data-s="loading"], .cg-pill[data-s="none"] { background: #3a5068; }
+.cg-pill[data-s="offline"], .cg-pill[data-s="error"] { background: #7a2430; }
+@keyframes cgPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+.cg-warn { margin: 0 0 14px; padding: 10px 14px; border-radius: 10px; font-size: 14px; background: #2b2105; border: 1px solid #7a5c00; color: #ffe19a; }
+.cg-warn[hidden] { display: none; }
+.cg-note { margin: 0 0 14px; font-size: 13px; color: var(--cg-muted); }
+
+/* ---------- dashboard grid ---------- */
+.cg-dash {
+  display: grid; gap: 14px; align-items: stretch;
+  grid-template-columns: minmax(310px, 1.05fr) minmax(0, 1.55fr) minmax(290px, .82fr);
+  grid-template-rows: minmax(600px, 700px) auto;
+  grid-template-areas: "feed map side" "latest latest side";
+}
+.cg-side { grid-area: side; display: flex; flex-direction: column; gap: 14px; }
+.cg-panel { background: var(--cg-panel); border: 1px solid var(--cg-line); border-radius: 14px; padding: 16px; min-width: 0; }
+.cg-panel > h2, .cg-ph h2 { font-size: 17px; font-weight: 800; }
+.cg-ph { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.cg-ph-l { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+/* ---------- incident feed ---------- */
+.cg-feed { grid-area: feed; display: flex; flex-direction: column; min-height: 0; }
+.cg-feed-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cg-sw { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; padding: 4px 0; min-height: 44px; font-size: 13px; color: var(--cg-muted); }
+.cg-sw .tr { width: 44px; height: 26px; border-radius: 99px; background: #3a5068; position: relative; transition: background .15s; flex: 0 0 auto; }
+.cg-sw .tr::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.cg-sw[aria-checked="true"] .tr { background: var(--cg-blue); }
+.cg-sw[aria-checked="true"] .tr::after { transform: translateX(18px); }
+.cg-sw[aria-disabled="true"] { opacity: .55; }
+.cg-stamp { font-size: 12px; color: var(--cg-muted); }
+.cg-iconbtn { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; background: var(--cg-panel2); border: 1px solid var(--cg-line); }
+.cg-iconbtn:hover:not(:disabled) { border-color: var(--cg-cyan); }
+.cg-iconbtn svg { width: 20px; height: 20px; }
+
+.cg-chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: thin; }
+.cg-chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 14px; border-radius: 99px; background: var(--cg-panel2); border: 1px solid var(--cg-line); font-size: 14px; font-weight: 600; white-space: nowrap; }
+.cg-chip svg { width: 16px; height: 16px; }
+.cg-chip:hover { border-color: var(--cg-blue); }
+.cg-chip[aria-pressed="true"] { background: var(--cg-blue); border-color: var(--cg-blue); color: #fff; }
+.cg-search { display: flex; gap: 8px; margin-bottom: 10px; }
+.cg-search input { flex: 1; }
+.cg-search select { flex: 0 1 150px; }
+
+.cg-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; min-height: 0; border-top: 1px solid var(--cg-line); }
+.cg-item { display: flex; align-items: stretch; border-bottom: 1px solid var(--cg-line); }
+.cg-row { flex: 1; min-width: 0; display: grid; grid-template-columns: 44px 1fr; gap: 12px; text-align: left; background: none; border: 0; padding: 12px 4px; border-radius: 8px; }
+.cg-row:hover { background: var(--cg-panel2); }
+.cg-item[data-sel="true"] { background: var(--cg-panel2); box-shadow: inset 3px 0 0 var(--cg-cyan); }
+.cg-ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--c); color: #fff; flex: 0 0 auto; }
+.cg-ico svg { width: 22px; height: 22px; }
+.cg-row-main { min-width: 0; }
+.cg-row-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--cg-muted); }
+.cg-row-main, .cg-row .t, .cg-row .loc, .cg-row .desc { display: block; }
+.cg-row .t { font-size: 15px; font-weight: 700; margin: 2px 0; }
+.cg-row .loc { font-size: 13px; color: var(--cg-muted); }
+.cg-row .desc { font-size: 13px; color: #c9d8e6; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cg-more { align-self: center; flex: 0 0 auto; min-width: 44px; min-height: 44px; background: none; border: 0; color: var(--cg-cyan); font-size: 13px; font-weight: 700; padding: 0 8px; }
+.cg-more:hover { text-decoration: underline; }
+.cg-tag { display: inline-flex; align-items: center; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--c, var(--cg-line)); color: var(--c, var(--cg-muted)); background: color-mix(in srgb, var(--c, #3a5068) 14%, transparent); }
+.cg-tag.st { --c: #7d94aa; }
+.cg-tag.st[data-st="verified"] { --c: #2fd18a; }
+.cg-tag.st[data-st="developing"] { --c: #ffb020; }
+.cg-tag.st[data-st="resolved"] { --c: #7fa3c7; }
+.cg-tag.demo { --c: var(--cg-demo); }
+
+.cg-state { padding: 28px 12px; text-align: center; color: var(--cg-muted); font-size: 14px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.cg-state strong { color: var(--cg-text); font-size: 16px; }
+.cg-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 10px; font-weight: 700; font-size: 14px; border: 1px solid var(--cg-blue); background: var(--cg-blue); color: #fff; }
+.cg-btn:hover:not(:disabled) { filter: brightness(1.12); }
+.cg-btn.sec { background: transparent; color: var(--cg-text); border-color: var(--cg-line); }
+.cg-btn.sec:hover:not(:disabled) { border-color: var(--cg-cyan); }
+.cg-btn:disabled { opacity: .5; }
+.cg-btn svg { width: 20px; height: 20px; flex: 0 0 auto; }
+
+/* ---------- map ---------- */
+.cg-map { grid-area: map; display: flex; flex-direction: column; min-height: 0; padding: 12px; }
+.cg-map .cg-ph { padding: 0 4px; }
+.cg-map-box { position: relative; flex: 1; min-height: 340px; border-radius: 10px; overflow: hidden; border: 1px solid var(--cg-line); background: #0a1c2c; isolation: isolate; }
+.cg-leaf { position: absolute; inset: 0; z-index: 0; }
+.cg-zoom { position: absolute; right: 10px; bottom: 14px; z-index: 500; display: flex; flex-direction: column; gap: 6px; }
+.cg-zoom button { width: 44px; height: 44px; border-radius: 10px; background: rgba(4,23,41,.94); border: 1px solid var(--cg-line); font-size: 22px; line-height: 1; display: grid; place-items: center; }
+.cg-zoom button:hover:not(:disabled) { border-color: var(--cg-cyan); }
+.cg-zoom button:disabled { opacity: .4; }
+.cg-zoom svg { width: 20px; height: 20px; }
+.cg-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; padding: 12px 4px 0; font-size: 13px; }
+.cg-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.cg-legend i { width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--c); color: #fff; }
+.cg-legend i svg { width: 11px; height: 11px; }
+.cg-legend .mapped { margin-left: auto; color: var(--cg-muted); }
+.cg-fb { position: absolute; inset: 0; background-color: #0b2236; background-image: linear-gradient(rgba(18,59,89,.55) 1px, transparent 1px), linear-gradient(90deg, rgba(18,59,89,.55) 1px, transparent 1px); background-size: 12.5% 16.66%; }
+.cg-fb-msg { position: absolute; left: 10px; top: 10px; right: 64px; z-index: 5; font-size: 12px; padding: 6px 10px; border-radius: 8px; background: rgba(4,23,41,.92); border: 1px solid var(--cg-line); color: var(--cg-muted); }
+.cg-fb-pin { position: absolute; transform: translate(-50%, -100%); padding: 0; background: none; border: 0; }
+.cg-fb-pop { position: absolute; left: 10px; right: 64px; bottom: 12px; z-index: 6; }
+.cg-pin { background: none; border: 0; }
+.cg-pinb { position: relative; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--c); border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.55); color: #fff; }
+.cg-pinb svg { width: 17px; height: 17px; transform: rotate(45deg); }
+.cg-pinb[data-sel="true"] { outline: 3px solid var(--cg-cyan); outline-offset: 2px; }
+.cg-pinb[data-res="true"] { opacity: .65; }
+.cg-card { color: #f5f8ff; font-size: 13px; line-height: 1.4; min-width: 200px; }
+.cg-card h3 { font-size: 15px; margin: 6px 0 2px; }
+.cg-card .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.cg-card button.cg-btn { min-height: 36px; margin-top: 8px; padding: 0 12px; }
+.cg-fb-pop .cg-card { background: var(--cg-panel); border: 1px solid var(--cg-line); border-radius: 10px; padding: 10px 12px; }
+/* Leaflet popup theming (rules only matter once Leaflet is loaded) */
+.cg .leaflet-popup-content-wrapper, .cg .leaflet-popup-tip { background: var(--cg-panel); color: var(--cg-text); border: 1px solid var(--cg-line); }
+.cg .leaflet-container { font: inherit; background: #0a1c2c; }
+.cg .leaflet-control-attribution { background: rgba(2,13,25,.8); color: var(--cg-muted); font-size: 10px; }
+.cg .leaflet-control-attribution a { color: var(--cg-cyan); }
+
+/* ---------- scanner audio ---------- */
+.cg-audio-st { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 10px; font-size: 13px; }
+.cg-onair { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; font-size: 12px; letter-spacing: .05em; padding: 4px 10px; border-radius: 99px; background: #3a5068; color: #fff; text-transform: uppercase; }
+.cg-onair[data-s="playing"] { background: var(--cg-live); }
+.cg-onair[data-s="error"] { background: #7a2430; }
+.cg-dotg { display: inline-flex; align-items: center; gap: 6px; color: var(--cg-muted); }
+.cg-dotg::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #7d94aa; }
+.cg-dotg[data-s="playing"]::before { background: #2fd18a; }
+.cg-dotg[data-s="error"]::before { background: var(--cg-live); }
+.cg-wave { display: block; width: 100%; height: 64px; border-radius: 8px; background: var(--cg-bg); border: 1px solid var(--cg-line); }
+.cg-wave-wrap { position: relative; }
+.cg-wave-msg { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; color: var(--cg-muted); pointer-events: none; }
+.cg-player { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+.cg-play { flex: 0 0 auto; width: 48px; height: 48px; border-radius: 50%; background: #fff; color: #041729; border: 0; display: grid; place-items: center; }
+.cg-play:disabled { background: #3a5068; color: #8aa0b5; }
+.cg-play svg { width: 22px; height: 22px; }
+.cg-player input[type="range"] { flex: 1; min-width: 0; margin: 0; padding: 0; height: 28px; background: transparent; border: 0; accent-color: var(--cg-blue); }
+.cg-sub { font-size: 14px; font-weight: 700; margin: 14px 0 4px; }
+.cg-ctl { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
+.cg-ctl > span { font-size: 14px; }
+.cg-ctl small { display: block; font-size: 11px; color: var(--cg-muted); }
+.cg-voice-note { font-size: 12px; color: var(--cg-muted); margin-top: 8px; }
+.cg-speak { display: flex; gap: 8px; margin-top: 10px; }
+.cg-speak .cg-btn:first-child { flex: 1; background: #4a3fd0; border-color: #4a3fd0; }
+.cg-speak .cg-btn:first-child:hover:not(:disabled) { background: #5a4ff0; }
+
+/* ---------- quick actions ---------- */
+.cg-qa { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.cg-qa .wide { grid-column: 1 / -1; }
+.cg-qa .cg-btn { flex-direction: column; min-height: 64px; text-align: center; line-height: 1.2; padding: 8px 10px; }
+.cg-qa .ann { background: #4a3fd0; border-color: #4a3fd0; }
+.cg-qa .add { background: #12905f; border-color: #12905f; }
+.cg-qa .wide { flex-direction: row; min-height: 52px; }
+.cg-qa svg { width: 20px; height: 20px; }
+.cg-qa small { font-weight: 500; font-size: 11px; opacity: .85; }
+.cg-auth { font-size: 12px; color: var(--cg-muted); margin-top: 10px; }
+
+/* ---------- latest incidents ---------- */
+.cg-latest { grid-area: latest; align-self: start; }
+.cg-cards { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
+.cg-cardl { flex: 1 0 230px; scroll-snap-align: start; display: grid; gap: 4px; padding: 12px; border-radius: 12px; background: var(--cg-panel2); border: 1px solid var(--cg-line); }
+.cg-cardl:hover { border-color: var(--cg-cyan); }
+.cg-cardl .h { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+.cg-cardl .h .cg-ico { width: 34px; height: 34px; }
+.cg-cardl .h .cg-ico svg { width: 18px; height: 18px; }
+.cg-cardl .h time { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--cg-muted); }
+.cg-cardl b { font-size: 14px; }
+.cg-cardl span.l { font-size: 13px; color: var(--cg-muted); }
+
+/* ---------- sources + footer ---------- */
+.cg-srcs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cg-src { display: grid; gap: 2px; padding: 12px; border-radius: 10px; background: var(--cg-panel2); border: 1px solid var(--cg-line); font-size: 13px; }
+.cg-src:hover { border-color: var(--cg-cyan); }
+.cg-src b { font-size: 14px; }
+.cg-src span { color: var(--cg-muted); font-size: 12px; }
+.cg-priv { display: flex; gap: 10px; font-size: 12px; color: var(--cg-muted); }
+.cg-priv svg { flex: 0 0 22px; width: 22px; height: 22px; color: var(--cg-cyan); }
+.cg-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin-top: 14px; padding: 14px 18px; border: 1px solid var(--cg-line); border-radius: 14px; background: var(--cg-panel); font-size: 14px; }
+.cg-foot b { font-size: 22px; letter-spacing: -.02em; }
+.cg-foot b i { font-style: normal; color: var(--cg-live); }
+.cg-foot a { color: var(--cg-cyan); font-weight: 700; }
+.cg-foot .r { margin-left: auto; color: var(--cg-muted); }
+
+/* detail dialog (inside the site's #modal) */
+.cg-detail { color: #f5f8ff; }
+.cg-detail h2 { font-size: 20px; margin: 10px 0 6px; }
+.cg-detail dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; margin: 12px 0; }
+.cg-detail dt { color: #a9bed2; }
+.cg-detail dd { margin: 0; }
+.cg-detail p { white-space: pre-wrap; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1100px) {
+  .cg-dash { grid-template-columns: 1fr 1fr; grid-template-rows: auto; grid-template-areas: "feed map" "latest latest" "audio actions" "sources sources"; }
+  .cg-side { display: contents; }
+  .cg-feed { max-height: 640px; }
+  .cg-map { min-height: 520px; }
+  .cg-side > #cgAudio { grid-area: audio; } .cg-side > #cgActions { grid-area: actions; } .cg-side > #cgSources { grid-area: sources; }
+  .cg-hero { grid-template-columns: minmax(130px, 28%) 1fr; }
+  .cg-hero-room { position: absolute; inset: 0 0 0 40%; opacity: .3; }
+  .cg-hero-brand { display: none; }
+}
+@media (max-width: 720px) {
+  .cg-dash { grid-template-columns: 1fr; grid-template-areas: "feed" "map" "audio" "actions" "latest" "sources"; }
+  .cg-feed { max-height: 74vh; }
+  .cg-map { min-height: 440px; }
+  .cg-hero { grid-template-columns: 34% 1fr; min-height: 190px; }
+  .cg-hero-portrait { min-height: 190px; }
+  .cg-hero-copy { padding: 14px 12px 12px 4px; gap: 6px; }
+  .cg-hero-copy h1 { font-size: clamp(22px, 8vw, 34px); }
+  .cg-hero-tag { font-size: 10px; letter-spacing: .03em; }
+  .cg-search { flex-wrap: wrap; }
+  .cg-search select { flex: 1 1 100%; }
+  .cg-foot .r { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cg *, .cg *::before, .cg *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+.cg-mapnote { position: absolute; left: 10px; top: 10px; right: 64px; z-index: 500; font-size: 12px; padding: 6px 10px; border-radius: 8px; background: rgba(4,23,41,.92); border: 1px solid var(--cg-line); color: var(--cg-muted); margin: 0; }
+.cg-mapnote[hidden] { display: none; }
+.cg-persona { font-size: 12px; color: var(--cg-muted); max-width: 60ch; }
+
+.cg [hidden] { display: none !important; }
+
+/* page chrome for the static host (modal, toast, forms) */
+.cgm { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 60; }
+.cgm-p { width: 100%; max-width: 460px; max-height: 90vh; overflow: auto; padding: 22px; background: #0b1b2e; border: 1px solid #123b59; border-radius: 14px; color: #f5f8ff; }
+.cgm-p h2.sm { margin: 0 0 12px; font-size: 20px; }
+.cgm-p label { display: block; font-size: 13px; color: #a9bed2; margin-bottom: 10px; }
+.cgm-p input, .cgm-p select, .cgm-p textarea { display: block; width: 100%; margin-top: 4px; background: #020d19; color: #f5f8ff; border: 1px solid #123b59; border-radius: 10px; padding: 10px 12px; font: inherit; }
+.cgm-p .acts { display: flex; gap: 8px; margin-top: 6px; }
+.cgm-p .btn { background: #087fff; color: #fff; border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer; font: inherit; font-weight: 700; }
+.cgm-p .btn.dark { background: #071d32; border: 1px solid #123b59; }
+.cgm-p .muted { color: #a9bed2; font-size: 13px; }
+@media (max-width: 560px) { .topbar-in { flex-wrap: wrap; } .topbar-right { margin-left: 0; max-width: 100%; flex-wrap: wrap; } }
+#toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #f4f4f5; color: #09090b; padding: 10px 18px; border-radius: 12px; font-weight: 600; display: none; z-index: 99; max-width: 92vw; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">423<em>.</em>news</span>
+      <span class="brand-sub">Scanner Wire</span>
+    </a>
+    <div class="search-slot" data-search-host></div>
+    <nav class="nav">
+      <a href="index.html">Live</a>
+      <a href="desk.html">Claudia's desk</a>
+      <a href="category.html" >Claudia</a>
+      <a href="conditions.html">Conditions</a>
+      <a href="claudia-scanner.html" class="on">Scanner Wire</a>
+      <a href="index.html#scanner">Scanner</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="clock" data-clock></span>
+      <span class="pill monitoring" data-claudia-status><span class="dot"></span>At her desk</span>
+    </div>
+  </div>
+</header>
+<main class="wrap page-pad"><div id="app"></div><div id="modal"></div><div id="toast" role="status"></div></main>
+<footer class="footer">
+  <div class="wrap row">
+    <div><strong style="color:var(--paper)">423.news</strong> · scanner wire<br>
+      Claudia Green Live Scanner Wire — filed reports from public sources.</div>
+    <div class="mono" style="max-width:420px">
+      <span style="color:var(--paper-dim)">/claudia-scanner.html</span> — canonical URL for this page.
+    </div>
+  </div>
+</footer>
+<script src="assets/config.js"></script>
+<script src="assets/store.js"></script>
+<script src="assets/feed.js"></script>
+<script src="assets/conditions.js"></script>
+<script src="assets/radar.js"></script>
+<script src="assets/search.js"></script>
+<script src="assets/onair.js"></script>
+<script>
+/* Host shim: lets the Claudia Green dashboard (claudia.js) run on the static desk site
+   (Cloudflare Pages + Supabase / data/feed.json) with no Express server.
+   It provides window.N423, the small bridge claudia.js expects. Read-only: nothing is published from this page. */
+(() => {
+'use strict';
+const CFG = window.CLAUDIA_CONFIG || {};
+const $ = s => document.querySelector(s);
+const dt = s => new Date(/Z|[+-]\d\d:?\d\d$/.test(s) ? s : String(s).replace(' ', 'T') + 'Z');
+const toast = m => { const t = $('#toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', 3600); };
+const closeM = () => { $('#modal').innerHTML = ''; };
+function modal(html) {
+  const m = $('#modal'); m.innerHTML = `<div class="cgm"><div class="cgm-p">${html}</div></div>`;
+  m.firstChild.addEventListener('mousedown', e => { if (e.target === m.firstChild) closeM(); });
+  return m;
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#modal') && $('#modal').firstChild) closeM(); });
+const fld = (n, l, x = '') => `<label>${l}<input name="${n}" ${x}></label>`;
+const sel = (n, l, o) => `<label>${l}<select name="${n}">${o.map(v => Array.isArray(v) ? `<option value="${v[0]}">${v[1]}</option>` : `<option>${v}</option>`).join('')}</select></label>`;
+function form(title, body, onSubmit, btn = 'Save') {
+  modal(`<h2 class="sm">${title}</h2><form id="mf">${body}<div class="acts"><button class="btn">${btn}</button><button type="button" class="btn dark" id="mc">Cancel</button></div><p id="me" class="muted" style="color:#ef4444"></p></form>`);
+  $('#mc').onclick = closeM;
+  $('#mf').onsubmit = async e => { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); try { await onSubmit(f); } catch (x) { $('#me').textContent = x.message; } };
+}
+const J = (m, b) => ({ method: m, body: JSON.stringify(b || {}) });
+
+/* ---- desk reports -> the dashboard's incident shape ---- */
+const CATS_RX = [['Police', /police|sheriff|law enforcement/], ['Fire', /fire|smoke|burn/], ['EMS', /\bems\b|medical|ambulance|rescue/],
+  ['Traffic', /traffic|crash|accident|road|work zone|lane|i-\d+/], ['Weather', /weather|rain|storm|flood|nws|forecast|wind|snow|ice/]];
+function category(r) {
+  const tags = (r.tags || []).join(' ').toLowerCase();
+  for (const [c, rx] of CATS_RX) if (rx.test(tags)) return c;
+  const h = String(r.headline || '').toLowerCase();
+  for (const [c, rx] of CATS_RX) if (rx.test(h)) return c;
+  return 'Community';
+}
+function toIncident(r) {
+  const status = (String(r.confidence || '').toLowerCase() === 'confirmed' || String(r.kind).toUpperCase() === 'VERIFIED') ? 'verified'
+    : String(r.confidence || '').toLowerCase() === 'developing' ? 'developing' : 'unverified';
+  const safety = (r.safety || []).length ? '\n\nWhat it means for you:\n- ' + r.safety.join('\n- ') : '';
+  const unc = (r.uncertain || []).length ? '\n\nStill unconfirmed:\n- ' + r.uncertain.join('\n- ') : '';
+  return { id: r.id, headline: r.headline, zone: '', category: category(r), status, location: r.dateline || '',
+    units: '', talkgroup: '', details: String(r.summary || '') + safety + unc, lat: null, lng: null, createdAt: r.ts, authorName: 'Claudia Green' };
+}
+async function loadReports(limit) {
+  const sb = CFG.supabase || {};
+  if (sb.url && sb.anonKey) {
+    const r = await fetch(sb.url.replace(/\/$/, '') + '/rest/v1/reports?select=*&published=eq.true&order=ts.desc&limit=' + limit, { headers: { apikey: sb.anonKey, Authorization: 'Bearer ' + sb.anonKey }, cache: 'no-store' });
+    if (!r.ok) throw new Error('The reports database answered ' + r.status + '.');
+    return r.json();
+  }
+  const r = await fetch('data/feed.json', { cache: 'no-store' });
+  if (!r.ok) throw new Error('Could not read data/feed.json (' + r.status + ').');
+  const d = await r.json(); return (d.reports || []).slice(0, limit);
+}
+async function api(path) {
+  if (path.startsWith('/wire')) { const n = Number((path.match(/limit=(\d+)/) || [])[1]) || 50; return { items: (await loadReports(n)).map(toIncident) }; }
+  if (path === '/scanner/config') return { listenUrl: CFG.scannerListenUrl || '', listenName: CFG.scannerListenName || '', audioStreamUrl: CFG.scannerStreamUrl || '', audioCors: !!CFG.scannerStreamCors, mapTileUrl: CFG.mapTileUrl || '', mapAttribution: CFG.mapAttribution || '' };
+  throw new Error('Not available on this page.');
+}
+window.N423 = {
+  api, J, toast, modal, closeM, form, fld, sel, dt,
+  auth: () => toast('Sign-in is not part of this page. Reports are filed by the desk.'),
+  canWire: () => false, getUser: () => null, app: () => document.getElementById('app'),
+  ZONES: ['423 area'], CATS: ['Police', 'Fire', 'EMS', 'Traffic', 'Weather', 'Community'],
+  readOnly: true, noZones: true, deskUrl: 'desk.html', mapView: { center: [35.75, -84.0], zoom: 7 },
+  personaNote: CFG.personaNote !== undefined ? CFG.personaNote : 'Claudia Green, independent correspondent for 423.news. Portrait is an illustration.'
+};
+const go = () => { const m = location.hash.match(/^#\/claudia\/(.+)$/); const id = m ? decodeURIComponent(m[1]) : ''; if (window.Claudia.active()) window.Claudia.hash(id); else window.Claudia.mount(id); };
+window.addEventListener('hashchange', go);
+document.addEventListener('DOMContentLoaded', go);
+})();
+
+</script>
+<script>
+/* Claudia Green Live Scanner Wire — page module for 423.news.
+   Mounted by the existing hash router at #/claudia (and #/claudia/<incidentId> for a deep link).
+   Uses the site's bridge (window.N423) for api(), auth, modals and toasts. Data comes from GET /api/wire. */
+(() => {
+'use strict';
+const N = () => window.N423;
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------- constants ---------- */
+const CAT = {
+  Police: { c: 'var(--cg-police)', hex: '#1f7aff', icon: 'car' },
+  Fire: { c: 'var(--cg-fire)', hex: '#ff303a', icon: 'fire' },
+  EMS: { c: 'var(--cg-ems)', hex: '#f4b000', icon: 'ems' },
+  Traffic: { c: 'var(--cg-traffic)', hex: '#11c879', icon: 'warn' },
+  Weather: { c: 'var(--cg-weather)', hex: '#8055ff', icon: 'wx' },
+  Community: { c: 'var(--cg-community)', hex: '#00cfff', icon: 'people' }
+};
+const STATUS = { unverified: 'Unverified', developing: 'Developing', verified: 'Verified', resolved: 'Resolved' };
+// Map centers for the coverage zones the server accepts (used only to recenter the map, never as incident locations).
+const ZONE_CENTER = {
+  'Hamilton / Chattanooga': [35.0456, -85.3097], 'Bradley / Cleveland': [35.1595, -84.8766], 'Soddy-Daisy': [35.2578, -85.1747],
+  'Polk County': [35.1751, -84.66], 'Rhea / Dayton': [35.4912, -84.9322], 'Sweetwater': [35.6001, -84.4619], 'East Ridge': [34.9951, -85.2933]
+};
+const DEFAULT_VIEW = [35.12, -85.1];
+const view = () => N().mapView || { center: DEFAULT_VIEW, zoom: 9 };
+const REFRESH_MS = 20000;
+const LEAF_CSS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css';
+const LEAF_JS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
+const TILES = {
+  url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  labels: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+  attr: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+};
+const SOURCES = [
+  { name: 'TDOT SmartWay', sub: 'Tennessee traffic and road conditions', url: 'https://smartway.tn.gov' },
+  { name: 'National Weather Service', sub: 'Morristown forecast office', url: 'https://www.weather.gov/mrx/' },
+  { name: 'Ready.gov', sub: 'Emergency preparedness', url: 'https://www.ready.gov' },
+  { name: 'OpenMHz', sub: 'Third-party radio archive', url: 'https://openmhz.com' }
+];
+
+/* ---------- icons ---------- */
+const PATHS = {
+  car: '<path d="M5 16l1.4-5a2 2 0 0 1 1.9-1.5h7.4a2 2 0 0 1 1.9 1.5L19 16"/><path d="M4 16h16v3h-2.5v-1.5h-11V19H4z"/><circle cx="7.5" cy="13" r=".6"/><circle cx="16.5" cy="13" r=".6"/>',
+  fire: '<path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 2.5 1.5 2.5C10.5 8.5 11 5.5 12 3z"/>',
+  ems: '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/>',
+  warn: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
+  wx: '<path d="M7 17a4 4 0 0 1 .5-8A5.5 5.5 0 0 1 18 10a3.5 3.5 0 0 1-.5 7H7z"/><path d="M12 12l-2 3h3l-1 3"/>',
+  people: '<circle cx="9" cy="8" r="3"/><path d="M3 19a6 6 0 0 1 12 0M17 11a2.5 2.5 0 1 0 0-5M17 14a5 5 0 0 1 4 5"/>',
+  play: '<path d="M8 5l11 7-11 7z" fill="currentColor"/>',
+  pause: '<path d="M8 5v14M16 5v14" stroke-width="3.5"/>',
+  vol: '<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 0 1 0 6"/>',
+  mute: '<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9l5 6M21 9l-5 6"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>', minus: '<path d="M5 12h14"/>',
+  reset: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
+  refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
+  expand: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+  shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>'
+};
+const ico = (n, filled) => `<svg viewBox="0 0 24 24" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${PATHS[n] || ''}</svg>`;
+
+/* ---------- preferences (saved in this browser only) ---------- */
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage unavailable */ } }
+};
+const P = Object.assign({ alerts: true, voice: false, announce: false, vol: 0.8, muted: false, auto: true }, LS.get('cg_prefs', {}));
+const savePrefs = () => LS.set('cg_prefs', P);
+
+/* ---------- state ---------- */
+let S = null;
+const fresh = () => ({
+  mounted: false, root: null, ac: null, items: [], source: 'live', status: 'loading', err: '', last: null, busy: false,
+  cat: 'All', zone: '', q: '', sel: null, seen: new Set(), firstLoad: true, demoOn: false, demoOff: false, timer: null,
+  map: null, markers: new Map(), fb: false, cfg: {}, el: null, an: null, ctx: null, raf: 0, aState: 'none', aMsg: '',
+  speaking: false, openId: null, mo: null, pendingHash: '', lastOpener: null
+});
+const isLocal = () => /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+const demoAllowed = () => !S.demoOff && (S.demoOn || isLocal() || /[?&]demo=1\b/.test(location.hash + location.search));
+
+/* ---------- data ---------- */
+const num = (v, lo, hi) => { if (v == null || v === '') return null; const n = Number(v); return Number.isFinite(n) && n >= lo && n <= hi ? n : null; };
+function norm(r, demo) {
+  if (!r || r.id == null || !r.headline) return null;
+  return {
+    id: String(r.id), headline: String(r.headline).slice(0, 200), zone: String(r.zone || ''), category: CAT[r.category] ? r.category : 'Community',
+    status: STATUS[r.status] ? r.status : 'unverified', location: String(r.location || ''), units: String(r.units || ''), talkgroup: String(r.talkgroup || ''),
+    details: String(r.details || ''), lat: num(r.lat, -90, 90), lng: num(r.lng, -180, 180), createdAt: r.createdAt || new Date().toISOString(),
+    author: String(r.authorName || ''), demo: !!demo
+  };
+}
+function demoItems() {
+  const t = m => new Date(Date.now() - m * 6e4).toISOString();
+  const d = [
+    ['d1', 'Police', 'unverified', 'Traffic stop (demo)', 'Bradley / Cleveland', 'US-11W near Lee Hwy, Cleveland', 'Example entry for previewing the layout.', 35.1595, -84.8766, 6],
+    ['d2', 'Fire', 'developing', 'Structure fire (demo)', 'Hamilton / Chattanooga', 'Oak St, Chattanooga', 'Example entry. Units on scene; fire contained to structure.', 35.0721, -85.3374, 10],
+    ['d3', 'EMS', 'unverified', 'Medical emergency (demo)', 'Hamilton / Chattanooga', 'I-75 North near Exit 1, Chattanooga', 'Example entry. EMS responding to a medical call.', 35.0083, -85.2411, 18],
+    ['d4', 'Police', 'unverified', 'Suspicious vehicle (demo)', 'Hamilton / Chattanooga', 'Signal Mountain Rd, Chattanooga', 'Example entry. Unoccupied vehicle; officers checking.', 35.1113, -85.3301, 25],
+    ['d5', 'Traffic', 'verified', 'Minor accident (demo)', 'East Ridge', 'I-24 East near MM 180, Chattanooga', 'Example entry. No injuries; vehicles on shoulder.', 35.0049, -85.2662, 31],
+    ['d6', 'Fire', 'resolved', 'Brush fire (demo)', 'Hamilton / Chattanooga', 'Lookout Mountain Rd, Lookout Mountain', 'Example entry. Crews on scene; under control.', 34.9836, -85.3497, 39],
+    ['d7', 'Weather', 'verified', 'Flood advisory (demo)', 'Rhea / Dayton', 'Low-lying roads near Dayton', 'Example entry for the Weather category.', 35.4912, -84.9322, 52]
+  ];
+  return d.map(x => norm({ id: 'demo-' + x[0], category: x[1], status: x[2], headline: x[3], zone: x[4], location: x[5], details: x[6], lat: x[7], lng: x[8], createdAt: t(x[9]) }, true));
+}
+const sortItems = a => a.sort((x, y) => (N().dt(y.createdAt) - N().dt(x.createdAt)) || String(y.id).localeCompare(String(x.id), undefined, { numeric: true }));
+
+async function refresh() {
+  if (!S || S.busy) return;
+  S.busy = true; setBusy(true);
+  try {
+    if (!navigator.onLine) throw Object.assign(new Error('You are offline. Showing the last reports received.'), { offline: true });
+    const d = await N().api('/wire?limit=50');
+    const map = new Map();
+    for (const r of (d && Array.isArray(d.items) ? d.items : [])) { const it = norm(r, false); if (it && !map.has(it.id)) map.set(it.id, it); } // first record per id wins; malformed rows are skipped
+    let items = sortItems([...map.values()]);
+    S.source = 'live';
+    if (!items.length && demoAllowed()) { items = sortItems(demoItems()); S.source = 'demo'; }
+    const newOnes = items.filter(i => !S.seen.has(i.id));
+    items.forEach(i => S.seen.add(i.id));
+    S.items = items; S.status = 'ok'; S.err = ''; S.last = new Date();
+    if (!S.firstLoad && S.source === 'live') notifyNew(newOnes.filter(i => i.status !== 'resolved'));
+    S.firstLoad = false;
+  } catch (e) {
+    S.status = e.offline ? 'offline' : 'error'; S.err = e.message || 'Could not load reports.';
+  } finally { S.busy = false; setBusy(false); }
+  renderAll();
+  if (S.pendingHash) { const id = S.pendingHash; S.pendingHash = ''; openDetail(id); }
+}
+const setBusy = b => { const f = $('#cgFeed', S.root); if (f) f.setAttribute('aria-busy', b ? 'true' : 'false'); const r = $('#cgRefresh', S.root); if (r) r.disabled = b; };
+
+function filtered() {
+  const q = S.q.trim().toLowerCase();
+  return S.items.filter(i => (S.cat === 'All' || i.category === S.cat) && (!S.zone || i.zone === S.zone) &&
+    (!q || (i.headline + ' ' + i.location + ' ' + i.details + ' ' + i.units + ' ' + i.category).toLowerCase().includes(q)));
+}
+
+/* ---------- formatting ---------- */
+const tm = s => N().dt(s).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+const catTag = c => `<span class="cg-tag" style="--c:${CAT[c].c}">${esc(c)}</span>`;
+const stTag = s => `<span class="cg-tag st" data-st="${s}">${STATUS[s]}</span>`;
+const demoTag = i => i.demo ? '<span class="cg-tag demo">Demo</span>' : '';
+const iconBadge = c => `<span class="cg-ico" style="--c:${CAT[c].c}" aria-hidden="true">${ico(CAT[c].icon)}</span>`;
+const pillState = () => (S.status === 'loading' && !S.items.length) ? 'loading' : S.status === 'offline' ? 'offline' : S.status === 'error' ? 'error' : S.source === 'demo' ? 'demo' : (P.auto ? 'live' : 'paused');
+const PILL = { live: 'Live', demo: 'Demo', paused: 'Paused', offline: 'Offline', error: 'Feed error', loading: 'Connecting', none: 'No feed' };
+const pill = () => { const s = pillState(); return `<span class="cg-pill" data-s="${s}">${PILL[s]}</span>`; };
+
+/* ---------- template ---------- */
+function template() {
+  return `<div class="cg">
+<div id="cgLive" class="cg-sr" role="status" aria-live="polite"></div>
+<section class="cg-hero" aria-label="Claudia Green Live Scanner Wire">
+  <div class="cg-hero-portrait"><img src="data:image/webp;base64,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" alt="Illustrated portrait of Claudia Green, 423.news scanner desk reporter" width="258" height="194" fetchpriority="high"><span class="cg-illus">Illustration</span></div>
+  <div class="cg-hero-copy"><div class="cg-hero-top"><span id="cgHeroPill">${pill()}</span><span class="cg-hero-wx" id="cgWx" hidden></span></div><h1>Claudia Green <span>Live Scanner Wire</span></h1><p class="cg-hero-tag">REAL CALLS &bull; REAL INCIDENTS &bull; REAL TIME</p>${N().personaNote ? `<p class="cg-persona">${esc(N().personaNote)}</p>` : ''}</div>
+  <div class="cg-hero-room"><img src="data:image/webp;base64,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" alt="" width="350" height="166" loading="lazy">
+    <div class="cg-hero-brand"><p>First to the call.<br>First to you.</p><b>423<i>.</i>NEWS</b></div></div>
+</section>
+<div class="cg-warn" id="cgDemo" hidden></div>
+<div class="cg-dash">
+  <section class="cg-panel cg-feed" id="cgFeed" aria-labelledby="cgFeedH" aria-busy="true">
+    <div class="cg-ph"><div class="cg-ph-l"><span id="cgFeedPill">${pill()}</span><h2 id="cgFeedH">Incident Feed</h2></div>
+      <div class="cg-feed-tools"><button class="cg-sw" id="cgAuto" role="switch" aria-checked="${P.auto}"><span>Auto refresh</span><span class="tr"></span></button>
+      <button class="cg-iconbtn" id="cgRefresh" aria-label="Refresh now" title="Refresh now">${ico('refresh')}</button></div></div>
+    <p class="cg-stamp" id="cgStamp" style="margin:-4px 0 8px">Waiting for first update&hellip;</p>
+    <div class="cg-chips" id="cgChips" role="group" aria-label="Filter by category">${['All', 'Police', 'Fire', 'EMS', 'Traffic', 'Weather', 'Community'].map(c =>
+      `<button class="cg-chip" data-cat="${c}" aria-pressed="${c === 'All'}">${c === 'All' ? '' : `<span style="color:${CAT[c].hex}">${ico(CAT[c].icon)}</span>`}${c}</button>`).join('')}</div>
+    <div class="cg-search"><input id="cgQ" type="search" placeholder="Search incidents" aria-label="Search incidents" autocomplete="off">
+      <select id="cgZone" aria-label="Coverage area"><option value="">All zones</option>${Object.keys(ZONE_CENTER).map(z => `<option>${esc(z)}</option>`).join('')}</select></div>
+    <ul class="cg-list" id="cgList" aria-label="Incidents"></ul>
+  </section>
+  <section class="cg-panel cg-map" id="cgMapPanel" aria-labelledby="cgMapH">
+    <div class="cg-ph"><h2 id="cgMapH">Live Incident Map</h2><button class="cg-iconbtn" id="cgFull" aria-label="Full screen map" title="Full screen" hidden>${ico('expand')}</button></div>
+    <div class="cg-map-box" id="cgMapBox"><div class="cg-leaf" id="cgLeaf"></div><p class="cg-mapnote" id="cgMapNote" hidden>These reports have no map coordinates, so they are listed in the feed and not plotted at a guessed position.</p><div class="cg-fb" id="cgFb" hidden></div>
+      <div class="cg-zoom"><button id="cgZin" aria-label="Zoom in" disabled>${ico('plus')}</button><button id="cgZout" aria-label="Zoom out" disabled>${ico('minus')}</button><button id="cgReset" aria-label="Reset map view" title="Reset map view" disabled>${ico('reset')}</button></div></div>
+    <div class="cg-legend" id="cgLegend">${['Police', 'Fire', 'EMS', 'Traffic', 'Weather'].map(c => `<span><i style="--c:${CAT[c].c}">${ico(CAT[c].icon)}</i>${c}</span>`).join('')}<span class="mapped" id="cgMapped"></span></div>
+  </section>
+  <div class="cg-side">
+    <section class="cg-panel" id="cgAudio" aria-labelledby="cgAudH">
+      <div class="cg-ph" style="margin-bottom:8px"><h2 id="cgAudH">Live Scanner Audio</h2></div>
+      <div class="cg-audio-st"><span class="cg-onair" id="cgOnAir" data-s="none">Not connected</span><span class="cg-dotg" id="cgAudMsg" data-s="none"></span></div>
+      <a class="cg-btn sec" id="cgListen" target="_blank" rel="noopener noreferrer" hidden style="margin-bottom:10px;text-align:center"></a>
+      <div class="cg-wave-wrap"><canvas class="cg-wave" id="cgWave" width="600" height="128" role="img" aria-label="Audio level display"></canvas><span class="cg-wave-msg" id="cgWaveMsg"></span></div>
+      <div class="cg-player"><button class="cg-play" id="cgPlay" aria-label="Play scanner audio" disabled>${ico('play')}</button>
+        <button class="cg-iconbtn" id="cgMute" aria-label="Mute" aria-pressed="${P.muted}">${ico(P.muted ? 'mute' : 'vol')}</button>
+        <input id="cgVol" type="range" min="0" max="100" value="${Math.round(P.vol * 100)}" aria-label="Volume"></div>
+      <h3 class="cg-sub">Sound Controls</h3>
+      ${sw('alerts', 'Alerts', 'On-screen notice when a new report arrives')}
+      ${sw('voice', 'Voice announcements', 'Synthesized voice on this device')}
+      ${sw('music', 'Background music', 'No music source is configured', true)}
+      ${sw('announce', 'Auto announce new incidents', 'Needs voice announcements on')}
+      <div class="cg-speak"><button class="cg-btn" id="cgSay">${ico('mic')}Announce latest incident</button><button class="cg-btn sec" id="cgStop" disabled>Stop</button></div>
+      <p class="cg-voice-note">Announcements use your device&rsquo;s synthesized voice and the report text shown here. They are not live radio and not an official dispatch.</p>
+    </section>
+    <section class="cg-panel" id="cgActions" aria-labelledby="cgQaH"><h2 id="cgQaH">Quick Actions</h2>
+      <div class="cg-qa"><button class="cg-btn ann" id="cgAnn">${ico('mic')}Make an Announcement</button><button class="cg-btn add" id="cgAdd">${ico('plus')}Add New Report</button>
+      <button class="cg-btn sec wide" id="cgDesk">${ico('edit')}Open Publishing Desk</button></div><p class="cg-auth" id="cgAuthNote"></p></section>
+    <section class="cg-panel" id="cgSources" aria-labelledby="cgSrcH"><h2 id="cgSrcH" style="margin-bottom:10px">Public Information Sources</h2>
+      <div class="cg-srcs">${SOURCES.map(s => `<a class="cg-src" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer"><b>${esc(s.name)}</b><span>${esc(s.sub)}</span></a>`).join('')}</div>
+      <p class="cg-voice-note">External sites. Not 423.news partners.</p>
+      <div class="cg-priv" style="margin-top:12px">${ico('shield')}<p>${N().readOnly ? 'Reports here follow the desk scanner policy: no names and no street numbers. This is not an emergency service: call 911.' : 'Police report locations are shown without house numbers. Do not send names, phone numbers or home addresses. This is not an emergency service: call 911.'}</p></div></section>
+  </div>
+  <section class="cg-panel cg-latest" aria-labelledby="cgLatH"><div class="cg-ph"><div class="cg-ph-l"><span style="color:var(--cg-muted);display:inline-flex;width:20px">${ico('clock')}</span><h2 id="cgLatH">Latest Incidents</h2></div></div><div class="cg-cards" id="cgCards"></div></section>
+</div>
+<footer class="cg-foot"><b>423<i>.</i>NEWS</b><span>Local News. Real Time.</span><span>Claudia Green Live Scanner Wire</span><a href="#/home">423.news</a><a href="#/reporting">All her reporting</a><span class="r">Stay Informed. Stay Safe.</span></footer>
+</div>`;
+}
+function sw(key, label, hint, off) {
+  return `<div class="cg-ctl"><span>${label}<small>${hint}</small></span><button class="cg-sw" data-pref="${key}" role="switch" aria-checked="${off ? 'false' : !!P[key]}" aria-label="${label}"${off ? ' aria-disabled="true"' : ''}><span class="tr"></span></button></div>`;
+}
+
+/* ---------- render ---------- */
+function renderAll() {
+  if (!S || !S.mounted) return;
+  const p = pillState();
+  $$('.cg-pill', S.root).forEach(e => { e.dataset.s = p; e.textContent = PILL[p]; });
+  const stamp = $('#cgStamp', S.root);
+  stamp.textContent = S.last ? 'Last update: ' + S.last.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' }) + (P.auto ? '' : ' (auto refresh off)') : (S.status === 'loading' ? 'Waiting for first update\u2026' : 'No successful update yet');
+  const dm = $('#cgDemo', S.root);
+  if (S.source === 'demo') { dm.hidden = false; dm.innerHTML = '<strong>Demo data.</strong> These incidents are examples for previewing the layout. They are not real reports. <button class="cg-btn sec" id="cgHideDemo" style="min-height:36px;margin-left:8px">Hide demo data</button>'; } else dm.hidden = true;
+  renderFeed(); renderMap(); renderCards(); renderAuthNote(); renderAudio();
+}
+
+function stateBlock(html) { return `<li class="cg-state" style="list-style:none">${html}</li>`; }
+function renderFeed() {
+  const ul = $('#cgList', S.root), rows = filtered();
+  if (S.status === 'loading' && !S.items.length) { ul.innerHTML = stateBlock('<strong>Loading reports</strong><span>Contacting the 423.news wire.</span>'); return; }
+  let banner = '';
+  if (S.status !== 'ok' && S.status !== 'loading') banner = stateBlock(`<strong>${S.status === 'offline' ? 'You are offline' : 'Could not load reports'}</strong><span>${esc(S.err)}</span><button class="cg-btn sec" id="cgRetry">Try again</button>`);
+  if (!S.items.length) {
+    if (S.status === 'ok') {
+      ul.innerHTML = stateBlock('<strong>No active reports right now</strong><span>Reports appear here when the Claudia Green desk publishes them.</span>' + (demoAllowed() ? '' : '<button class="cg-btn sec" id="cgDemoOn">Preview with demo data</button>'));
+    } else ul.innerHTML = banner;
+    announce('No incidents to show.'); return;
+  }
+  if (!rows.length) { ul.innerHTML = banner + stateBlock('<strong>No incidents match your filters</strong><button class="cg-btn sec" id="cgClear">Clear filters</button>'); announce('No incidents match the filters.'); return; }
+  ul.innerHTML = banner + rows.map(i => `<li class="cg-item" data-id="${esc(i.id)}" data-sel="${S.sel === i.id}">
+<button class="cg-row" data-pick="${esc(i.id)}" aria-pressed="${S.sel === i.id}">${iconBadge(i.category)}<span class="cg-row-main"><span class="cg-row-top"><time datetime="${esc(N().dt(i.createdAt).toISOString())}">${esc(tm(i.createdAt))}</time>${catTag(i.category)}${stTag(i.status)}${demoTag(i)}</span>
+<span class="t">${esc(i.headline)}</span><span class="loc">${esc(i.location)}${i.lat == null ? ' \u00b7 not on map' : ''}</span><span class="desc">${esc(i.details)}</span></span></button>
+<button class="cg-more" data-open="${esc(i.id)}" aria-label="Details for ${esc(i.headline)}">Details</button></li>`).join('');
+  announce(rows.length + (rows.length === 1 ? ' incident shown.' : ' incidents shown.'));
+}
+const announce = (() => { let last = ''; return m => { const l = $('#cgLive', S && S.root); if (l && m !== last) { l.textContent = m; last = m; } }; })();
+
+function renderCards() {
+  const c = $('#cgCards', S.root), top = filtered().slice(0, 6);
+  c.innerHTML = top.length ? top.map(i => `<a class="cg-cardl" href="#/claudia/${encodeURIComponent(i.id)}" data-open="${esc(i.id)}"><span class="h">${iconBadge(i.category)}<span>${esc(i.category)}</span><time datetime="${esc(N().dt(i.createdAt).toISOString())}">${esc(tm(i.createdAt))}</time></span><b>${esc(i.headline)}</b><span class="l">${esc(i.location)}</span>${i.demo ? '<span class="cg-tag demo" style="justify-self:start">Demo</span>' : ''}</a>`).join('')
+    : '<p class="cg-note" style="margin:0">Nothing to show yet.</p>';
+}
+
+function renderAuthNote() {
+  const u = N().getUser(), n = $('#cgAuthNote', S.root);
+  if (N().readOnly) { n.textContent = 'This page is read-only. Reports are filed by the desk.'; return; }
+  n.textContent = !u ? 'Sign in to submit tips. Publishing is limited to approved press and admin accounts.' : N().canWire() ? 'Signed in with publishing access.' : 'Signed in. Tips go to editorial review before anything is published.';
+}
+
+/* ---------- selection and details ---------- */
+function select(id, o = {}) {
+  S.sel = id;
+  $$('.cg-item', S.root).forEach(li => { const on = li.dataset.id === id; li.dataset.sel = on; $('.cg-row', li).setAttribute('aria-pressed', on); if (on && !o.fromList) li.scrollIntoView({ block: 'nearest' }); });
+  markSelected();
+  const i = S.items.find(x => x.id === id), m = S.markers.get(id);
+  if (S.map && m && !o.fromMap) { S.map.panTo(m.getLatLng()); m.openPopup(); }
+  if (S.fb) renderFb(filtered().filter(hasGeo));
+}
+function cardHtml(i) {
+  return `<div class="cg-card"><div class="row">${catTag(i.category)}${stTag(i.status)}${demoTag(i)}</div><h3>${esc(i.headline)}</h3><div>${esc(i.location)}</div><div style="color:#a9bed2">${esc(tm(i.createdAt))}</div><button class="cg-btn sec" data-open="${esc(i.id)}">Details</button></div>`;
+}
+function openDetail(id, opener) {
+  const i = S.items.find(x => x.id === id);
+  if (!i) { N().toast('That incident is no longer on the wire.'); return; }
+  S.openId = id; S.lastOpener = opener || document.activeElement;
+  const osm = i.lat != null && i.lng != null ? `<a class="cg-btn sec" target="_blank" rel="noopener noreferrer" href="https://www.openstreetmap.org/?mlat=${i.lat}&mlon=${i.lng}#map=15/${i.lat}/${i.lng}">View on OpenStreetMap</a>` : '';
+  const m = N().modal(`<div class="cg-detail"><div class="cg-row-top" style="display:flex;gap:8px;flex-wrap:wrap">${catTag(i.category)}${stTag(i.status)}${demoTag(i)}</div><h2>${esc(i.headline)}</h2>
+${i.demo ? '<p class="cg-warn" style="margin:8px 0">Demo entry. This is not a real incident.</p>' : ''}
+${i.status === 'unverified' || i.status === 'developing' ? '<p style="color:#ffe19a;font-size:13px;margin:6px 0">Not fully confirmed. Details may change.</p>' : ''}
+<dl><dt>Time</dt><dd>${esc(N().dt(i.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }))}</dd><dt>Location</dt><dd>${esc(i.location)}</dd><dt>Zone</dt><dd>${esc(i.zone)}</dd>${i.units ? `<dt>Units</dt><dd>${esc(i.units)}</dd>` : ''}${i.talkgroup ? `<dt>Talkgroup</dt><dd>${esc(i.talkgroup)}</dd>` : ''}${i.author ? `<dt>Source</dt><dd>${esc(i.author)}</dd>` : ''}</dl>
+<p>${esc(i.details)}</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="cg-btn" id="cgDSay">Read aloud</button>${osm}<button class="cg-btn sec" id="cgDClose">Close</button></div></div>`);
+  const dlg = m.firstChild; dlg.setAttribute('role', 'dialog'); dlg.setAttribute('aria-modal', 'true'); dlg.setAttribute('aria-label', 'Incident details');
+  $('#cgDClose').onclick = () => N().closeM(); $('#cgDSay').onclick = () => speak(announceText(i, true));
+  $('#cgDClose').focus();
+  try { history.replaceState(null, '', '#/claudia/' + encodeURIComponent(id)); } catch { /* ignore */ }
+}
+function watchModal() {
+  const m = document.getElementById('modal'); if (!m) return;
+  S.mo = new MutationObserver(() => {
+    if (S.openId && !m.firstChild) {
+      S.openId = null;
+      try { history.replaceState(null, '', '#/claudia'); } catch { /* ignore */ }
+      const o = S.lastOpener; S.lastOpener = null; if (o && o.isConnected && o.focus) o.focus();
+    }
+  });
+  S.mo.observe(m, { childList: true });
+}
+
+/* ---------- map ---------- */
+const hasGeo = i => i.lat != null && i.lng != null;
+function pinHtml(i) { return `<span class="cg-pinb" style="--c:${CAT[i.category].c}" data-sel="${S.sel === i.id}" data-res="${i.status === 'resolved'}">${ico(CAT[i.category].icon)}</span>`; }
+const loadCss = href => { if (!document.getElementById('cgLeafCss')) { const l = document.createElement('link'); l.id = 'cgLeafCss'; l.rel = 'stylesheet'; l.href = href; document.head.appendChild(l); } };
+const loadScript = src => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Map library failed to load')); document.head.appendChild(s); });
+async function ensureLeaflet() {
+  if (window.L && window.L.map) return true;
+  try {
+    if (!ensureLeaflet.p) { loadCss(LEAF_CSS); ensureLeaflet.p = loadScript(LEAF_JS); }
+    await Promise.race([ensureLeaflet.p, new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 8000))]);
+    return !!(window.L && window.L.map);
+  } catch { ensureLeaflet.p = null; return false; }
+}
+async function initMap() {
+  const ok = await ensureLeaflet();
+  if (!S || !S.mounted) return;
+  if (!ok) { S.fb = true; $('#cgLeaf', S.root).hidden = true; $('#cgFb', S.root).hidden = false; renderMap(); return; }
+  const L = window.L, cfg = S.cfg;
+  const map = L.map($('#cgLeaf', S.root), { zoomControl: false, minZoom: 6, maxZoom: 18 }).setView(view().center, view().zoom);
+  L.tileLayer(cfg.mapTileUrl || TILES.url, { attribution: cfg.mapAttribution || TILES.attr, maxZoom: 18 }).addTo(map);
+  if (!cfg.mapTileUrl) L.tileLayer(TILES.labels, { maxZoom: 18, opacity: .9 }).addTo(map);
+  S.map = map;
+  $('#cgZin', S.root).disabled = $('#cgZout', S.root).disabled = $('#cgReset', S.root).disabled = false;
+  renderMap(true);
+  setTimeout(() => map.invalidateSize(), 150);
+}
+function renderMap(fit) {
+  if (!S || !S.mounted) return;
+  const geo = filtered().filter(hasGeo), all = filtered();
+  $('#cgMapped', S.root).textContent = geo.length + ' of ' + all.length + ' on map';
+  $('#cgMapNote', S.root).hidden = !(all.length && !geo.length);
+  if (S.fb) { renderFb(geo); return; }
+  if (!S.map) return;
+  const L = window.L, want = new Map(geo.map(i => [i.id, i]));
+  for (const [id, m] of S.markers) if (!want.has(id)) { m.remove(); S.markers.delete(id); }
+  for (const [id, i] of want) {
+    let m = S.markers.get(id);
+    const icon = L.divIcon({ className: 'cg-pin', html: pinHtml(i), iconSize: [34, 42], iconAnchor: [17, 40], popupAnchor: [0, -38] });
+    if (!m) {
+      m = L.marker([i.lat, i.lng], { icon, title: i.category + ': ' + i.headline, alt: i.category + ': ' + i.headline, riseOnHover: true }).addTo(S.map);
+      m.bindPopup(() => cardHtml(m._cg), { autoPanPadding: [30, 30] });
+      m.on('click', () => select(id, { fromMap: true }));
+      S.markers.set(id, m);
+    } else { m.setLatLng([i.lat, i.lng]); m.setIcon(icon); }
+    m._cg = i;
+  }
+  if (fit === true) fitAll();
+}
+function markSelected() {
+  if (!S.map) return;
+  for (const [id, m] of S.markers) m.setIcon(window.L.divIcon({ className: 'cg-pin', html: pinHtml(m._cg), iconSize: [34, 42], iconAnchor: [17, 40], popupAnchor: [0, -38] }));
+}
+function fitAll() {
+  if (!S.map) return;
+  if (S.zone && ZONE_CENTER[S.zone]) { S.map.setView(ZONE_CENTER[S.zone], 11); return; }
+  const pts = filtered().filter(hasGeo).map(i => [i.lat, i.lng]);
+  if (pts.length > 1) S.map.fitBounds(pts, { padding: [40, 40], maxZoom: 12 }); else if (pts.length === 1) S.map.setView(pts[0], 11); else S.map.setView(view().center, view().zoom);
+}
+// Fallback when the map library or tiles cannot load: positions only, no basemap.
+const FB = { la: [34.85, 35.75], ln: [-85.55, -84.35] };
+function renderFb(geo) {
+  const box = $('#cgFb', S.root);
+  box.innerHTML = '<p class="cg-fb-msg">Map tiles could not load (offline or blocked). Showing marker positions only.</p>' + geo.map(i => {
+    const x = (i.lng - FB.ln[0]) / (FB.ln[1] - FB.ln[0]) * 100, y = (FB.la[1] - i.lat) / (FB.la[1] - FB.la[0]) * 100;
+    return `<button class="cg-fb-pin" style="left:${Math.min(97, Math.max(3, x))}%;top:${Math.min(95, Math.max(12, y))}%" data-fbpin="${esc(i.id)}" aria-label="${esc(i.category + ': ' + i.headline)}"><span class="cg-pinb" style="--c:${CAT[i.category].c}" data-sel="${S.sel === i.id}" data-res="${i.status === 'resolved'}">${ico(CAT[i.category].icon)}</span></button>`;
+  }).join('') + '<div class="cg-fb-pop" id="cgFbPop"></div>';
+  const cur = S.items.find(x => x.id === S.sel); if (cur) showFbCard(cur);
+}
+function showFbCard(i) { const p = $('#cgFbPop', S.root); if (p) p.innerHTML = i && hasGeo(i) ? cardHtml(i) : ''; }
+
+/* ---------- audio ---------- */
+const streamUrl = () => { const u = String(S.cfg.audioStreamUrl || ''); return /^(https:\/\/|\/(?!\/))/i.test(u) || (isLocal() && /^http:\/\//i.test(u)) ? u : ''; };
+const A_TXT = { none: ['Not connected', 'Scanner audio source not connected'], ready: ['Standby', 'Stream configured. Press play to listen.'], connecting: ['Connecting', 'Connecting to stream\u2026'], playing: ['On air', 'Stream playing'], error: ['Error', 'Stream unavailable'] };
+function setAudio(st, msg) { S.aState = st; S.aMsg = msg || ''; renderAudio(); }
+function renderAudio() {
+  const st = streamUrl() ? (S.aState === 'none' ? 'ready' : S.aState) : 'none', t = A_TXT[st];
+  const on = $('#cgOnAir', S.root); on.dataset.s = st; on.textContent = t[0];
+  const m = $('#cgAudMsg', S.root); m.dataset.s = st; m.textContent = S.aMsg || t[1];
+  const ln = $('#cgListen', S.root), lu = /^https:\/\//i.test(S.cfg.listenUrl || '') ? S.cfg.listenUrl : '';
+  ln.hidden = !lu; if (lu) { ln.href = lu; ln.textContent = 'Listen on Broadcastify (opens their player)'; ln.title = S.cfg.listenName || ''; ln.setAttribute('aria-label', 'Listen on Broadcastify, opens in a new tab: ' + (S.cfg.listenName || 'scanner feed')); }
+  const adm = N().getUser() && N().getUser().role === 'admin';
+  if (st === 'none' && adm) m.textContent += ' (admin: set SCANNER_STREAM_URL on the server)';
+  const pb = $('#cgPlay', S.root); pb.disabled = st === 'none';
+  pb.innerHTML = ico(st === 'playing' || st === 'connecting' ? 'pause' : 'play');
+  pb.setAttribute('aria-label', st === 'playing' || st === 'connecting' ? 'Pause scanner audio' : 'Play scanner audio');
+  $('#cgWaveMsg', S.root).textContent = st === 'none' ? 'No signal source' : st === 'playing' && !S.an ? 'Playing (level display unavailable for this stream)' : st === 'ready' ? 'Paused' : '';
+  $('#cgSay', S.root).disabled = !P.voice; $('#cgSay', S.root).title = P.voice ? '' : 'Turn on Voice announcements first';
+  $('#cgStop', S.root).disabled = !S.speaking;
+  const au = $('[data-pref="announce"]', S.root); au.setAttribute('aria-disabled', P.voice ? 'false' : 'true'); au.setAttribute('aria-checked', String(P.voice && P.announce));
+  if (st !== 'playing') drawIdle();
+}
+async function togglePlay() {
+  const url = streamUrl(); if (!url) return;
+  if (!S.el) {
+    const a = new Audio(); a.preload = 'none';
+    if (S.cfg.audioCors) a.crossOrigin = 'anonymous';
+    a.volume = P.vol; a.muted = P.muted;
+    a.addEventListener('playing', () => { setAudio('playing'); startWave(); });
+    a.addEventListener('waiting', () => setAudio('connecting'));
+    a.addEventListener('pause', () => { if (S.aState !== 'error') setAudio('ready'); stopWave(); });
+    a.addEventListener('error', () => { if (!a.getAttribute('src')) return; /* we detached the stream on purpose */ setAudio('error', 'Stream failed to load or disconnected. Press play to retry.'); stopWave(); });
+    S.el = a;
+  }
+  const a = S.el;
+  if (!a.paused && S.aState !== 'error') { a.pause(); a.removeAttribute('src'); a.load(); stopWave(); setAudio('ready'); return; } // load() cancels the queued pause event, so set state here // live stream: drop the connection on pause
+  setAudio('connecting'); a.src = url; a.load();
+  try { await a.play(); }
+  catch (e) { setAudio('error', e && e.name === 'NotAllowedError' ? 'Your browser blocked playback. Press play again.' : 'Stream could not start.'); }
+}
+function startWave() {
+  stopWave();
+  try {
+    const sameOrigin = (() => { try { return new URL(S.el.src, location.href).origin === location.origin; } catch { return false; } })();
+    if (S.cfg.audioCors || sameOrigin) {
+      if (!S.ctx) { S.ctx = new (window.AudioContext || window.webkitAudioContext)(); const src = S.ctx.createMediaElementSource(S.el); S.an = S.ctx.createAnalyser(); S.an.fftSize = 128; src.connect(S.an); S.an.connect(S.ctx.destination); }
+      if (S.ctx.state === 'suspended') S.ctx.resume();
+    }
+  } catch { S.an = null; }
+  renderAudio();
+  const data = S.an ? new Uint8Array(S.an.frequencyBinCount) : null, slow = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let lastT = 0;
+  const loop = t => {
+    S.raf = requestAnimationFrame(loop);
+    if (t - lastT < (slow ? 500 : 50)) return; lastT = t;
+    if (!data) { drawIdle(); return; }
+    S.an.getByteFrequencyData(data); drawBars(data);
+  };
+  S.raf = requestAnimationFrame(loop);
+}
+function stopWave() { cancelAnimationFrame(S.raf); S.raf = 0; }
+function drawBars(d) {
+  const cv = $('#cgWave', S.root); if (!cv) return; const g = cv.getContext('2d'), w = cv.width, h = cv.height, n = 48, bw = w / n;
+  g.clearRect(0, 0, w, h); const grd = g.createLinearGradient(0, 0, w, 0); grd.addColorStop(0, '#7a4dff'); grd.addColorStop(1, '#2d8bff'); g.fillStyle = grd;
+  for (let i = 0; i < n; i++) { const v = d[Math.floor(i * d.length / n)] / 255, bh = Math.max(3, v * h * .9); g.fillRect(i * bw + 2, (h - bh) / 2, bw - 4, bh); }
+}
+function drawIdle() {
+  const cv = $('#cgWave', S.root); if (!cv) return; const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height);
+  g.fillStyle = '#26445f'; for (let i = 0; i < 48; i++) g.fillRect(i * (cv.width / 48) + 2, cv.height / 2 - 1.5, cv.width / 48 - 4, 3);
+}
+function applyVolume() { if (S.el) { S.el.volume = P.vol; S.el.muted = P.muted; } const m = $('#cgMute', S.root); m.innerHTML = ico(P.muted ? 'mute' : 'vol'); m.setAttribute('aria-pressed', String(P.muted)); m.setAttribute('aria-label', P.muted ? 'Unmute' : 'Mute'); }
+
+/* ---------- voice announcements ---------- */
+const canSpeak = () => 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+function announceText(i, plain) {
+  return (plain ? '' : '423 News automated announcement. ') + `${i.category} report${i.status === 'unverified' ? ', unverified' : ''}. ${i.headline}. ${i.location}.` + (i.demo ? ' This is demo data.' : '');
+}
+function speak(text, queue) {
+  if (!canSpeak()) { N().toast('Voice announcements are not supported in this browser.'); return false; }
+  if (P.muted) { N().toast('Unmute to hear announcements.'); return false; }
+  if (!queue) speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text); u.volume = P.vol; u.lang = 'en-US';
+  const done = () => { S.speaking = speechSynthesis.speaking || speechSynthesis.pending; if (S.mounted) $('#cgStop', S.root).disabled = !S.speaking; };
+  u.onstart = () => { S.speaking = true; if (S.mounted) $('#cgStop', S.root).disabled = false; }; u.onend = u.onerror = done;
+  speechSynthesis.speak(u); return true;
+}
+function notifyNew(list) {
+  if (!list.length) return;
+  if (P.alerts) { announce('New report: ' + list[0].category + ', ' + list[0].headline + (list.length > 1 ? ` and ${list.length - 1} more` : '')); N().toast('New ' + list[0].category + ' report: ' + list[0].headline); }
+  if (P.voice && P.announce) list.slice(0, 3).forEach((i, k) => speak(announceText(i), k > 0));
+}
+
+/* ---------- quick actions ---------- */
+const needsAuth = () => { if (N().getUser()) return false; N().auth(); return true; };
+function announcementForm() {
+  const n = N(), pub = n.canWire();
+  n.form('Make an announcement',
+    n.fld('headline', 'Headline', 'required minlength="5" maxlength="120"') + n.sel('zone', 'Zone', n.ZONES) + n.fld('location', 'Location or area', 'required minlength="3" maxlength="140" placeholder="e.g. Hamilton County"') +
+    '<label>Message<textarea name="details" rows="4" required minlength="10" maxlength="1500"></textarea></label>' +
+    `<p class="muted">${pub ? 'Publishes to the wire as an official statement from the desk.' : n.readOnly ? 'This page is read-only. You can preview an announcement aloud on this device.' : 'Publishing needs an approved press account. You can still preview it aloud on this device.'}</p>` +
+    '<button type="button" class="btn dark" id="cgPrev" style="margin-bottom:10px">Preview aloud</button>',
+    async f => {
+      if (!pub) { speak(`${f.headline}. ${f.details}`); throw new Error('Preview only. Nothing was published.'); }
+      const r = await n.api('/wire', n.J('POST', { headline: f.headline, zone: f.zone, category: 'Community', status: 'verified', location: f.location, details: f.details })); if (r && r.item) S.seen.add(String(r.item.id));
+      n.closeM(); n.toast('Announcement published to the wire.'); refresh();
+    }, pub ? 'Publish announcement' : 'Preview aloud');
+  $('#cgPrev').onclick = () => { const f = Object.fromEntries(new FormData($('#mf'))); if (f.headline || f.details) speak(`${f.headline || ''}. ${f.details || ''}`); else $('#me').textContent = 'Write a headline or message first.'; };
+}
+function reportForm() {
+  const n = N(); if (n.readOnly) { n.toast('Reports are filed by the desk, not from this page.'); return; }
+  if (needsAuth()) return;
+  if (n.canWire()) {
+    n.form('Add a wire report',
+      n.fld('headline', 'Headline', 'required minlength="5" maxlength="120"') + n.sel('category', 'Category', n.CATS) +
+      n.sel('status', 'Status', Object.entries(STATUS).map(([k, v]) => [k, v])) + n.sel('zone', 'Zone', n.ZONES) +
+      n.fld('location', 'Location / cross streets', 'required minlength="3" maxlength="140"') + n.fld('units', 'Responding units (optional)', 'maxlength="200"') +
+      n.fld('lat', 'Latitude (optional)', 'inputmode="decimal"') + n.fld('lng', 'Longitude (optional)', 'inputmode="decimal"') +
+      '<label>Details<textarea name="details" rows="4" required minlength="10" maxlength="1500"></textarea></label><p class="muted">Leave out names, phone numbers and home addresses.</p>',
+      async f => { const r = await n.api('/wire', n.J('POST', f)); if (r && r.item) S.seen.add(String(r.item.id)); n.closeM(); n.toast('Wire report published.'); refresh(); }, 'Publish report');
+  } else {
+    n.form('Send a tip to the newsroom',
+      n.fld('headline', 'What happened?', 'required minlength="5" maxlength="120"') + n.fld('location', 'Where (street or area)', 'required minlength="3" maxlength="140"') +
+      '<label>Details<textarea name="details" rows="4" required minlength="20" maxlength="1500"></textarea></label><p class="muted">Tips are reviewed by editors before anything is published. Leave out names, phone numbers and home addresses. In an emergency, call 911.</p>',
+      async f => {
+        const r = await n.api('/posts', n.J('POST', { category: 'Live', title: 'Tip: ' + f.headline, summary: f.location, body: `Location: ${f.location}\n\n${f.details}` }));
+        n.closeM(); n.toast(r.notice || 'Tip submitted for review.');
+      }, 'Send tip');
+  }
+}
+function openDesk() {
+  const n = N(); if (n.deskUrl) { location.href = n.deskUrl; return; }
+  if (needsAuth()) return;
+  if (n.canWire()) { location.hash = '#/wire'; } else n.toast('The publishing desk is limited to approved press and admin accounts.');
+}
+
+/* ---------- weather chip (National Weather Service, same source the home page uses) ---------- */
+async function loadWeather() {
+  try {
+    const p = await (await fetch('https://api.weather.gov/points/35.0456,-85.3097')).json();
+    const f = await (await fetch(p.properties.forecastHourly)).json(), per = f.properties.periods[0];
+    if (!S || !S.mounted) return;
+    const el = $('#cgWx', S.root); el.textContent = `Chattanooga, TN \u00b7 ${per.temperature}\u00b0${per.temperatureUnit || 'F'}`; el.hidden = false;
+  } catch { /* weather is optional */ }
+}
+
+/* ---------- events ---------- */
+function bind() {
+  const R = S.root, ac = S.ac = new AbortController(), sig = { signal: ac.signal };
+  R.addEventListener('click', e => {
+    const t = e.target.closest('button,a'); if (!t || !R.contains(t)) return;
+    const d = t.dataset;
+    if (d.open !== undefined) { e.preventDefault(); return openDetail(d.open, t); }
+    if (d.pick !== undefined) return select(d.pick, { fromList: true });
+    if (d.fbpin !== undefined) return select(d.fbpin, { fromMap: true });
+    if (d.cat !== undefined) { S.cat = d.cat; $$('.cg-chip', R).forEach(c => c.setAttribute('aria-pressed', String(c.dataset.cat === S.cat))); renderFeed(); renderMap(true); renderCards(); return; }
+    if (d.pref !== undefined) {
+      if (t.getAttribute('aria-disabled') === 'true') { if (d.pref === 'announce') N().toast('Turn on Voice announcements first.'); return; }
+      P[d.pref] = !P[d.pref]; t.setAttribute('aria-checked', String(P[d.pref]));
+      if (d.pref === 'voice' && !P.voice) { P.announce = false; if (canSpeak()) speechSynthesis.cancel(); }
+      if (d.pref === 'voice' && P.voice && !canSpeak()) N().toast('This browser has no speech synthesis. Voice announcements will not play.');
+      savePrefs(); renderAudio(); return;
+    }
+    switch (t.id) {
+      case 'cgAuto': P.auto = !P.auto; t.setAttribute('aria-checked', String(P.auto)); savePrefs(); renderAll(); if (P.auto) refresh(); break;
+      case 'cgRefresh': case 'cgRetry': refresh(); break;
+      case 'cgClear': S.q = ''; S.cat = 'All'; S.zone = ''; $('#cgQ', R).value = ''; $('#cgZone', R).value = ''; $$('.cg-chip', R).forEach(c => c.setAttribute('aria-pressed', String(c.dataset.cat === 'All'))); renderAll(); renderMap(true); break;
+      case 'cgDemoOn': S.demoOn = true; S.demoOff = false; refresh(); break;
+      case 'cgHideDemo': S.demoOn = false; S.demoOff = true; S.items = []; refresh(); break;
+      case 'cgZin': S.map && S.map.zoomIn(); break;
+      case 'cgZout': S.map && S.map.zoomOut(); break;
+      case 'cgReset': fitAll(); break;
+      case 'cgFull': (document.fullscreenElement ? document.exitFullscreen() : $('#cgMapPanel', R).requestFullscreen()).catch(() => {}); break;
+      case 'cgPlay': togglePlay(); break;
+      case 'cgMute': P.muted = !P.muted; savePrefs(); applyVolume(); if (P.muted && canSpeak()) speechSynthesis.cancel(); break;
+      case 'cgSay': { const i = S.items.find(x => x.status !== 'resolved') || S.items[0]; if (!i) N().toast('No incidents to announce yet.'); else speak(announceText(i)); break; }
+      case 'cgStop': if (canSpeak()) speechSynthesis.cancel(); S.speaking = false; t.disabled = true; break;
+      case 'cgAnn': announcementForm(); break;
+      case 'cgAdd': reportForm(); break;
+      case 'cgDesk': openDesk(); break;
+    }
+  }, sig);
+  let qt; $('#cgQ', R).addEventListener('input', e => { clearTimeout(qt); qt = setTimeout(() => { S.q = e.target.value; renderFeed(); renderMap(true); renderCards(); }, 150); }, sig);
+  $('#cgZone', R).addEventListener('change', e => { S.zone = e.target.value; renderFeed(); renderMap(); renderCards(); fitAll(); }, sig);
+  $('#cgVol', R).addEventListener('input', e => { P.vol = Number(e.target.value) / 100; if (P.vol > 0) P.muted = false; savePrefs(); applyVolume(); }, sig);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && P.auto && S.mounted) refresh(); }, sig);
+  window.addEventListener('online', () => refresh(), sig);
+  window.addEventListener('offline', () => { S.status = 'offline'; S.err = 'You are offline. Showing the last reports received.'; renderAll(); }, sig);
+  document.addEventListener('fullscreenchange', () => { if (S.map) setTimeout(() => S.map.invalidateSize(), 150); }, sig);
+  if (document.fullscreenEnabled) $('#cgFull', R).hidden = false;
+}
+
+/* ---------- lifecycle (called by the site router) ---------- */
+async function mount(hash) {
+  leave(); S = fresh(); S.mounted = true;
+  const n = N(), root = S.root = n.app();
+  root.innerHTML = template(); document.body.classList.add('cg-page');
+  document.title = 'Claudia Green Live Scanner Wire \u2022 423.news';
+  bind(); applyVolume(); drawIdle(); watchModal();
+  if (n.noZones) $('#cgZone', root).hidden = true;
+  S.pendingHash = hash || '';
+  const cfgP = n.api('/scanner/config').then(c => { S.cfg = Object.assign({}, c, window.CLAUDIA_CONFIG || {}); }).catch(() => { S.cfg = Object.assign({}, window.CLAUDIA_CONFIG || {}); });
+  await Promise.all([cfgP, refresh()]);
+  renderAudio(); initMap(); loadWeather();
+  S.timer = setInterval(() => { if (P.auto && !document.hidden) refresh(); }, REFRESH_MS);
+}
+function leave() {
+  if (!S) return;
+  clearInterval(S.timer); stopWave();
+  if (S.el) { try { S.el.pause(); S.el.removeAttribute('src'); S.el.load(); } catch { /* ignore */ } }
+  if (S.ctx) { try { S.ctx.close(); } catch { /* ignore */ } }
+  if (S.map) { try { S.map.remove(); } catch { /* ignore */ } }
+  if (S.mo) S.mo.disconnect();
+  if (S.ac) S.ac.abort();
+  if (canSpeak()) speechSynthesis.cancel();
+  document.body.classList.remove('cg-page');
+  S.mounted = false; S = null;
+}
+function active() { return !!(S && S.mounted && S.root && S.root.isConnected && S.root.querySelector('.cg')); }
+// Same-page navigation (hash change or sign-in): keep audio and map alive, just sync the view.
+function hash(a) { if (!active()) return; renderAuthNote(); renderAudio(); if (a) { if (S.items.length) openDetail(a); else S.pendingHash = a; } }
+
+window.Claudia = { mount, leave, active, hash };
+})();
+
+</script>
+</body>
+</html>
