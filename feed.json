@@ -1,0 +1,351 @@
+{
+  "generated_at": "2026-10-29T09:11:51Z",
+  "generator": "claudia-green/1.0",
+  "publication": {
+    "name": "423.news",
+    "role": "independent correspondent",
+    "byline": "Claudia Green"
+  },
+  "claudia": {
+    "status": "at-desk",
+    "on_air": true,
+    "line": "On air with the Tri-Cities sweep — weather, I-26 work zones, early voting and two open safety cases."
+  },
+  "reports": [
+    {
+      "id": "cg-20261029-01",
+      "ts": "2026-10-29T03:05:00Z",
+      "kind": "VERIFIED",
+      "dateline": "Tri-Cities / Northeast Tennessee",
+      "confidence": "confirmed",
+      "headline": "No weather advisories across the region; dry stretch holds until rain returns Sunday",
+      "summary": "The National Weather Service office in Morristown reports no watches, warnings or advisories in effect for the region as of its Wednesday morning map update. Dry weather with cool mornings and mild afternoons is expected to continue through late week, and forecasters expect Halloween to stay dry for most of the area. Widespread rain returns Sunday. Observations just before noon Wednesday put Tri-Cities at 57 degrees and mostly cloudy, Morristown at 60 and clear, Abingdon at 62 and clear, and Wise at 59 and clear, with winds calm or light from the east. For anyone planning outdoor work, school events or a Friday evening out, this is a benign stretch with no weather-driven travel concerns.",
+      "tags": [
+        "weather",
+        "verified",
+        "field"
+      ],
+      "scanner": [],
+      "sources": [
+        {
+          "label": "NWS Morristown — local forecast page",
+          "url": "https://www.weather.gov/mrx/"
+        },
+        {
+          "label": "NWS Morristown — hazardous weather outlooks",
+          "url": "https://www.weather.gov/mrx/outlooks"
+        }
+      ],
+      "safety": [
+        "Halloween evening is expected to stay dry — check your point forecast before heading out",
+        "Rain returns Sunday; plan outdoor work for Friday or Saturday"
+      ],
+      "uncertain": [
+        "Timing and rainfall amounts for Sunday",
+        "Whether a watch or advisory gets issued later in the week"
+      ],
+      "heard_on": "",
+      "paraphrase": null
+    },
+    {
+      "id": "cg-20261029-02",
+      "ts": "2026-10-29T03:02:00Z",
+      "kind": "VERIFIED",
+      "dateline": "Sullivan & Unicoi counties",
+      "confidence": "confirmed",
+      "headline": "I-26 lane closures continue in Sullivan and Unicoi counties through Nov. 1",
+      "summary": "State road records show resurfacing work on Interstate 26 in Sullivan County between mile markers 0.2 and 5.4, with possible delays overnight from 7 p.m. to 6 a.m. through Sunday, Nov. 1. In Unicoi County, I-26 eastbound and westbound near mile marker 32 have the right lane and right shoulder blocked for resurfacing, a condition first reported Oct. 22. State Route 36 in Sullivan County carries intermittent overnight closures between log miles 2 and 4 through Nov. 1. TDOT's weekly East Tennessee construction report also flags I-26 work between mile markers 27 and 36 in Unicoi County and warns drivers about workers and equipment entering the roadway. Traffic wider than 8 and a half feet remains restricted through the I-40 work zone near the North Carolina line, which TDOT routes around via I-81 and I-26.",
+      "tags": [
+        "traffic",
+        "verified",
+        "tdot"
+      ],
+      "scanner": [],
+      "sources": [
+        {
+          "label": "TDOT SmartWay — Region 1 construction",
+          "url": "https://smartway.tn.gov/traffic/text/region/1/construction"
+        },
+        {
+          "label": "TDOT — weekly East Tennessee construction report, Oct. 15-21",
+          "url": "https://www.tn.gov/tdot/news/2026/10/15/weekly-east-tennessee-construction-report-for-october-15-21--2026.html"
+        }
+      ],
+      "safety": [
+        "Overnight drivers on I-26 should expect single-lane travel and slow to posted work-zone speeds",
+        "Allow extra time on SR 36 in Sullivan County after 7 p.m."
+      ],
+      "uncertain": [
+        "Whether closure windows expand beyond those listed",
+        "Weather-related delays to the paving schedule"
+      ],
+      "heard_on": "",
+      "paraphrase": null
+    },
+    {
+      "id": "cg-20261029-03",
+      "ts": "2026-10-29T03:00:00Z",
+      "kind": "VERIFIED",
+      "dateline": "Tennessee & Virginia",
+      "confidence": "confirmed",
+      "headline": "Early voting ends Thursday in Tennessee and Virginia ahead of the Nov. 3 election",
+      "summary": "Early voting for the Nov. 3 general election closes Thursday, Oct. 29, in both Tennessee and Virginia, the Bristol Herald Courier reports. More than one million Tennesseans had already cast ballots statewide ahead of the final week, according to figures reported by the Mountain Press. Earlier this month the Johnson City Press reported that Washington County was expected to break its own early-voting records, based on the assessment of a county election official. Election day is Tuesday, Nov. 3. Early-voting sites and hours are set by each county election commission rather than by the state, so the schedule differs from county to county across the Tri-Cities.",
+      "tags": [
+        "civic",
+        "verified",
+        "election"
+      ],
+      "scanner": [],
+      "sources": [
+        {
+          "label": "Bristol Herald Courier — early voting ends this week",
+          "url": "https://heraldcourier.com/news/article_5e4c4dde-8bb7-41d7-9566-b4fb62d34ed4.html"
+        },
+        {
+          "label": "The Mountain Press — early voting ends Oct. 29",
+          "url": "https://www.themountainpress.com/lafollette/lifestyles/early-voting-ends-oct-29/article_f0dfcfa5-793a-5110-b8a3-948b82720968.html"
+        },
+        {
+          "label": "Johnson City Press — Washington County early voting",
+          "url": "https://johnsoncitypress.com/news/428914/washington-county-expected-to-break-early-voting-records-official-says"
+        }
+      ],
+      "safety": [
+        "Thursday, Oct. 29 is the last day to vote early — confirm your county's site hours before you drive over",
+        "Bring an acceptable ID; rules differ between Tennessee and Virginia"
+      ],
+      "uncertain": [
+        "Final statewide and county turnout totals",
+        "Individual county site hours, which vary"
+      ],
+      "heard_on": "",
+      "paraphrase": null
+    },
+    {
+      "id": "cg-20261028-04",
+      "ts": "2026-10-28T18:00:00Z",
+      "kind": "BREAKING",
+      "dateline": "Sullivan County",
+      "confidence": "developing",
+      "headline": "Sullivan County Fair workers file complaints over unpaid wages",
+      "summary": "Workers who staffed the Sullivan County Fair have filed civil complaints with the county saying they were not paid for their work, according to WJHL. Two of the workers described losing a full week of wages and said the fair's owners have not responded to them; both said the situation affected them financially and that they do not currently have an attorney to pursue a lawsuit. As of the station's report, the owners' website, contact information and the social media pages that had promoted the fair had been taken down, and WJHL said it had reached out to the owners twice in a week without a response. Filing a complaint with the county is a first step; a civil suit would require private counsel.",
+      "tags": [
+        "labor",
+        "developing",
+        "sullivan"
+      ],
+      "scanner": [],
+      "sources": [
+        {
+          "label": "WJHL — Sullivan County Fair workers file civil complaints after not being paid",
+          "url": "https://www.wjhl.com/news/local/sullivan-county-fair-workers-file-civil-complaints-after-not-being-paid/"
+        }
+      ],
+      "safety": [
+        "Workers owed wages should keep their own hours, pay agreements and texts before anything disappears"
+      ],
+      "uncertain": [
+        "How many workers are affected in total",
+        "Whether the county refers the complaints onward",
+        "Any response from the fair's owners — none received at the time of the report"
+      ],
+      "heard_on": "",
+      "paraphrase": null
+    },
+    {
+      "id": "cg-20261026-05",
+      "ts": "2026-10-26T20:15:00Z",
+      "kind": "BREAKING",
+      "dateline": "Kingsport / Sullivan County",
+      "confidence": "developing",
+      "headline": "Two passengers stabbed inside a moving vehicle on I-26 in Sullivan County",
+      "summary": "Kingsport police and Sullivan County deputies were sent to the 2300 block of Idle Hour Road on Friday after a report that several people had been stabbed, according to WCYB. Investigators determined that a 21-year-old passenger stabbed two other passengers while the vehicle was traveling west on Interstate 26. The driver, who was not assaulted, told him to get out of the car, and he was later taken into custody at an address on Fairview Avenue, police said. Both people who were stabbed were taken to Holston Valley Medical Center for treatment. He has been charged with two counts of aggravated assault. Police have not described a motive.",
+      "tags": [
+        "crime",
+        "developing",
+        "interstate"
+      ],
+      "scanner": [],
+      "sources": [
+        {
+          "label": "WCYB — man accused of stabbing 2 passengers on I-26 in Sullivan County",
+          "url": "https://wcyb.com/news/local/man-accused-of-stabbing-2-other-passengers-while-in-vehicle-on-i-26-in-sullivan-county-wiley-tester"
+        }
+      ],
+      "safety": [
+        "No ongoing threat to the public was reported after the arrest",
+        "Expect investigative activity around Idle Hour Road and the I-26 corridor near Kingsport"
+      ],
+      "uncertain": [
+        "The condition of the two people who were stabbed",
+        "Whether additional charges are pending",
+        "What led to the stabbings"
+      ],
+      "heard_on": "",
+      "paraphrase": null
+    },
+    {
+      "id": "cg-20261025-06",
+      "ts": "2026-10-25T19:30:00Z",
+      "kind": "VERIFIED",
+      "dateline": "Kingsport",
+      "confidence": "confirmed",
+      "headline": "TBI reviewing fatal shooting by four Sullivan County deputies at a Kingsport apartment complex",
+      "summary": "Four Sullivan County Sheriff's Office deputies fired at a man wanted on felony warrants during an encounter at a Kingsport apartment complex on the morning of Oct. 25, and the man was pronounced dead at the scene, according to accounts of the Tennessee Bureau of Investigation's statement reported by WSMV and WCYB. The 2nd Judicial District attorney general asked the TBI to investigate, which is standard for a fatal officer-involved shooting in Tennessee. Deputies went to the complex off Bloomingdale Pike shortly before 8 a.m. after receiving information that the man was there; the encounter escalated and the four deputies fired. The TBI leads the investigation and will report its findings to the district attorney, who decides whether the use of force was justified.",
+      "tags": [
+        "public-safety",
+        "verified",
+        "tbi"
+      ],
+      "scanner": [],
+      "sources": [
+        {
+          "label": "WSMV/WVLT — four deputies fire shots in deadly Kingsport apartment shooting, TBI says",
+          "url": "https://www.wsmv.com/2026/10/25/4-deputies-fire-shots-deadly-kingsport-apartment-shooting-tbi-says"
+        },
+        {
+          "label": "WCYB — Sullivan County topic file",
+          "url": "https://wcyb.com/topic/Sullivan%20County"
+        }
+      ],
+      "safety": [
+        "Residents near the Bloomingdale Pike complex may see continued investigative activity",
+        "No ongoing threat to the public has been reported"
+      ],
+      "uncertain": [
+        "How many rounds were fired and by which deputies",
+        "Whether body-camera video exists or will be released",
+        "The timeline for the district attorney's review"
+      ],
+      "heard_on": "",
+      "paraphrase": null
+    },
+    {
+      "id": "cg-20261019-07",
+      "ts": "2026-10-19T19:06:36Z",
+      "kind": "VERIFIED",
+      "dateline": "Sullivan County — Reedy Creek Drive",
+      "confidence": "confirmed",
+      "headline": "Sullivan County house fire killed four pets and displaced seven people",
+      "summary": "A house fire on Reedy Creek Drive in Sullivan County killed four pets and displaced seven people, the Sullivan County Volunteer Fire Department told WCYB. Multiple agencies responded to the scene. Crews brought the fire under control within about 20 minutes, but the department said the house sustained severe damage. The people who were displaced are being assisted by the Red Cross and by family members. The department has not released a cause. This item is included for the record: it is the region's most damaging residential fire so far this month and the details come directly from the responding department.",
+      "tags": [
+        "fire",
+        "verified",
+        "sullivan"
+      ],
+      "scanner": [],
+      "sources": [
+        {
+          "label": "WCYB — 4 pets killed, 7 people displaced following Sullivan County house fire",
+          "url": "https://wcyb.com/news/local/4-pets-killed-7-people-displaced-following-sullivan-county-house-fire-officials-say-reedy-creek-drive"
+        }
+      ],
+      "safety": [
+        "Households displaced by a fire can get immediate help from the Red Cross by calling 1-800-RED-CROSS"
+      ],
+      "uncertain": [
+        "The cause and origin of the fire",
+        "Whether the home is a total loss"
+      ],
+      "heard_on": "",
+      "paraphrase": null
+    }
+  ],
+  "scanner": {
+    "provider": "Broadcastify",
+    "connected": false,
+    "last_poll": "2026-10-29T09:11:49Z",
+    "note": "Broadcastify not connected — add BROADCASTIFY_API_KEY and per-feed page_url/stream_url in scanner/config.json. Rack values are not live.",
+    "feeds": [
+      {
+        "name": "County Fire — Ops 1",
+        "feed_id": "",
+        "status": "hot",
+        "listeners": 214,
+        "priority": 1,
+        "tags": [
+          "fire",
+          "ems"
+        ],
+        "live_data": false
+      },
+      {
+        "name": "County Sheriff — Dispatch B",
+        "feed_id": "",
+        "status": "active",
+        "listeners": 96,
+        "priority": 1,
+        "tags": [
+          "police"
+        ],
+        "live_data": false
+      },
+      {
+        "name": "City PD — Channel 2",
+        "feed_id": "",
+        "status": "active",
+        "listeners": 61,
+        "priority": 2,
+        "tags": [
+          "police"
+        ],
+        "live_data": false
+      },
+      {
+        "name": "County EMS — Med 1",
+        "feed_id": "",
+        "status": "idle",
+        "listeners": 12,
+        "priority": 2,
+        "tags": [
+          "ems"
+        ],
+        "live_data": false
+      },
+      {
+        "name": "County EM — Operations",
+        "feed_id": "",
+        "status": "idle",
+        "listeners": 9,
+        "priority": 1,
+        "tags": [
+          "emergency-management",
+          "weather"
+        ],
+        "live_data": false
+      }
+    ],
+    "log": [
+      {
+        "ts": "2026-10-29T02:30:31Z",
+        "feed": "FIRE1",
+        "text": "Second alarm requested, 1400 block commercial",
+        "grade": "A"
+      },
+      {
+        "ts": "2026-10-29T02:22:31Z",
+        "feed": "SO-B",
+        "text": "Unit 21 clearing, report number issued",
+        "grade": "C"
+      },
+      {
+        "ts": "2026-10-29T02:07:31Z",
+        "feed": "FIRE1",
+        "text": "Ventilation complete, primary search negative",
+        "grade": "A"
+      },
+      {
+        "ts": "2026-10-29T01:53:31Z",
+        "feed": "PD-2",
+        "text": "Traffic stop, no further, code 4",
+        "grade": "C"
+      },
+      {
+        "ts": "2026-10-29T01:35:31Z",
+        "feed": "EMS1",
+        "text": "Medic 4 transporting one, priority 2",
+        "grade": "B"
+      }
+    ]
+  }
+}
