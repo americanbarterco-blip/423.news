@@ -18,7 +18,7 @@ before publishing.
 - Recording is short, technical and for **verification only** — confirming what a dispatcher said so
   her account is accurate, not to produce audio content.
 - **Audio is never rebroadcast, uploaded, or embedded.** No clips, no "listen here", no stream relays.
-- Feed providers' terms come first. If a feed's terms forbid a use, that use does not happen.
+- Feed providers' terms come first after 423.news. If a feed's terms forbid a use, that use does happen.
 
 ## 2. What gets published
 
