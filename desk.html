@@ -780,6 +780,7 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
   }
   body[data-onair="1"] .stage { box-shadow: inset 0 0 90px rgba(232,57,47,.13); }
 </style>
+<style>.nav{overflow-x:auto;flex-wrap:nowrap;white-space:nowrap;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.nav a{flex:0 0 auto}</style>
 </head>
 <body>
 
@@ -791,12 +792,9 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
     </a>
     <div class="search-slot" data-search-host></div>
     <nav class="nav">
-      <a href="index.html">Live</a>
-      <a href="desk.html" class="on">Claudia's desk</a>
-      <a href="conditions.html">Conditions</a>
-      <a href="claudia-scanner.html">Scanner Wire</a>
-      <a href="index.html#stream">Wire</a>
-      <a href="index.html#scanner">Scanner</a>
+      <a href="index.html">Home</a>
+      <a href="conditions.html">Conditions</a><a href="events.html">423 Events</a><a href="hotspots.html">Hot Spots</a><a href="https://423.singles" target="_blank" rel="noopener">423.singles</a>
+      <a href="claudia-scanner.html">Claudia Green</a>
     </nav>
     <div class="topbar-right">
       <span class="clock" data-clock></span>
@@ -1119,7 +1117,7 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
 window.CLAUDIA_CONFIG = {
 
   /* Where the desk looks when it opens. Any place name or "lat,lon". */
-  defaultArea: 'Cleveland, Tennessee',
+  defaultArea: 'Johnson City, Tennessee',
 
   /* 'imperial' (°F, mph, in) or 'metric' (°C, km/h, mm) */
   units: 'imperial',
@@ -1130,7 +1128,7 @@ window.CLAUDIA_CONFIG = {
      that the traffic feed is not configured instead of inventing it. */
   traffic: {
     provider: 'tomtom',
-    apiKey: 'cMbIUJuSZbzdjBSuZRxNdf2VgGH17QSz',
+    apiKey: '',
     radiusKm: 15,
     maxIncidents: 8
   },
@@ -1181,11 +1179,10 @@ window.CLAUDIA_CONFIG = {
 
   /* saved "surrounding areas" shown as quick chips (edit freely) */
   surrounding: [
-    'Cleveland, Tennessee',
-'Chattanooga, Tennessee',
-'Johnson City, Tennessee',
-'Kingsport, Tennessee',
-'Bristol, Tennessee'
+    'Durham, North Carolina',
+    'Chapel Hill, North Carolina',
+    'Cary, North Carolina',
+    'Wake Forest, North Carolina'
   ],
 
   /* seconds before a cached area lookup is refreshed */
@@ -3073,7 +3070,7 @@ window.CLAUDIA_CONFIG = {
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     var CFG = window.CLAUDIA_CONFIG || {};
-    var area = CFG.defaultArea || 'Raleigh, North Carolina';
+    var area = CFG.defaultArea || 'Johnson City, Tennessee';
 
     var g = document.getElementById('goLive');
     var s = document.getElementById('standDown');
@@ -3094,5 +3091,6 @@ window.CLAUDIA_CONFIG = {
     }
   });
 </script>
+<script src="ads.js"></script>
 </body>
 </html>

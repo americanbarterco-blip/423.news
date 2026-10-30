@@ -758,6 +758,7 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
 }
 
 </style>
+<style>.nav{overflow-x:auto;flex-wrap:nowrap;white-space:nowrap;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.nav a{flex:0 0 auto}</style>
 </head>
 <body>
 
@@ -769,11 +770,9 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
     </a>
     <div class="search-slot" data-search-host></div>
     <nav class="nav">
-      <a href="index.html">Live</a>
-      <a href="desk.html">Claudia's desk</a>
-      <a href="conditions.html" class="on">Conditions</a>
-      <a href="claudia-scanner.html">Scanner Wire</a>
-      <a href="index.html#stream">Wire</a>
+      <a href="index.html">Home</a>
+      <a href="conditions.html" class="on">Conditions</a><a href="events.html">423 Events</a><a href="hotspots.html">Hot Spots</a><a href="https://423.singles" target="_blank" rel="noopener">423.singles</a>
+      <a href="claudia-scanner.html">Claudia Green</a>
     </nav>
     <div class="topbar-right">
       <span class="clock" data-clock></span>
@@ -856,7 +855,7 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
 window.CLAUDIA_CONFIG = {
 
   /* Where the desk looks when it opens. Any place name or "lat,lon". */
-  defaultArea: 'Cleveland, Tennessee',
+  defaultArea: 'Johnson City, Tennessee',
 
   /* 'imperial' (°F, mph, in) or 'metric' (°C, km/h, mm) */
   units: 'imperial',
@@ -867,7 +866,7 @@ window.CLAUDIA_CONFIG = {
      that the traffic feed is not configured instead of inventing it. */
   traffic: {
     provider: 'tomtom',
-    apiKey: 'cMbIUJuSZbzdjBSuZRxNdf2VgGH17QSz',
+    apiKey: '',
     radiusKm: 15,
     maxIncidents: 8
   },
@@ -918,11 +917,10 @@ window.CLAUDIA_CONFIG = {
 
   /* saved "surrounding areas" shown as quick chips (edit freely) */
   surrounding: [
-    'Cleveland, Tennessee',
-  'Chattanooga, Tennessee',
-  'Johnson City, Tennessee',
-  'Kingsport, Tennessee',
-  'Bristol, Tennessee'
+    'Durham, North Carolina',
+    'Chapel Hill, North Carolina',
+    'Cary, North Carolina',
+    'Wake Forest, North Carolina'
   ],
 
   /* seconds before a cached area lookup is refreshed */
@@ -1740,7 +1738,7 @@ window.CLAUDIA_CONFIG = {
     var bbox = [place.lon - d, place.lat - d, place.lon + d, place.lat + d].join(',');
     return cached('tt:' + coordKey(place.lat, place.lon), function () {
       var url = 'https://api.tomtom.com/traffic/services/4/incidentDetails/s3/' + bbox +
-        '/10/-1/json?key=' + encodeURIComponent(tcfg.apiKey) + '&projection=EPSG4326';
+        '/-1/-1/json?key=' + encodeURIComponent(tcfg.apiKey) + '&projection=EPSG4326';
       return getJSON(url).then(function (raw) {
         var pois = ((raw.tm || {}).poi) || [];
         var list = pois.map(function (p) {
@@ -2875,8 +2873,9 @@ window.CLAUDIA_CONFIG = {
 
   var start = new URLSearchParams(location.search).get('area');
   if (!start) { try { start = localStorage.getItem('claudia.area'); } catch (e) {} }
-  load(start || CFG.defaultArea || 'Raleigh, North Carolina');
+  load(start || CFG.defaultArea || 'Johnson City, Tennessee');
 })();
 </script>
+<script src="ads.js"></script>
 </body>
 </html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>423.news Admin</title>
+<style>
+:root{--bg:#07111c;--p:#0f1d2c;--l:#24384a;--t:#e8eef5;--m:#9eafc0;--a:#ff5a0a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:15px system-ui,sans-serif;padding:12px}
+h1{font-size:18px;margin:0}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.card{background:var(--p);border:1px solid var(--l);border-radius:12px;padding:12px;margin-bottom:10px;overflow:hidden}
+input,textarea{width:100%;background:#000;color:var(--t);border:1px solid var(--l);border-radius:8px;padding:10px;font:inherit;margin:4px 0 8px}
+textarea{min-height:200px;font:12px monospace}button{background:var(--a);color:#fff;border:0;border-radius:8px;padding:8px 12px;font:inherit;font-weight:700;margin:4px 6px 0 0}
+button.g{background:var(--l)}button.d{background:#b91c1c}.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px}.tabs button{flex:0 0 auto;background:var(--l)}.tabs button.on{background:var(--a)}
+img,video{max-width:100%;max-height:200px;display:block;margin:6px 0;border-radius:8px}small{color:var(--m);word-break:break-word}#msg{color:#ffb020;min-height:20px;margin-bottom:6px}
+</style></head><body>
+<div id="app"></div>
+<script>
+var FN = 'https://kdiwehqtezlhecxsoysj.supabase.co/functions/v1/admin'; /* your project URL + /functions/v1/admin */
+var tok = sessionStorage.getItem('t423') || '', tables = [], cur = '', rows = [], q = '', app = document.getElementById('app');
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function say(m){var e=document.getElementById('msg');if(e)e.textContent=m||''}
+function call(a,d){return fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action:a,token:tok},d||{}))})
+  .then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(r.status===401&&j.error==='auth'){out();}return{s:r.status,j:j}})})
+  .catch(function(){return{s:0,j:{}}})}
+function out(){tok='';sessionStorage.removeItem('t423');drawLogin()}
+function drawLogin(){
+  app.innerHTML='<div class="card"><h1>423.news Admin</h1><p><small>Staff only.</small></p><div id="msg"></div><input id="pw" type="password" placeholder="Admin password" autocomplete="current-password"><button id="go">Log in</button></div>';
+  var go=function(){var v=document.getElementById('pw').value;if(!v)return;call('login',{password:v}).then(function(r){document.getElementById('pw').value='';
+    if(r.s===200){tok=r.j.token;sessionStorage.setItem('t423',tok);init()}else if(r.s===429)say('Too many attempts. Wait 15 minutes.');else if(r.s===0)say('Cannot reach the server.');else say('Incorrect password.')})};
+  document.getElementById('go').onclick=go;document.getElementById('pw').onkeydown=function(e){if(e.key==='Enter')go()}}
+function init(){call('tables').then(function(r){if(r.s!==200)return;tables=r.j.tables||[];cur=tables[0]||'pw';draw()})}
+function draw(){
+  var tabs=tables.concat(['pw']).map(function(t){return'<button class="'+(t===cur?'on':'')+'" data-t="'+esc(t)+'">'+(t==='pw'?'Password':esc(t))+'</button>'}).join('');
+  app.innerHTML='<div class="top"><h1>423.news Admin</h1><button class="g" id="lo">Log out</button></div><div class="tabs">'+tabs+'</div><div id="msg"></div><div id="body"></div>';
+  document.getElementById('lo').onclick=function(){call('noop');out()};
+  document.querySelector('.tabs').onclick=function(e){var b=e.target.closest('[data-t]');if(b){cur=b.getAttribute('data-t');draw()}};
+  if(cur==='pw')drawPw();else if(!tables.length)document.getElementById('body').innerHTML='<div class="card">No tables set yet. Add ADMIN_TABLES in the function secrets.</div>';else load()}
+function drawPw(){
+  document.getElementById('body').innerHTML='<div class="card"><b>Change admin password</b><input id="c0" type="password" placeholder="Current password"><input id="c1" type="password" placeholder="New password (10+ characters)"><input id="c2" type="password" placeholder="New password again"><button id="sv">Change</button></div>';
+  document.getElementById('sv').onclick=function(){var c0=c0v('c0'),c1=c0v('c1'),c2=c0v('c2');
+    if(c1!==c2)return say('New passwords do not match.');if(c1.length<10)return say('Use at least 10 characters.');
+    call('change',{current:c0,next:c1}).then(function(r){say(r.s===200?'Password changed.':r.s===429?'Too many attempts. Wait 15 minutes.':r.s===401?'Current password is incorrect.':'Could not change password.');if(r.s===200)['c0','c1','c2'].forEach(function(i){document.getElementById(i).value=''})})};
+  function c0v(i){return document.getElementById(i).value}}
+function load(){
+  document.getElementById('body').innerHTML='<input id="q" placeholder="Search '+esc(cur)+'" value="'+esc(q)+'"><button id="add">+ Add new</button><div id="addbox"></div><div id="rows">Loading…</div>';
+  document.getElementById('q').oninput=function(e){q=e.target.value;paint()};
+  document.getElementById('add').onclick=function(){var t=Object.assign({},TPL[cur]||(rows[0]?rows[0]:{}));delete t.id;delete t.created_at;
+    var bx=document.getElementById('addbox');bx.innerHTML='<div class="card"><textarea>'+esc(JSON.stringify(t,null,2))+'</textarea><button id="adds">Add</button><button class="g" id="addc">Cancel</button></div>';
+    document.getElementById('addc').onclick=function(){bx.innerHTML=''};
+    document.getElementById('adds').onclick=function(){var p;try{p=JSON.parse(bx.querySelector('textarea').value)}catch(x){return say('That is not valid JSON.')}
+      call('insert',{table:cur,row:p}).then(function(r){say(r.s===200?'Added.':'Could not add. Check the fields.');if(r.s===200)load()})}};
+  call('list',{table:cur}).then(function(r){if(r.s!==200){document.getElementById('rows').textContent='Could not load this table.';return}rows=r.j.rows||[];paint()})}
+function media(row){var h='';Object.keys(row).forEach(function(k){var v=row[k];if(typeof v!=='string')return;
+  var im=/^https:\/\/\S+\.(jpe?g|png|gif|webp)(\?\S*)?$/i.test(v),vd=/^https:\/\/\S+\.(mp4|webm|mov)(\?\S*)?$/i.test(v);if(!im&&!vd)return;
+  h+=im?'<img src="'+esc(v)+'" alt="" loading="lazy">':'<video src="'+esc(v)+'" controls preload="none"></video>';
+  if(v.indexOf('/storage/v1/object/public/')>-1)h+='<button class="d" data-df="'+esc(k)+'">Delete '+(im?'photo':'video')+' file</button>'});return h}
+function paint(){
+  var list=rows.filter(function(r){return!q||JSON.stringify(r).toLowerCase().indexOf(q.toLowerCase())>-1}).slice(0,100);
+  document.getElementById('rows').innerHTML=list.map(function(r){var title=r.title||r.name||r.username||r.display_name||r.email||r.id;
+    return'<div class="card" data-id="'+esc(r.id)+'"><b>'+esc(title)+'</b><br><small>'+esc(JSON.stringify(r).slice(0,180))+'</small>'+media(r)+'<div class="act"><button data-e="1">Edit</button><button class="d" data-x="1">Delete</button>'+(cur==='news_profiles'?'<button class="d" data-du="1">Remove account</button>':'')+'</div></div>'}).join('')||'<div class="card">Nothing found.</div>';
+  document.getElementById('rows').onclick=function(e){var c=e.target.closest('.card');if(!c)return;var id=c.getAttribute('data-id'),row=rows.filter(function(r){return String(r.id)===id})[0];
+    if(e.target.getAttribute('data-x')){if(confirm('Delete this permanently?'))call('delete',{table:cur,id:id}).then(function(r){say(r.s===200?'Deleted.':'Could not delete.');load()})}
+    else if(e.target.getAttribute('data-e')){var d=Object.assign({},row);delete d.id;c.querySelector('.act').innerHTML='<textarea>'+esc(JSON.stringify(d,null,2))+'</textarea><button data-s="1">Save</button><button class="g" data-c="1">Cancel</button>'}
+    else if(e.target.getAttribute('data-df')){var f=e.target.getAttribute('data-df');if(confirm('Delete this file from storage and clear it from the row?')){var pt={};pt[f]=null;
+      call('deleteFile',{url:row[f]}).then(function(r){if(r.s!==200)return say('Could not delete the file.');call('update',{table:cur,id:id,patch:pt}).then(function(){say('File deleted.');load()})})}}
+    else if(e.target.getAttribute('data-du')){if(confirm('Remove this account permanently? Their login will stop working.'))call('deleteUser',{id:id}).then(function(r){say(r.s===200?'Account removed.':'Could not remove the account.');load()})}
+    else if(e.target.getAttribute('data-c'))paint();
+    else if(e.target.getAttribute('data-s')){var p;try{p=JSON.parse(c.querySelector('textarea').value)}catch(x){return say('That is not valid JSON.')}
+      call('update',{table:cur,id:id,patch:p}).then(function(r){say(r.s===200?'Saved.':'Could not save.');load()})}}}
+if(tok)init();else drawLogin();
+</script></body></html>

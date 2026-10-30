@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>423 Events • 423.news</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#050b12">
+<link rel="stylesheet" href="site.css">
+<style>#nav{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#nav::-webkit-scrollbar{display:none}#nav a{flex:0 0 auto;white-space:nowrap}
+.chips{display:flex;gap:6px;overflow-x:auto;margin:10px 0}.chips button{flex:0 0 auto;background:var(--s2,#14263a);border:1px solid var(--line,#24384a);color:var(--muted,#9eafc0);border-radius:99px;padding:6px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--accent,#ff5a0a);border-color:var(--accent,#ff5a0a);color:#fff}
+.cards{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.ecard{background:var(--panel,#0f1d2c);border:1px solid var(--line,#24384a);border-radius:14px;overflow:hidden}
+.ecard img{display:block;width:100%;max-height:180px;object-fit:cover}.ecard div{padding:12px 14px}.ecard h3{margin:0 0 4px;font-size:16px}
+.ecard small{display:block;color:var(--muted,#9eafc0)}.ecard p{margin:8px 0 0;font-size:14px}.ecard a.go{display:inline-block;margin-top:8px;text-decoration:underline;font-weight:600}
+#map{height:320px;border-radius:14px;border:1px solid var(--line,#24384a);margin-bottom:12px}</style>
+</head><body>
+<header><div class="wrap"><div class="bar"><a href="index.html" class="logo" aria-label="423.news home"><span class="wm"><span><b>423</b>.news</span></span></a></div><nav id="nav"><a href="index.html#/home">Home</a><a href="index.html#/news">News</a><a href="claudia-scanner.html">Claudia Green</a><a href="conditions.html">Conditions</a><a href="events.html">423 Events</a><a href="hotspots.html">Hot Spots</a><a href="index.html#/sports">Sports</a><a href="index.html#/schools">Schools</a><a href="index.html#/outdoors">Outdoors</a><a href="index.html#/classifieds">Classifieds</a><a href="index.html#/community">citizen423report</a><a href="index.html#/teams">My Teams</a><a href="desk.html">Live</a><a href="index.html#/government">Government</a><a href="https://423.singles" target="_blank" rel="noopener">423.singles</a></nav></div></header>
+<main><div class="wrap"><h1>423 Events</h1><div class="chips" id="chips"></div><div id="list"><p class="muted">Loading…</p></div></div></main>
+<footer><div class="wrap">© 423.news — Local reporting, school sports, and community voices.</div></footer>
+<script>
+var SUPA_URL='https://kdiwehqtezlhecxsoysj.supabase.co', SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE'; /* same project URL and public (anon) key your site already uses */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function https(u){return /^https:\/\//i.test(u||'')?u:''}
+function get(path){if(/PASTE_/.test(SUPA_URL+SUPA_KEY))return Promise.reject(new Error('setup'));
+  return fetch(SUPA_URL+'/rest/v1/'+path,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}}).then(function(r){if(!r.ok)throw new Error('http');return r.json()})}
+function chips(el,names,cur,cb){el.innerHTML=names.map(function(n){return'<button type="button" data-n="'+esc(n)+'" aria-pressed="'+(n===cur)+'">'+esc(n)+'</button>'}).join('');
+  el.onclick=function(e){var b=e.target.closest('[data-n]');if(b)cb(b.getAttribute('data-n'))}}
+function card(img,title,meta,desc,link){return'<div class="ecard">'+(https(img)?'<img src="'+esc(img)+'" alt="" loading="lazy">':'')+'<div><h3>'+esc(title)+'</h3>'+meta+(desc?'<p>'+esc(desc)+'</p>':'')+
+  (https(link)?'<a class="go" href="'+esc(link)+'" target="_blank" rel="noopener noreferrer">More info</a>':'')+'</div></div>'}
+function fail(el,e){el.innerHTML='<p class="muted">'+(e&&e.message==='setup'?'This page needs the Supabase URL and key set at the top of the page.':'Could not load right now. Try again soon.')+'</p>'}
+var rows=[],city='All',list=document.getElementById('list');
+function paint(){var cities=['All'].concat(rows.map(function(r){return r.city}).filter(function(c,i,a){return c&&a.indexOf(c)===i}).sort());
+  chips(document.getElementById('chips'),cities,city,function(n){city=n;paint()});
+  var show=rows.filter(function(r){return city==='All'||r.city===city});
+  list.innerHTML=show.length?'<div class="cards">'+show.map(function(r){var d=new Date(r.starts_at).toLocaleString([],{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    return card(r.image_url,r.title,'<small>'+esc(d)+'</small><small>'+esc([r.location,r.city].filter(Boolean).join(' · '))+'</small>',r.description,r.link_url)}).join('')+'</div>':'<p class="muted">No upcoming events yet.</p>'}
+get('events?select=*&starts_at=gte.'+encodeURIComponent(new Date(Date.now()-12*36e5).toISOString())+'&order=starts_at.asc&limit=200').then(function(r){rows=r;paint()}).catch(function(e){fail(list,e)});
+</script>
+<script src="ads.js"></script>
+</body></html>
