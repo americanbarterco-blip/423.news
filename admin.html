@@ -14,6 +14,21 @@ img,video{max-width:100%;max-height:200px;display:block;margin:6px 0;border-radi
 <div id="app"></div>
 <script>
 var FN = 'https://kdiwehqtezlhecxsoysj.supabase.co/functions/v1/admin'; /* your project URL + /functions/v1/admin */
+/* starting rows for "+ Add new". Only tables that people may add to by hand are listed. */
+var TPL = {
+  news_posts:{slug:'my-story-slug',section:'news',topic:null,title:'Title',body:'Story text',image_url:null,price:null,author_id:null,author_name:'423.news',status:'published'},
+  news_comments:{post_id:'PASTE-POST-ID-HERE',author_id:null,author_name:'423.news',body:'Comment text'},
+  news_streams:{title:'Title',league:'general',kind:'video',ref:'YOUTUBE-VIDEO-ID',active:true,sort:0},
+  events:{title:'Event name',starts_at:'2026-11-01T18:00:00-04:00',location:'',city:'Cleveland',description:'',image_url:null,link_url:null},
+  hotspots:{name:'Place name',kind:'eat',city:'Cleveland',address:'',lat:35.1595,lon:-84.8766,description:'',image_url:null,link_url:null}
+};
+/* tables where a hand-added row can never work, because another job or sign-up creates them */
+var NOADD = {
+  news_profiles:'Accounts are created when people sign up. Edit an existing row instead.',
+  news_reports:'Claudia files these from her desk. Edit an existing row instead.',
+  news_scores:'Scores come from the sports sync. Edit an existing row instead.',
+  news_headlines:'Headlines come from the sports sync. Edit an existing row instead.'
+};
 var tok = sessionStorage.getItem('t423') || '', tables = [], cur = '', rows = [], q = '', app = document.getElementById('app');
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function say(m){var e=document.getElementById('msg');if(e)e.textContent=m||''}
@@ -42,7 +57,7 @@ function drawPw(){
 function load(){
   document.getElementById('body').innerHTML='<input id="q" placeholder="Search '+esc(cur)+'" value="'+esc(q)+'"><button id="add">+ Add new</button><div id="addbox"></div><div id="rows">Loading…</div>';
   document.getElementById('q').oninput=function(e){q=e.target.value;paint()};
-  document.getElementById('add').onclick=function(){var t=Object.assign({},TPL[cur]||(rows[0]?rows[0]:{}));delete t.id;delete t.created_at;
+  document.getElementById('add').onclick=function(){if(NOADD[cur]){say(NOADD[cur]);return}var t=Object.assign({},TPL[cur]||(rows[0]?rows[0]:{}));delete t.id;delete t.created_at;
     var bx=document.getElementById('addbox');bx.innerHTML='<div class="card"><textarea>'+esc(JSON.stringify(t,null,2))+'</textarea><button id="adds">Add</button><button class="g" id="addc">Cancel</button></div>';
     document.getElementById('addc').onclick=function(){bx.innerHTML=''};
     document.getElementById('adds').onclick=function(){var p;try{p=JSON.parse(bx.querySelector('textarea').value)}catch(x){return say('That is not valid JSON.')}
