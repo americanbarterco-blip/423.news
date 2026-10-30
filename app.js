@@ -13,7 +13,7 @@
     schools:     { label: 'Schools',     emoji: '🏫', blurb: 'Districts, campuses, students and teachers.' },
     outdoors:    { label: 'Outdoors',    emoji: '🏞️', blurb: 'Trails, lakes, hunting, fishing and getting outside.' },
     classifieds: { label: 'Classifieds', emoji: '🏷️', blurb: 'Buy, sell and trade with your neighbors.' },
-    community:   { label: 'Community',   emoji: '👥', blurb: 'Real people. Local stories.' },
+    community:   { label: 'citizen423report',   emoji: '👥', blurb: 'Real people. Local stories.' },
     government:  { label: 'Government',  emoji: '🏛️', blurb: 'Councils, commissions, courts and public meetings.' }
   };
   var COMMUNITY_TOPICS = [
@@ -102,6 +102,7 @@
     opts = opts || {};
     var q = sb.from('news_posts').select(POST_COLS).eq('status', 'published').order('created_at', { ascending: false }).limit(opts.limit || 40);
     if (opts.section) q = q.eq('section', opts.section);
+    else if (!opts.sections) q = q.neq('section', 'community');   /* community posts show only inside citizen423report */
     if (opts.sections) q = q.in('section', opts.sections);
     if (opts.topic && opts.topic !== 'all') q = q.eq('topic', opts.topic);
     if (opts.photos) q = q.not('image_url', 'is', null);
@@ -115,10 +116,22 @@
   /* ---------- views ---------- */
   var views = {};
 
+  /* small mini feed of the latest citizen posts, with who posted them */
+  function citizenMini(list) {
+    return '<div class="sech"><h2>citizen423report</h2><a href="#/community">Join in →</a></div><div class="panel pad" style="margin-bottom:26px">' +
+      list.map(function (p) {
+        var nm = p.author_name || 'Neighbor';
+        return '<a href="' + href(p) + '" style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);color:inherit;text-decoration:none">' +
+          '<span aria-hidden="true" style="flex:0 0 32px;width:32px;height:32px;border-radius:50%;background:#7c3aed;color:#fff;display:grid;place-items:center;font-weight:800">' + esc(nm.charAt(0).toUpperCase()) + '</span>' +
+          '<span style="min-width:0"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(p.title) + '</b>' +
+          '<small class="muted">' + esc(nm) + ' · ' + esc(ago(p.created_at)) + '</small></span></a>';
+      }).join('') + '</div>';
+  }
+
   views.home = function () {
     return Promise.all([
       listPosts({ sections: ['news', 'sports', 'schools', 'outdoors', 'government'], limit: 40 }),
-      listPosts({ section: 'community', limit: 4 }),
+      listPosts({ section: 'community', limit: 5 }),
       listPosts({ section: 'classifieds', limit: 4 }),
       sb.from('news_reports').select('id,kind,dateline,headline,ts').eq('published', true).order('ts', { ascending: false }).limit(4),
       sb.from('news_scores').select('*').eq('status', 'in').order('start_time', { ascending: true }).limit(6)
@@ -138,17 +151,17 @@
           '<div class="rail">' + rail.map(mini).join('') + '</div></div>';
       } else {
         out += '<div class="panel pad" style="margin-bottom:18px"><span class="badge">Welcome</span><h1>Local news, written by the people who live here</h1>' +
-          '<p class="muted">Be the first to file a story, post to the community board, or list something for sale.</p>' +
-          '<div class="row-actions"><button class="btn" data-submit="news">Submit a Story</button><a class="btn dark" href="#/community">Visit the Community</a></div></div>';
+          '<p class="muted">Be the first to file a story, post to citizen423report, or list something for sale.</p>' +
+          '<div class="row-actions"><button class="btn" data-submit="news">Submit a Story</button><a class="btn dark" href="#/community">Visit citizen423report</a></div></div>';
       }
       out += quick;
       var liveG = (r[4] && r[4].data) || [];
       if (liveG.length) out += '<div class="sech"><h2>Live now</h2><a href="#/scores">All scores →</a></div><div class="games" style="margin-bottom:26px">' + liveG.map(gameCard).join('') + '</div>';
 
       if (wire.length) {
-        out += '<div class="sech"><h2>Claudia\'s Wire</h2><a href="category.html">All reports →</a></div><div class="wire">' +
+        out += '<div class="sech"><h2>Claudia Green</h2><a href="claudia-scanner.html">All reports →</a></div><div class="wire">' +
           wire.map(function (w) {
-            return '<a href="category.html"><div><span class="badge">' + esc(w.kind) + '</span></div><div><h3>' + esc(w.headline) + '</h3><span class="muted">' + esc(w.dateline || '') + ' · ' + esc(ago(w.ts)) + '</span></div></a>';
+            return '<a href="report.html?id=' + encodeURIComponent(w.id) + '"><div><span class="badge">' + esc(w.kind) + '</span></div><div><h3>' + esc(w.headline) + '</h3><span class="muted">' + esc(w.dateline || '') + ' · ' + esc(ago(w.ts)) + '</span></div></a>';
           }).join('') + '</div>';
       }
       if (news.length > 4) {
@@ -156,7 +169,7 @@
         if (news.length > 8) out += '<div class="lower panel pad" style="margin-bottom:26px"><div style="grid-column:1/-1"><h2 class="sm">More stories</h2>' + news.slice(8, 16).map(mini).join('') + '</div></div>';
       }
       if (cls.length) out += '<div class="sech"><h2>Classifieds</h2><a href="#/classifieds">See all →</a></div><div class="g4">' + cls.map(tile).join('') + '</div>';
-      if (comm.length) out += '<div class="sech"><h2>From the community</h2><a href="#/community">Join in →</a></div><div class="ugcs">' + comm.map(ugc).join('') + '</div>';
+      if (comm.length) out += citizenMini(comm);
       return out;
     });
   };
