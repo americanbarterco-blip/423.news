@@ -781,6 +781,13 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
   body[data-onair="1"] .stage { box-shadow: inset 0 0 90px rgba(232,57,47,.13); }
 </style>
 <style>.nav{overflow-x:auto;flex-wrap:nowrap;white-space:nowrap;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.nav a{flex:0 0 auto}@media (max-width:1020px){.topbar-in{flex-wrap:wrap;height:auto;padding-top:8px;padding-bottom:6px;row-gap:4px}.nav{display:flex;order:9;flex:0 0 100%;margin-left:0;gap:18px;padding:6px 0 4px}.nav a{font-size:12.5px}}</style>
+<style>
+.cg-cam{position:relative;border-radius:14px;overflow:hidden;background:#000;border:1px solid var(--line,#24384a);max-width:300px;aspect-ratio:9/16;margin:0 auto}
+.cg-cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cg-cam .cg-tag{position:absolute;left:8px;top:8px;background:rgba(0,0,0,.65);color:#fff;font:700 11px/1 system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:5px 8px;border-radius:99px}
+.cg-cam .cg-snd{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.65);color:#fff;border:0;border-radius:99px;padding:7px 11px;font:600 12px system-ui,sans-serif;cursor:pointer}
+.cg-cam-note{font-size:11px;color:var(--muted,#9eafc0);text-align:center;margin:6px 0 0}
+</style>
 </head>
 <body>
 
@@ -829,6 +836,7 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
           <span style="color:var(--muted-2)" data-updated>—</span>
         </div>
 
+        <div class="cg-cam"><video src="claudia-onair.mp4" poster="claudia-poster.jpg" autoplay muted loop playsinline preload="auto"></video><span class="cg-tag">On camera</span><button type="button" class="cg-snd" onclick="var v=this.parentNode.querySelector('video');v.muted=!v.muted;this.textContent=v.muted?'Sound on':'Sound off'">Sound on</button></div><p class="cg-cam-note">Claudia Green is 423.news&rsquo;s AI correspondent. Recorded video, not a live broadcast.</p>
         <svg class="stage-svg" viewBox="0 0 900 500" role="img"
              aria-label="Illustration of Claudia Green seated at her newsroom desk with monitors, microphone and a scanner radio">
           <defs>
@@ -2533,7 +2541,7 @@ window.CLAUDIA_CONFIG = {
             '<path d="M12.8 12.8 17 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' +
           '</svg>' +
           '<input id="cmdInput" class="cmd-input" type="text" autocomplete="off" spellcheck="false" ' +
-            'placeholder="Search the wire, or ask: weather raleigh · traffic durham · radar cary" ' +
+            'placeholder="Search the wire, or ask: weather chattanooga · traffic knoxville · radar kingsport" ' +
             'aria-label="Search or command">' +
           '<button class="mic" id="cmdMic" type="button" title="Speak a command" aria-label="Speak a command">' +
             '<svg viewBox="0 0 20 20" aria-hidden="true">' +
@@ -3105,6 +3113,7 @@ window.CLAUDIA_CONFIG = {
     }
   });
 </script>
+<script src="claudia-voice.js"></script>
 <script src="ads.js"></script>
 </body>
 </html>
