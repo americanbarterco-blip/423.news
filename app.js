@@ -309,19 +309,77 @@
 
   views.profile = function () {
     if (!state.user) return Promise.resolve(empty('Your profile', 'Sign in to manage your posts and display name.', '<button class="btn" data-auth="signin">Sign in</button>'));
-    return sb.from('news_posts').select(POST_COLS).eq('author_id', state.user.id).order('created_at', { ascending: false }).limit(100).then(function (r) {
+    return Promise.all([sb.from('news_posts').select(POST_COLS).eq('author_id', state.user.id).order('created_at', { ascending: false }).limit(100), tipsHtml()]).then(function (all) {
+      var r = all[0], tipsSection = all[1] || '';
       if (r.error) throw r.error;
       var mine = r.data || [];
       return '<h1>Your profile</h1><div class="panel pad" style="max-width:520px"><form id="nameForm"><label for="dn">Display name (shown on your posts)</label>' +
         '<input id="dn" name="name" maxlength="60" required value="' + esc(state.profile ? state.profile.display_name : '') + '"><div class="muted" style="margin-bottom:10px">' + esc(state.user.email || '') + (isStaff() ? ' · ' + esc(state.profile.role) : '') + '</div>' +
         '<div class="row-actions"><button class="btn" type="submit">Save</button><button class="btn dark" type="button" data-signout>Sign out</button></div></form></div>' +
-        '<div class="sech" style="margin-top:26px"><h2>Your posts</h2></div>' +
+        tipsSection + '<div class="sech" style="margin-top:26px"><h2>Your posts</h2></div>' +
         (mine.length ? mine.map(function (p) {
           return '<div class="row"><div><a href="' + href(p) + '"><b>' + esc(p.title) + '</b></a><div class="muted">' + esc(label(p)) + ' · ' + esc(ago(p.created_at)) + '</div></div><span class="st ' + esc(p.status) + '">' + esc(p.status) + '</span></div>';
         }).join('') : empty('No posts yet', 'Anything you submit will show up here with its review status.'));
     });
   };
 
+
+  /* ---------- scanner clips & tips for Claudia (private: staff and the sender only) ---------- */
+  var CLIP_MIME = { mp3: 'audio/mpeg', m4a: 'audio/mp4', mp4: 'audio/mp4', aac: 'audio/aac', wav: 'audio/wav', ogg: 'audio/ogg', oga: 'audio/ogg', webm: 'audio/webm' };
+  function uploadClip(file) {
+    if (!file || !file.size) return Promise.resolve(null);
+    var m = /\.([a-z0-9]+)$/i.exec(file.name || ''), ext = m ? m[1].toLowerCase() : '';
+    if (!CLIP_MIME[ext]) return Promise.reject(new Error('Clip must be an MP3, M4A, WAV, OGG, AAC or WebM audio file.'));
+    if (file.size > 15 * 1024 * 1024) return Promise.reject(new Error('Clip is larger than 15 MB. Trim it to the part that matters.'));
+    var path = state.user.id + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 10) + '.' + ext;
+    return sb.storage.from('scanner-clips').upload(path, file, { contentType: CLIP_MIME[ext], upsert: false }).then(function (r) {
+      if (r.error) throw r.error;
+      return path;
+    });
+  }
+  function openTip(direct) {
+    state.tipDirect = !!(direct && isStaff());
+    if (!state.user) { toast('Sign in to send Claudia a clip'); openAuth('signin'); return; }
+    openModal('<h2 style="margin-top:0">' + (state.tipDirect ? 'Share a clip straight to Claudia' : 'Send Claudia a scanner clip') + '</h2>' +
+      (state.tipDirect ? '<p class="muted" style="margin-top:0">This goes into Claudia\'s desk queue right away, ahead of reader tips. She transcribes it, writes her own account and runs the paraphrase check. Nothing is published as-is.</p>' : '') +
+      '<p class="muted" style="margin-top:0">Share something you heard on public scanner audio. It goes privately to Claudia and the editors. ' +
+      'It is never posted or played on the site. If it checks out, Claudia writes her own short account in her own words, marked unconfirmed.</p>' +
+      '<form id="tipForm">' +
+      '<label for="ta">Where (area or block, no street numbers)</label><input id="ta" name="area" maxlength="120" required placeholder="e.g. east side near the mall, Kingsport">' +
+      '<label for="tw">When you heard it</label><input id="tw" name="heard_at" maxlength="80" placeholder="e.g. today around 6:15 PM">' +
+      '<label for="tn">What you heard</label><textarea id="tn" name="note" rows="5" maxlength="2000" minlength="5" required placeholder="Units, what was happening, what changed. No names, ages or plates."></textarea>' +
+      '<label for="tu">Link to the feed or archive (optional)</label><input id="tu" name="source_url" type="url" maxlength="300" placeholder="https://www.broadcastify.com/…">' +
+      '<label for="tc">Audio clip (optional, MP3/M4A/WAV, up to 15 MB)</label><input id="tc" name="clip" type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.webm">' +
+      '<label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px"><input type="checkbox" name="ok" required style="width:auto;margin-top:3px"><span class="muted">This is public dispatch audio I am allowed to share. It is not a private call or recording.</span></label>' +
+      '<div class="hint">Claudia never publishes names, street numbers, plates or ages, and does not copy radio traffic word for word.</div>' +
+      '<div id="terr" style="color:#f87171;min-height:20px"></div>' +
+      '<div class="row-actions"><button class="btn" type="submit" id="tsubmit">' + (state.tipDirect ? 'Send straight to Claudia' : 'Send to Claudia') + '</button><button class="btn dark" type="button" data-close>Cancel</button></div></form>');
+  }
+  function tipsHtml() {
+    var staff = isStaff();
+    var q = sb.from('news_scanner_tips').select('id,author_name,area,heard_at,source_url,note,clip_path,status,to_claudia,picked_up_at,created_at').order('created_at', { ascending: false }).limit(staff ? 50 : 20);
+    if (!staff) q = q.eq('author_id', state.user.id);
+    return q.then(function (r) {
+      var rows = r.error ? [] : (r.data || []);
+      var out = '<div class="sech" style="margin-top:26px"><h2>' + (staff ? 'Scanner clips for Claudia' : 'Your scanner clips') + '</h2></div>' +
+        '<div class="panel pad" style="margin-bottom:12px"><p class="muted" style="margin-top:0">Heard something on the scanner? Send Claudia a clip or a note. It stays private. She reports only her own account, never your audio.</p>' +
+        '<div class="row-actions"><button class="btn" type="button" data-tip>Send Claudia a clip</button>' +
+        (staff ? '<button class="btn ok" type="button" data-tip="direct">Share straight to Claudia</button>' : '') + '</div></div>';
+      if (!rows.length) return out + (staff ? '<p class="muted">No clips from readers yet.</p>' : '');
+      return out + rows.map(function (t) {
+        var src = /^https:\/\//i.test(t.source_url || '') ? ' · <a href="' + esc(t.source_url) + '" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">feed link</a>' : '';
+        var acts = staff ? '<div class="row-actions" style="margin-top:8px">' +
+          (t.clip_path ? '<button class="btn dark sm" type="button" data-tipclip="' + esc(t.clip_path) + '">Listen</button>' : '') +
+          (!t.to_claudia && t.status === 'new' ? '<button class="btn ok sm" type="button" data-tipsend="' + esc(t.id) + '">Send to Claudia</button>' : '') +
+          (t.status !== 'used' ? '<button class="btn ok sm" type="button" data-tipstatus="used" data-id="' + esc(t.id) + '">Mark used</button>' : '') +
+          (t.status !== 'dismissed' ? '<button class="btn dark sm" type="button" data-tipstatus="dismissed" data-id="' + esc(t.id) + '">Dismiss</button>' : '') + '</div>' : '';
+        return '<div class="panel q-item"><span class="st ' + (t.status === 'used' || t.to_claudia ? 'published' : '') + '">' + (t.to_claudia && t.status === 'new' ? (t.picked_up_at ? 'Claudia has it' : 'with Claudia') : esc(t.status)) + '</span> <span class="muted">' +
+          (staff ? 'from ' + esc(t.author_name || 'a reader') + ' · ' : '') + esc(ago(t.created_at)) + src + (t.clip_path ? ' · clip attached' : '') + '</span>' +
+          '<h3 style="margin:6px 0">' + esc(t.area) + (t.heard_at ? ' · ' + esc(t.heard_at) : '') + '</h3>' +
+          '<p style="white-space:pre-wrap;overflow-wrap:anywhere;margin:0">' + esc(excerpt(t.note, 700)) + '</p>' + acts + '</div>';
+      }).join('');
+    }, function () { return ''; });
+  }
 
   /* ---------- live sports: scores, headlines, video ---------- */
   var LEAGUES = [['all', 'All Sports'], ['nfl', 'NFL'], ['nba', 'NBA'], ['ncaaf', 'College Football'], ['ncaab', 'College Basketball'], ['wwe', 'WWE']];
@@ -430,6 +488,11 @@
   }
   function render() {
     var rt = parse(); state.route = rt;
+    if (rt.name === 'tip') { /* #/tip opens the scanner-clip form on top of the profile page */
+      try { history.replaceState(null, '', '#/profile'); } catch (e) {}
+      rt = parse(); state.route = rt;
+      setTimeout(openTip, 0);
+    }
     var my = ++state.token;
     var app = $('#app');
     setActive(rt.name);
@@ -544,7 +607,7 @@
 
   /* ---------- events ---------- */
   document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-submit],[data-auth],[data-close],[data-share],[data-delpost],[data-delcmt],[data-unfollow],[data-setstatus],[data-signout],[data-retry],[data-play],[data-delstream]');
+    var t = e.target.closest('[data-submit],[data-auth],[data-close],[data-share],[data-delpost],[data-delcmt],[data-unfollow],[data-setstatus],[data-signout],[data-retry],[data-play],[data-delstream],[data-tip],[data-tipclip],[data-tipstatus],[data-tipsend]');
     if (!t) { if (e.target.id === 'modal') closeModal(); return; }
     if (t.hasAttribute('data-close')) { closeModal(); return; }
     if (t.hasAttribute('data-retry')) { render(); return; }
@@ -559,6 +622,27 @@
       return;
     }
 
+    if (t.hasAttribute('data-tip')) { openTip(t.getAttribute('data-tip') === 'direct'); return; }
+    if (t.hasAttribute('data-tipsend')) {
+      sb.from('news_scanner_tips').update({ to_claudia: true }).eq('id', t.getAttribute('data-tipsend')).then(function (r) {
+        if (r.error) toast('Failed: ' + r.error.message); else { toast('Sent to Claudia'); scrollTop = false; render(); }
+      });
+      return;
+    }
+    if (t.hasAttribute('data-tipclip')) {
+      sb.storage.from('scanner-clips').createSignedUrl(t.getAttribute('data-tipclip'), 300).then(function (r) {
+        if (r.error || !r.data) { toast('Could not open the clip'); return; }
+        var au = document.createElement('audio'); au.controls = true; au.autoplay = true; au.src = r.data.signedUrl; au.style.cssText = 'width:100%;margin-top:6px';
+        t.replaceWith(au);
+      });
+      return;
+    }
+    if (t.hasAttribute('data-tipstatus')) {
+      sb.from('news_scanner_tips').update({ status: t.getAttribute('data-tipstatus') }).eq('id', t.getAttribute('data-id')).then(function (r) {
+        if (r.error) toast('Failed: ' + r.error.message); else { toast('Updated'); scrollTop = false; render(); }
+      });
+      return;
+    }
     if (t.hasAttribute('data-submit')) { openSubmit(t.getAttribute('data-submit'), t.getAttribute('data-topic')); return; }
     if (t.hasAttribute('data-auth')) { openAuth(t.getAttribute('data-auth')); return; }
     if (t.hasAttribute('data-signout')) {
@@ -624,6 +708,28 @@
           return;
         }
         closeModal(); toast(mode === 'signup' ? 'Welcome to 423.news!' : 'Signed in');
+      });
+      return;
+    }
+
+    if (f.id === 'tipForm') {
+      var td = new FormData(f), tsub = $('#tsubmit'), terr = $('#terr'); terr.textContent = '';
+      var tsrc = (td.get('source_url') || '').toString().trim();
+      if (tsrc && !/^https:\/\//i.test(tsrc)) { terr.textContent = 'The link must start with https://'; return; }
+      tsub.disabled = true; tsub.textContent = 'Sending…';
+      var tfile = td.get('clip');
+      uploadClip(tfile && tfile.size ? tfile : null).then(function (path) {
+        return sb.from('news_scanner_tips').insert({
+          author_name: state.profile ? state.profile.display_name : '',
+          area: (td.get('area') || '').toString().trim(), heard_at: (td.get('heard_at') || '').toString().trim(),
+          source_url: tsrc, note: (td.get('note') || '').toString().trim(), clip_path: path, to_claudia: !!(state.tipDirect && isStaff()) });
+      }).then(function (r) {
+        if (r.error) throw r.error;
+        closeModal(); toast(state.tipDirect ? 'Sent straight to Claudia' : 'Sent to Claudia. Thank you.');
+        if ((state.route || {}).name === 'profile') { scrollTop = false; render(); } else location.hash = '#/profile';
+      }).catch(function (er) {
+        tsub.disabled = false; tsub.textContent = state.tipDirect ? 'Send straight to Claudia' : 'Send to Claudia';
+        terr.textContent = (er && er.message) || 'Could not send. Try again.';
       });
       return;
     }

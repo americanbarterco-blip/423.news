@@ -95,3 +95,13 @@ responder or dispatcher is ever credited or named.
 Scanner accounts are provisional by construction. When an official release contradicts her account,
 she files a `DESK` item naming what changed, keeps the original visible, and never silently edits
 history. If an item names or endangers someone, it comes down immediately and a correction runs.
+
+## 7. Reader scanner clips
+
+Signed-in readers can send Claudia a clip or a note (profile page, or `#/tip`). Rules:
+
+- Clips and notes are **private**: visible only to the sender and editors, stored in a private bucket, never published, embedded or played on the site.
+- Editors listen to verify. Claudia may then file her own account under section 2 and the gate in section 4. Nothing a reader sends is quoted or copied.
+- Public dispatch audio only. A private call, a phone recording or anything the sender is not allowed to share is deleted.
+- Names, street numbers, plates and ages in a note are never carried into a report.
+- Editors mark each tip used or dismissed. Clips can be deleted at any time.
