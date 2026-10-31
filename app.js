@@ -134,7 +134,7 @@
       listPosts({ section: 'community', limit: 5 }),
       listPosts({ section: 'classifieds', limit: 4 }),
       sb.from('news_reports').select('id,kind,dateline,headline,ts').eq('published', true).order('ts', { ascending: false }).limit(4),
-      sb.from('news_scores').select('*').eq('status', 'in').order('start_time', { ascending: true }).limit(6)
+      sb.from('news_scores').select('*').in('status', ['in', 'pre']).gte('start_time', new Date(Date.now() - 12 * 3600e3).toISOString()).lte('start_time', new Date(Date.now() + 3 * 86400e3).toISOString()).order('start_time', { ascending: true }).limit(12)
     ]).then(function (r) {
       var news = r[0], comm = r[1], cls = r[2], wire = (r[3] && r[3].data) || [];
       var out = '';
@@ -155,8 +155,13 @@
           '<div class="row-actions"><button class="btn" data-submit="news">Submit a Story</button><a class="btn dark" href="#/community">Visit citizen423report</a></div></div>';
       }
       out += quick;
-      var liveG = (r[4] && r[4].data) || [];
-      if (liveG.length) out += '<div class="sech"><h2>Live now</h2><a href="#/scores">All scores →</a></div><div class="games" style="margin-bottom:26px">' + liveG.map(gameCard).join('') + '</div>';
+      var allG = (r[4] && r[4].data) || [];
+      var liveG = allG.filter(function (g) { return g.status === 'in'; });
+      var soonG = allG.filter(function (g) { return g.status === 'pre'; }).slice(0, 4);
+      var showG = liveG.length ? liveG.slice(0, 6) : soonG;
+      out += '<div class="sech"><h2>' + (liveG.length ? 'Live now' : 'Up next') + '</h2><a href="#/scores">All scores →</a></div>' +
+        (showG.length ? '<div class="games" style="margin-bottom:26px">' + showG.map(gameCard).join('') + '</div>'
+                      : '<p class="muted" style="margin-bottom:26px">No games on right now. <a href="#/scores" style="text-decoration:underline">See scores, video and headlines →</a></p>');
 
       if (wire.length) {
         out += '<div class="sech"><h2>Claudia Green</h2><a href="claudia-scanner.html">All reports →</a></div><div class="wire">' +
@@ -169,10 +174,34 @@
         if (news.length > 8) out += '<div class="lower panel pad" style="margin-bottom:26px"><div style="grid-column:1/-1"><h2 class="sm">More stories</h2>' + news.slice(8, 16).map(mini).join('') + '</div></div>';
       }
       if (cls.length) out += '<div class="sech"><h2>Classifieds</h2><a href="#/classifieds">See all →</a></div><div class="g4">' + cls.map(tile).join('') + '</div>';
-      if (comm.length) out += citizenMini(comm);
+      out += comm.length ? citizenMini(comm) : '<div class="sech"><h2>citizen423report</h2><a href="#/community">Join in →</a></div><p class="muted" style="margin-bottom:26px">No posts yet. <a href="#/community" style="text-decoration:underline">Be the first to post →</a></p>';
       return out;
     });
   };
+
+  /* Live video on the News page: same table as Scores & Live (news_streams), kept apart by league = 'news'. */
+  function newsVideos() {
+    return sb.from('news_streams').select('*').eq('league', 'news').eq('active', true)
+      .order('sort', { ascending: true }).order('created_at', { ascending: false }).limit(20).then(function (r) {
+        var list = r.error ? [] : (r.data || []);
+        var streams = list.filter(function (s) { return s.kind === 'live'; }).concat(list.filter(function (s) { return s.kind !== 'live'; }));
+        state.streams = streams;
+        var out = '';
+        if (streams.length) {
+          out += '<div class="sech"><h2>Live video</h2></div><div id="vplayer">' + player(streams[0]) + '</div><div class="chips" id="vlist">' + streams.map(function (st, i) {
+            return '<span class="chip"><button type="button" class="linkbtn" style="text-decoration:none;color:inherit" data-play="' + i + '">' + (st.kind === 'live' ? '🔴 ' : '▶ ') + esc(st.title) + '</button>' +
+              (isStaff() ? '<button type="button" data-delstream="' + esc(st.id) + '" aria-label="Remove">×</button>' : '') + '</span>';
+          }).join('') + '</div>';
+        }
+        if (isStaff()) {
+          out += '<form id="streamForm" class="panel pad" style="margin:12px 0 24px"><b>Add live video (editors)</b><div class="hint">Paste a YouTube video, live stream or playlist link. It shows here and on the home page. Only use streams you have the right to embed.</div>' +
+            '<input name="title" placeholder="Title" maxlength="120" required><input name="url" placeholder="https://www.youtube.com/watch?v=…" required>' +
+            '<input type="hidden" name="league" value="news">' +
+            '<select name="kind"><option value="live">Live stream</option><option value="video">Video</option><option value="playlist">Playlist</option></select><button class="btn" type="submit">Add</button></form>';
+        }
+        return out;
+      }, function () { return ''; });
+  }
 
   function sectionView(sec, topic) {
     var meta = SECTIONS[sec];
@@ -186,7 +215,9 @@
     }
     var opts = { section: sec, limit: 60 };
     if (sec === 'community' && topic === 'photos') opts.photos = true; else opts.topic = topic;
-    return listPosts(opts).then(function (posts) {
+    var vidP = sec === 'news' && topic === 'all' ? newsVideos() : Promise.resolve('');
+    return Promise.all([listPosts(opts), vidP]).then(function (rr) {
+      var posts = rr[0], vid = rr[1];
       var head = '<div class="chead"><div style="margin-bottom:18px"><span class="badge">' + esc(meta.label) + '</span><h1>' + esc(meta.label) + '</h1><p class="muted">' + esc(meta.blurb) + '</p></div>' +
         '<button class="btn" data-submit="' + sec + '"' + (topic && topic !== 'all' && topic !== 'photos' ? ' data-topic="' + esc(topic) + '"' : '') + '>' +
         (sec === 'community' ? 'Create Post' : sec === 'classifieds' ? 'Post a Listing' : 'Submit a Story') + '</button></div>';
@@ -199,7 +230,7 @@
       } else {
         body = '<div class="grid">' + posts.map(card).join('') + '</div>';
       }
-      return head + tabs + body;
+      return head + vid + tabs + body;
     });
   }
 
@@ -329,7 +360,7 @@
     var until = new Date(Date.now() + 4 * 86400e3).toISOString();
     var sq = sb.from('news_scores').select('*').gte('start_time', since).lte('start_time', until).order('start_time', { ascending: true }).limit(400);
     var hq = sb.from('news_headlines').select('id,league,title,url,source,published,created_at').order('published', { ascending: false, nullsFirst: false }).limit(30);
-    var vq = sb.from('news_streams').select('*').eq('active', true).order('sort', { ascending: true }).order('created_at', { ascending: false }).limit(30);
+    var vq = sb.from('news_streams').select('*').eq('active', true).neq('league', 'news').order('sort', { ascending: true }).order('created_at', { ascending: false }).limit(30);
     if (league !== 'all') { sq = sq.eq('league', league); hq = hq.eq('league', league); vq = vq.in('league', [league, 'general']); }
     return Promise.all([sq, hq, vq]).then(function (r) {
       var games = r[0].data || [], heads = r[1].data || [], streams = r[2].data || [];
@@ -672,6 +703,14 @@
     rtTimer = setTimeout(function () { scrollTop = false; render(); }, 900);
   }
 
+  var nvTimer;
+  function onNewsStreams() {
+    var rt = state.route || {};
+    if (rt.name !== 'news' || $('#modal').className) return;
+    var ae = document.activeElement; if (ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName)) return;
+    clearTimeout(nvTimer);
+    nvTimer = setTimeout(function () { var y = window.scrollY; scrollTop = false; render(); setTimeout(function () { window.scrollTo(0, y); }, 400); }, 1500);
+  }
   var scTimer;
   function onScores() {
     var rt = state.route || {};
@@ -688,6 +727,7 @@
     sb.channel('news-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'news_posts' }, onChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'news_comments' }, onChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'news_streams' }, onNewsStreams)
       .subscribe();
   } catch (e) { /* page still works without live updates */ }
 

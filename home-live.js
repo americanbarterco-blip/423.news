@@ -14,10 +14,11 @@
 
     /* TomTom Traffic key (restrict it to your domain in the TomTom dashboard).
        Empty = the panel links to TDOT SmartWay instead of inventing incidents. */
-    trafficKey: '',
+    trafficKey: 'cMbIUJuSZbzdjBSuZRxNdf2VgGH17QSz',
     radiusKm: 12,
     maxPerHub: 4,
     refreshSeconds: 120,
+    sportsRefreshSeconds: 30,   /* how often the Live sports spaces check for new videos */
 
     /* Hubs that together cover the 423 area */
     hubs: [
@@ -55,6 +56,10 @@
     }
   };
   var CFG = Object.assign({}, DEFAULTS, window.HOME_LIVE || {});
+
+  /* Public (anon) key: safe in the browser. Row Level Security decides what visitors can read. */
+  var SB_URL = 'https://kdiwehqtezlhecxsoysj.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE';
 
   var TYPES = { 1: 'Accident', 2: 'Fog', 3: 'Dangerous conditions', 4: 'Rain', 5: 'Ice', 6: 'Jam',
     7: 'Lane closed', 8: 'Road closed', 9: 'Road works', 10: 'Wind', 11: 'Flooding', 14: 'Broken down vehicle' };
@@ -167,10 +172,25 @@
       newsPhase = ad;
       if (hlsInst) { try { hlsInst.destroy(); } catch (e) {} hlsInst = null; }
       if (ad) { mountAds(box); dot.classList.remove('on'); }
-      else dot.classList.toggle('on', mountStream(box, CFG.videoUrl, CFG.videoTitle,
-        'No live video stream is connected yet.<br>Add a YouTube live embed or HLS (.m3u8) URL in home-live.js.'));
+      else dot.classList.toggle('on', mountStream(box, newsUrl(), newsTitle(),
+        'No live news video yet.<br>Add one on the <a href="#/news" style="text-decoration:underline">News</a> page.'));
     }
-    tag.textContent = ad ? 'Commercial break · live in ' + Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2) : CFG.videoTitle;
+    tag.textContent = ad ? 'Commercial break · live in ' + Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2) : newsTitle();
+  }
+
+  /* ---------------- live news: videos come from the News page (news_streams, league news) ---------------- */
+  var newsStream = null, newsSig = '';
+  function newsUrl() { return CFG.videoUrl || (newsStream ? ytSrc(newsStream) + '&autoplay=1&mute=1' : ''); }
+  function newsTitle() { return CFG.videoUrl ? CFG.videoTitle : (newsStream ? newsStream.title : CFG.videoTitle); }
+  function paintNewsVideo() {
+    if (CFG.videoUrl) return;                   /* a fixed URL typed into home-live.js wins */
+    loadStreams(true).then(function (list) {
+      var main = list.filter(function (x) { return x.kind === 'live'; })[0] || list[0] || null;
+      var sig = main ? main.id + ':' + main.ref : '-';
+      if (sig === newsSig) return;
+      newsSig = sig; newsStream = main;
+      newsPhase = null; tickNews();             /* swap the player now */
+    }).catch(function () { /* keep what is showing */ });
   }
 
   /* ---------------- traffic ---------------- */
@@ -178,7 +198,7 @@
     var d = CFG.radiusKm / 111;
     var bbox = [h.lon - d, h.lat - d, h.lon + d, h.lat + d].join(',');
     var url = 'https://api.tomtom.com/traffic/services/4/incidentDetails/s3/' + bbox +
-      '/-1/-1/json?key=' + encodeURIComponent(CFG.trafficKey) + '&projection=EPSG4326';
+      '/10/-1/json?key=' + encodeURIComponent(CFG.trafficKey) + '&projection=EPSG4326';
     return fetch(url, { cache: 'no-store' }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
@@ -241,13 +261,64 @@
     }).catch(function () { el.innerHTML = '<div class="hl-note">Claudia Green’s feed is not available right now. <a href="' + esc(CFG.claudiaUrl) + '" style="text-decoration:underline">Open her page</a>.</div>'; });
   }
 
+  /* ---------------- live sports: videos come from Scores & Live (news_streams) ---------------- */
+  var sportsSig = '', sportsTimer = null;
+  function ytSrc(st) {
+    var b = 'https://www.youtube-nocookie.com/embed/';
+    return st.kind === 'playlist' ? b + 'videoseries?list=' + encodeURIComponent(st.ref) : b + encodeURIComponent(st.ref) + '?rel=0';
+  }
+  /* newsOnly = true: videos posted on the News page (league news). false: everything else (sports). */
+  function loadStreams(newsOnly) {
+    return fetch(SB_URL + '/rest/v1/news_streams?select=id,title,league,kind,ref&active=eq.true&league=' + (newsOnly ? 'eq.news' : 'neq.news') + '&order=sort.asc,created_at.desc&limit=12',
+      { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } })
+      .then(function (r) { if (!r.ok) throw new Error('streams ' + r.status); return r.json(); });
+  }
+  function paintSports(box) {
+    var sp = CFG.sports;
+    /* If you type a stream URL into CFG.sports above, that fixed setup wins over the Scores & Live videos. */
+    var manual = !!((sp.main && sp.main.url) || (sp.others || []).some(function (o) { return o.url; }));
+    if (manual) {
+      if (sportsSig === 'manual') return;
+      sportsSig = 'manual';
+      var onM = false;
+      box.querySelectorAll('[data-sp]').forEach(function (el) {
+        var i = +el.getAttribute('data-sp'), c = i === 0 ? sp.main : sp.others[i - 1];
+        var ok = mountStream(el, c.url, c.label || c.title || 'Live sports', 'No stream connected yet.');
+        if (i === 0) onM = ok;
+      });
+      var dm = document.getElementById('spDot'); if (dm) dm.classList.toggle('on', onM);
+      return;
+    }
+    loadStreams(false).then(function (list) {
+      if (!box.isConnected) return;
+      var main = list.filter(function (x) { return x.kind === 'live'; })[0] || list[0] || null;
+      var rest = list.filter(function (x) { return x !== main; }).slice(0, 3);
+      var slots = [main, rest[0] || null, rest[1] || null, rest[2] || null];
+      var sig = slots.map(function (x) { return x ? x.id + ':' + x.ref : '-'; }).join('|');
+      if (sig === sportsSig) return;            /* nothing new: leave the playing videos alone */
+      sportsSig = sig;
+      var empty = 'No video yet. Add one in <a href="#/scores" style="text-decoration:underline">Scores &amp; Live</a>.';
+      box.querySelectorAll('[data-sp]').forEach(function (el) {
+        var i = +el.getAttribute('data-sp'), st = slots[i];
+        var h = el.parentNode.querySelector('h2');
+        if (i > 0 && h) h.textContent = st ? st.title : 'More video';
+        if (st) mountStream(el, ytSrc(st), st.title, empty); else el.innerHTML = '<div class="hl-empty">' + empty + '</div>';
+      });
+      var t = document.getElementById('spTitle'); if (t) t.textContent = main ? main.title : sp.main.title;
+      var d = document.getElementById('spDot'); if (d) d.classList.toggle('on', !!(main && main.kind === 'live'));
+    }).catch(function () {
+      if (sportsSig) return;                    /* keep whatever is already showing */
+      box.querySelectorAll('[data-sp]').forEach(function (el) { el.innerHTML = '<div class="hl-empty">Videos could not be loaded right now.</div>'; });
+    });
+  }
+
   /* ---------------- mount ---------------- */
   function sportsHtml() {
     var sp = CFG.sports, small = (sp.others || []).slice(0, 3).map(function (o, i) {
       return '<div class="hl"><div class="hl-h"><h2>' + esc(o.label) + '</h2></div><div class="hl-video" data-sp="' + (i + 1) + '"></div></div>';
     }).join('');
-    return '<div class="hl"><div class="hl-h"><h2><span class="hl-dot" id="spDot"></span>Live sports</h2><span class="muted">' +
-      esc(sp.main.title) + '</span></div><div class="hl-video" data-sp="0"></div></div><div class="hl-sports-row">' + small + '</div>';
+    return '<div class="hl"><div class="hl-h"><h2><span class="hl-dot" id="spDot"></span>Live sports</h2><span><span class="muted" id="spTitle">' +
+      esc(sp.main.title) + '</span> · <a href="#/scores" style="font-size:12px;text-decoration:underline">All video →</a></span></div><div class="hl-video" data-sp="0"></div></div><div class="hl-sports-row">' + small + '</div>';
   }
   function mount() {
     var app = document.getElementById('app');
@@ -267,13 +338,14 @@
     sports.id = 'homeSports';
     sports.innerHTML = sportsHtml();
     app.insertBefore(sports, root.nextSibling);
-    var sp = CFG.sports, on = false;
-    sports.querySelectorAll('[data-sp]').forEach(function (el) {
-      var i = +el.getAttribute('data-sp'), c = i === 0 ? sp.main : sp.others[i - 1];
-      var ok = mountStream(el, c.url, c.label || c.title || 'Live sports', 'No stream connected yet.');
-      if (i === 0) on = ok;
-    });
-    document.getElementById('spDot').classList.toggle('on', on);
+    sportsSig = ''; newsSig = '';
+    paintSports(sports);
+    paintNewsVideo();
+    clearInterval(sportsTimer);
+    sportsTimer = setInterval(function () {
+      var sx = document.getElementById('homeSports');
+      if (sx && !document.hidden) { paintSports(sx); paintNewsVideo(); }
+    }, CFG.sportsRefreshSeconds * 1000);
     newsPhase = null; tickNews();
     clearInterval(newsTimer); newsTimer = setInterval(tickNews, 1000);
     root.querySelector('.hl-chips').addEventListener('click', function (e) {
