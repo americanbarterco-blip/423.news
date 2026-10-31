@@ -43,6 +43,8 @@
     claudiaUrl: 'claudia-scanner.html',
     feedUrl: 'feed.json',   /* the same file the scanner page reads */
     claudiaCount: 4,
+    claudiaVideo: 'claudia-onair.mp4',   /* recorded clip of Claudia; shown as 'On camera', never as LIVE */
+    claudiaPoster: 'claudia-poster.jpg',
 
     /* Sports block: one big stream, three smaller ones in a row under it.
        For YouTube embeds add ?autoplay=1&mute=1 to the URL. */
@@ -330,6 +332,7 @@
       '<div class="hl-video" id="hlVideo"></div></div>' +
       '<div class="hl-side">' +
       '<div class="hl"><div class="hl-h"><h2>Claudia Green</h2><a href="' + esc(CFG.claudiaUrl) + '" style="font-size:12px;text-decoration:underline">Open full</a></div>' +
+      (CFG.claudiaVideo ? '<div style="padding:12px 14px 0"><div class="hl-video" style="aspect-ratio:16/9;border-radius:12px"><video src="' + esc(CFG.claudiaVideo) + '" poster="' + esc(CFG.claudiaPoster || '') + '" autoplay muted loop playsinline style="object-fit:cover;object-position:50% 25%"></video><span class="cg-cam" style="position:absolute;inset:0;border:0;background:none;aspect-ratio:auto;max-width:none;pointer-events:none"><span class="cg-tag" style="position:absolute;left:8px;top:8px;background:rgba(0,0,0,.65);color:#fff;font:700 11px system-ui;padding:5px 8px;border-radius:99px;text-transform:uppercase">On camera</span></span><button type="button" class="cg-snd" style="position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.65);color:#fff;border:0;border-radius:99px;padding:7px 11px;font:600 12px system-ui;cursor:pointer">Enable voice</button></div><div class="hl-note" style="padding:6px 0 0">On camera · Claudia Green, 423.news’s AI correspondent. Recorded video.</div></div>' : '') +
       '<div class="hl-claudia"><div class="hl-note">Loading…</div></div></div>' +
       '<div class="hl"><div class="hl-h"><h2>Traffic · 423 area</h2><span class="muted hl-stamp"></span></div>' +
       '<div class="hl-chips"></div><div class="hl-list"></div></div></div>';
