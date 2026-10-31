@@ -33,7 +33,7 @@
 
   function vids() { return [].slice.call(document.querySelectorAll('video[src*="claudia-onair"]')); }
   function setTag(on) {
-    document.querySelectorAll('.cg-cam .cg-tag').forEach(function (t) { t.textContent = on ? 'Reporting' : 'On camera'; });
+    document.querySelectorAll('.cg-cam .cg-tag').forEach(function (t) { t.textContent = on ? 'Reporting' : (t.getAttribute('data-idle') || 'On camera'); });
   }
   function keepSilent() { vids().forEach(function (v) { v.muted = true; v.loop = true;
     if (enabled && !busy) { v.pause(); try { v.currentTime = 0; } catch (e) {} return; } /* idle: rests on her first frame */
