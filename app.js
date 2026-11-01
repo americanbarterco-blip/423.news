@@ -370,6 +370,7 @@
         var src = /^https:\/\//i.test(t.source_url || '') ? ' · <a href="' + esc(t.source_url) + '" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">feed link</a>' : '';
         var acts = staff ? '<div class="row-actions" style="margin-top:8px">' +
           (t.clip_path ? '<button class="btn dark sm" type="button" data-tipclip="' + esc(t.clip_path) + '">Listen</button>' : '') +
+          (/^https:\/\/([a-z0-9-]+\.)*broadcastify\.com\//i.test(t.source_url || '') ? '<button class="btn ok sm" type="button" data-tippost="' + esc(t.id) + '" data-name="' + esc(t.area) + '" data-url="' + esc(t.source_url) + '">Post feed on Claudia\'s page</button>' : '') +
           (!t.to_claudia && t.status === 'new' ? '<button class="btn ok sm" type="button" data-tipsend="' + esc(t.id) + '">Send to Claudia</button>' : '') +
           (t.status !== 'used' ? '<button class="btn ok sm" type="button" data-tipstatus="used" data-id="' + esc(t.id) + '">Mark used</button>' : '') +
           (t.status !== 'dismissed' ? '<button class="btn dark sm" type="button" data-tipstatus="dismissed" data-id="' + esc(t.id) + '">Dismiss</button>' : '') + '</div>' : '';
@@ -607,7 +608,7 @@
 
   /* ---------- events ---------- */
   document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-submit],[data-auth],[data-close],[data-share],[data-delpost],[data-delcmt],[data-unfollow],[data-setstatus],[data-signout],[data-retry],[data-play],[data-delstream],[data-tip],[data-tipclip],[data-tipstatus],[data-tipsend]');
+    var t = e.target.closest('[data-submit],[data-auth],[data-close],[data-share],[data-delpost],[data-delcmt],[data-unfollow],[data-setstatus],[data-signout],[data-retry],[data-play],[data-delstream],[data-tip],[data-tipclip],[data-tipstatus],[data-tipsend],[data-tippost]');
     if (!t) { if (e.target.id === 'modal') closeModal(); return; }
     if (t.hasAttribute('data-close')) { closeModal(); return; }
     if (t.hasAttribute('data-retry')) { render(); return; }
@@ -623,6 +624,15 @@
     }
 
     if (t.hasAttribute('data-tip')) { openTip(t.getAttribute('data-tip') === 'direct'); return; }
+    if (t.hasAttribute('data-tippost')) {
+      var fname = (t.getAttribute('data-name') || '').trim().slice(0, 80), furl = t.getAttribute('data-url') || '';
+      if (!fname || !/^https:\/\/([a-z0-9-]+\.)*broadcastify\.com\//i.test(furl)) { toast('Needs a Broadcastify link'); return; }
+      sb.from('news_scanner_feeds').upsert({ name: fname, url: furl, status: 'active', live_data: false }, { onConflict: 'name' }).then(function (r) {
+        if (r.error) { toast('Failed: ' + r.error.message); return; }
+        sb.from('news_scanner_tips').update({ status: 'used' }).eq('id', t.getAttribute('data-tippost')).then(function () { toast('Posted on Claudia\'s page'); scrollTop = false; render(); });
+      });
+      return;
+    }
     if (t.hasAttribute('data-tipsend')) {
       sb.from('news_scanner_tips').update({ to_claudia: true }).eq('id', t.getAttribute('data-tipsend')).then(function (r) {
         if (r.error) toast('Failed: ' + r.error.message); else { toast('Sent to Claudia'); scrollTop = false; render(); }

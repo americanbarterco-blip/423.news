@@ -1246,7 +1246,7 @@ window.CLAUDIA_CONFIG = {
         feeds: (feeds || []).map(function (f) {
           return {
             name: f.name, status: f.status, listeners: f.listeners,
-            live_data: f.live_data, priority: f.priority, tags: f.tags || []
+            live_data: f.live_data, priority: f.priority, tags: f.tags || [], url: f.url || ''
           };
         }),
         log: (log || []).map(function (l) {
@@ -1568,7 +1568,7 @@ window.CLAUDIA_CONFIG = {
         return '<div class="feed-row">' +
           '<span class="bars' + (hot ? ' hot' : '') + '">' +
             '<i></i><i></i><i></i><i></i><i></i><i></i></span>' +
-          '<span class="name">' + esc(f.name) + '</span>' +
+          '<span class="name">' + esc(f.name) + (/^https:\/\/([a-z0-9-]+\.)*broadcastify\.com\//i.test(f.url || '') ? ' <a href="' + esc(f.url) + '" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;font-weight:700;text-decoration:underline;white-space:nowrap">Listen live</a>' : '') + '</span>' +
           '<span class="cnt">' + (f.listeners != null ? f.listeners : '—') + '</span>' +
         '</div>';
       }).join('');
