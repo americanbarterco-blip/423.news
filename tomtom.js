@@ -8,7 +8,7 @@
   /* ===== YOUR TOMTOM KEY: paste it between the quotes on the next line, then save. =====
      Every traffic panel on the site (homepage, Conditions, Claudia Green, her studio) uses this one key.
      Leave it empty to keep using whatever key each page already has. */
-  var SITE_KEY = '7RkPkhWz7e4sBTdxkcnZfnL1wD8ZZ726';
+  var SITE_KEY = 'ekv73Nbmk5yJVb1cVNekupb9dpPZShY9';
   /* ====================================================================================== */
   var TYPES = { 0: 'Incident', 1: 'Accident', 2: 'Fog', 3: 'Dangerous conditions', 4: 'Rain', 5: 'Ice', 6: 'Jam', 7: 'Lane closed',
     8: 'Road closed', 9: 'Road works', 10: 'Wind', 11: 'Flooding', 14: 'Broken down vehicle' };
