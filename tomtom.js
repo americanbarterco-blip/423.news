@@ -59,7 +59,7 @@
     incidents: function (lat, lon, km, key) {
       key = SITE_KEY || key;
       return v5(lat, lon, km || 12, key).catch(function (e) {
-        if (e.status === 401 || e.status === 403 || e.status === 429) throw e;     /* a key problem: v4 would fail the same way */
+        if (e.status === 401 || e.status === 403 || e.status === 429) { e.message += ' [file v2, key ' + String(key).slice(0, 4) + '...' + String(key).slice(-2) + ']'; throw e; }     /* a key problem: v4 would fail the same way */
         return v4(lat, lon, km || 12, key).catch(function () { throw e; });         /* keep the first, clearer reason */
       }).then(function (list) {
         list.sort(function (a, b) { return (b.severe ? 1 : 0) - (a.severe ? 1 : 0); });
