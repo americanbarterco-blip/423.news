@@ -759,6 +759,7 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
 
 </style>
 <style>.nav{overflow-x:auto;flex-wrap:nowrap;white-space:nowrap;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.nav a{flex:0 0 auto}@media (max-width:1020px){.topbar-in{flex-wrap:wrap;height:auto;padding-top:8px;padding-bottom:6px;row-gap:4px}.nav{display:flex;order:9;flex:0 0 100%;margin-left:0;gap:18px;padding:6px 0 4px}.nav a{font-size:12.5px}}</style>
+<script src="tomtom.js"></script>
 </head>
 <body>
 
@@ -1751,22 +1752,9 @@ window.CLAUDIA_CONFIG = {
     var d = (tcfg.radiusKm || 15) / 111;
     var bbox = [place.lon - d, place.lat - d, place.lon + d, place.lat + d].join(',');
     return cached('tt:' + coordKey(place.lat, place.lon), function () {
-      var url = 'https://api.tomtom.com/traffic/services/4/incidentDetails/s3/' + bbox +
-        '/10/-1/json?key=' + encodeURIComponent(tcfg.apiKey) + '&projection=EPSG4326';
-      return getJSON(url).then(function (raw) {
-        var pois = ((raw.tm || {}).poi) || [];
-        var list = pois.map(function (p) {
-          var desc = (p.d && (p.d.description && p.d.description.value)) || (typeof p.d === 'string' ? p.d : '');
-          var type = TOMTOM_TYPES[p.ic] || TOMTOM_TYPES[p.ty] || 'Incident';
-          return {
-            type: type,
-            text: desc || type,
-            severe: !!SEVERE_TYPES[p.ty] || p.c === 1,
-            delay: p.dl || null,
-            length: p.l || null,
-            from: p.f || null,
-            to: p.t || null
-          };
+      return TomTom.incidents(place.lat, place.lon, tcfg.radiusKm || 15, tcfg.apiKey).then(function (items) {
+        var list = items.map(function (x) {
+          return { type: x.type, text: x.text || x.type, severe: x.severe, delay: x.delay, length: x.length, from: x.from, to: x.to };
         });
         // severe first, then the rest
         list.sort(function (a, b) { return (b.severe ? 1 : 0) - (a.severe ? 1 : 0); });

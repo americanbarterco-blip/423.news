@@ -196,21 +196,8 @@
 
   /* ---------------- traffic ---------------- */
   function fetchHub(h) {
-    var d = CFG.radiusKm / 111;
-    var bbox = [h.lon - d, h.lat - d, h.lon + d, h.lat + d].join(',');
-    var url = 'https://api.tomtom.com/traffic/services/4/incidentDetails/s3/' + bbox +
-      '/10/-1/json?key=' + encodeURIComponent(CFG.trafficKey) + '&projection=EPSG4326';
-    return fetch(url, { cache: 'no-store' }).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    }).then(function (raw) {
-      var list = (((raw.tm || {}).poi) || []).map(function (p) {
-        var desc = (p.d && p.d.description && p.d.description.value) || (typeof p.d === 'string' ? p.d : '');
-        return { hub: h.name, type: TYPES[p.ic] || TYPES[p.ty] || 'Incident', text: desc,
-          severe: !!SEVERE[p.ty] || p.c === 1, from: p.f || '', to: p.t || '' };
-      });
-      list.sort(function (a, b) { return (b.severe ? 1 : 0) - (a.severe ? 1 : 0); });
-      return { hub: h.name, ok: true, list: list.slice(0, CFG.maxPerHub) };
+    return window.TomTom.incidents(h.lat, h.lon, CFG.radiusKm, CFG.trafficKey).then(function (list) {
+      return { hub: h.name, ok: true, list: list.map(function (x) { x.hub = h.name; return x; }).slice(0, CFG.maxPerHub) };
     }).catch(function (e) { return { hub: h.name, ok: false, error: e.message, list: [] }; });
   }
 
@@ -237,7 +224,9 @@
       return '<div class="hl-row"><span class="hl-t' + (t.severe ? ' sev' : '') + '">' + esc(t.type) + '</span><div>' +
         esc(t.text || t.type) + '<small>' + esc(t.hub) + (t.from ? ' · ' + esc(t.from) : '') + (t.to ? ' → ' + esc(t.to) : '') + '</small></div></div>';
     }).join('') : '<div class="hl-note">No incidents reported' + (hubFilter === 'All' ? ' in the 423 area' : ' near ' + esc(hubFilter)) + ' right now.</div>';
-    if (failed) list.innerHTML += '<div class="hl-note">' + failed + ' area' + (failed > 1 ? 's' : '') + ' could not be reached.</div>';
+    if (failed) { var why = ''; results.some(function (r) { if (!r.ok) { why = r.error; return true; } });
+      var note = '<div class="hl-note">' + (failed === results.length ? 'Live traffic could not be loaded. ' : failed + ' area' + (failed > 1 ? 's' : '') + ' could not be loaded. ') + esc(why) + '</div>';
+      list.innerHTML = (failed === results.length ? '' : list.innerHTML) + note; }
     stamp.textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   }
 
