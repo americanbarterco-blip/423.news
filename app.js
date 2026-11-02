@@ -316,13 +316,25 @@
       return '<h1>Your profile</h1><div class="panel pad" style="max-width:520px"><form id="nameForm"><label for="dn">Display name (shown on your posts)</label>' +
         '<input id="dn" name="name" maxlength="60" required value="' + esc(state.profile ? state.profile.display_name : '') + '"><div class="muted" style="margin-bottom:10px">' + esc(state.user.email || '') + (isStaff() ? ' · ' + esc(state.profile.role) : '') + '</div>' +
         '<div class="row-actions"><button class="btn" type="submit">Save</button><button class="btn dark" type="button" data-signout>Sign out</button></div></form></div>' +
-        tipsSection + '<div class="sech" style="margin-top:26px"><h2>Your posts</h2></div>' +
+        pushPanel() + tipsSection + '<div class="sech" style="margin-top:26px"><h2>Your posts</h2></div>' +
         (mine.length ? mine.map(function (p) {
           return '<div class="row"><div><a href="' + href(p) + '"><b>' + esc(p.title) + '</b></a><div class="muted">' + esc(label(p)) + ' · ' + esc(ago(p.created_at)) + '</div></div><span class="st ' + esc(p.status) + '">' + esc(p.status) + '</span></div>';
         }).join('') : empty('No posts yet', 'Anything you submit will show up here with its review status.'));
     });
   };
 
+
+  /* ---------- editors: send a push notification to everyone who turned alerts on ---------- */
+  function pushPanel() {
+    if (!isStaff()) return '';
+    return '<div class="sech" style="margin-top:26px"><h2>Send a notification</h2></div>' +
+      '<form id="pushForm" class="panel pad" style="margin-bottom:12px"><p class="muted" style="margin-top:0">Goes to every phone that turned on 423.news alerts. Claudia\'s new reports already notify automatically.</p>' +
+      '<label for="pft">Title</label><input id="pft" name="title" maxlength="80" required placeholder="e.g. Road closed on I-26">' +
+      '<label for="pfb">Message</label><textarea id="pfb" name="body" rows="3" maxlength="200" required placeholder="One or two short sentences"></textarea>' +
+      '<label for="pfu">Link inside the site (optional)</label><input id="pfu" name="url" maxlength="300" placeholder="e.g. conditions.html">' +
+      '<div id="pfmsg" class="muted" style="min-height:20px"></div>' +
+      '<div class="row-actions"><button class="btn" type="submit" id="pfsubmit">Send notification</button></div></form>';
+  }
 
   /* ---------- scanner clips & tips for Claudia (private: staff and the sender only) ---------- */
   var CLIP_MIME = { mp3: 'audio/mpeg', m4a: 'audio/mp4', mp4: 'audio/mp4', aac: 'audio/aac', wav: 'audio/wav', ogg: 'audio/ogg', oga: 'audio/ogg', webm: 'audio/webm' };
@@ -719,6 +731,22 @@
         }
         closeModal(); toast(mode === 'signup' ? 'Welcome to 423.news!' : 'Signed in');
       });
+      return;
+    }
+
+    if (f.id === 'pushForm') {
+      var pd = new FormData(f), pm = $('#pfmsg'), pb = $('#pfsubmit');
+      if (!confirm('Send this to everyone who turned on notifications?')) return;
+      pb.disabled = true; pm.textContent = 'Sending…';
+      sb.auth.getSession().then(function (r) {
+        var tok = r.data && r.data.session && r.data.session.access_token;
+        if (!tok) throw new Error('Please sign in again.');
+        return fetch(SB_URL + '/functions/v1/push-send', { method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + tok },
+          body: JSON.stringify({ title: pd.get('title'), body: pd.get('body'), url: (pd.get('url') || '').toString().trim() || 'index.html', topics: ['breaking', 'claudia'] }) });
+      }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'Could not send'); return j; }); })
+        .then(function (j) { pb.disabled = false; pm.textContent = 'Sent to ' + j.sent + ' phone' + (j.sent === 1 ? '' : 's') + (j.failed ? ' (' + j.failed + ' failed)' : '') + '.'; f.reset(); })
+        .catch(function (er) { pb.disabled = false; pm.textContent = (er && er.message) || 'Could not send.'; });
       return;
     }
 
