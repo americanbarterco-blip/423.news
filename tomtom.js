@@ -4,6 +4,12 @@
    When it fails the error says why (key refused, quota, blocked address), so the page can show it. */
 (function () {
   'use strict';
+
+  /* ===== YOUR TOMTOM KEY: paste it between the quotes on the next line, then save. =====
+     Every traffic panel on the site (homepage, Conditions, Claudia Green, her studio) uses this one key.
+     Leave it empty to keep using whatever key each page already has. */
+  var SITE_KEY = '7RkPkhWz7e4sBTdxkcnZfnL1wD8ZZ726';
+  /* ====================================================================================== */
   var TYPES = { 0: 'Incident', 1: 'Accident', 2: 'Fog', 3: 'Dangerous conditions', 4: 'Rain', 5: 'Ice', 6: 'Jam', 7: 'Lane closed',
     8: 'Road closed', 9: 'Road works', 10: 'Wind', 11: 'Flooding', 14: 'Broken down vehicle' };
   var SEVERE = { 1: 1, 5: 1, 6: 1, 7: 1, 8: 1, 11: 1 };
@@ -51,6 +57,7 @@
 
   window.TomTom = {
     incidents: function (lat, lon, km, key) {
+      key = SITE_KEY || key;
       return v5(lat, lon, km || 12, key).catch(function (e) {
         if (e.status === 401 || e.status === 403 || e.status === 429) throw e;     /* a key problem: v4 would fail the same way */
         return v4(lat, lon, km || 12, key).catch(function () { throw e; });         /* keep the first, clearer reason */
