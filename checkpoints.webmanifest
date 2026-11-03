@@ -1,0 +1,23 @@
+{
+ "id": "checkpoints",
+ "name": "423 Checkpoints",
+ "short_name": "Checkpoints",
+ "start_url": "checkpoints.html",
+ "scope": "/checkpoints.html",
+ "display": "standalone",
+ "background_color": "#050b12",
+ "theme_color": "#050b12",
+ "icons": [
+  {
+   "src": "cp-icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "cp-icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  }
+ ]
+}

@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkpoints &amp; Roadblocks — 423.news</title>
+<meta name="description" content="Publicly announced DUI/sobriety checkpoints and roadblocks in the 423 area, with live driving alerts.">
+<meta name="theme-color" content="#050b12">
+<link rel="manifest" href="checkpoints.webmanifest">
+<link rel="apple-touch-icon" href="cp-icon-192.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<link rel="stylesheet" href="site.css">
+<style>
+:root{--acc:var(--accent);--card:var(--panel);--mut:var(--muted);--red:#ff4d4f;--grn:#35c48a;--amb:#f5a524}
+main{max-width:900px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;margin:.2rem 0 .6rem}
+.note{color:var(--mut);font-size:.85rem;margin:.4rem 0 1rem}
+#alert{display:none;border-radius:12px;padding:14px 16px;margin-bottom:14px;font-weight:600}
+#alert.warn{display:block;background:#3a2a05;border:2px solid var(--amb)}
+#alert.stop{display:block;background:#3a0f10;border:2px solid var(--red)}
+#alert small{display:block;font-weight:400;color:var(--mut);margin-top:4px}
+.cbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.cbar button{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;font-size:.95rem;cursor:pointer}
+.cbar button.sec{background:var(--s2);border:1px solid var(--line);color:var(--text)}
+#map{height:360px;border-radius:12px;border:1px solid var(--line);margin-bottom:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.card h3{margin:0 0 4px;font-size:1rem}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;border-radius:6px;padding:2px 7px;margin-right:6px;background:var(--line)}
+.tag.dui{background:#5a3b00;color:var(--amb)}
+.tag.road{background:#4a1416;color:#ff8a8c}
+.tag.ver{background:#0e3a29;color:var(--grn)}
+.tag.unv{background:#333;color:var(--mut)}
+.mut{color:var(--mut);font-size:.85rem}
+.empty{color:var(--mut);text-align:center;padding:24px}
+.safety{border-left:3px solid var(--accent);padding:8px 12px;margin:16px 0;background:var(--panel);border-radius:0 8px 8px 0;font-size:.9rem}
+.cnav a{color:var(--muted);font-size:14px;font-weight:600;margin-left:18px}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="bar">
+  <a class="logo" href="index.html">423.news</a>
+  <span class="cnav" style="margin-left:auto"><a href="index.html">Home</a><a href="conditions.html">Conditions</a></span>
+</div></div></header>
+<main>
+  <h1>Checkpoints &amp; Roadblocks</h1>
+  <p class="note">Publicly announced DUI/sobriety checkpoints and roadblocks in the 423 area. Entries expire automatically. Always follow posted signs and officer instructions.</p>
+  <div id="alert" role="alert" aria-live="assertive"></div>
+  <div class="cbar">
+    <button id="trackBtn">📍 Start driving alerts</button>
+    <button class="sec" id="stopBtn" style="display:none">Stop</button>
+    <button class="sec" id="filterBtn">Showing: All</button>
+  </div>
+  <p class="note" id="trackNote">Driving alerts use your phone's location and direction of travel. Your location stays on your device and is never sent or stored. Don't operate your phone while driving: set up the alerts before you go, or have a passenger use it.</p>
+  <div id="map"></div>
+  <div id="list"></div>
+  <div class="safety"><strong>Plan a safe ride.</strong> If you're drinking, use a designated driver, taxi, or rideshare. Checkpoint info is provided for public awareness and may change without notice.</div>
+  <p class="note" id="updated"></p>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+(function(){
+  var DATA_URL='checkpoints.json';
+  var ALERT_MILES=5;          // start warning within this distance
+  var STOP_MILES=0.75;        // "prepare to stop" within this distance
+  var HEADING_TOLERANCE=50;   // degrees either side of the bearing to the checkpoint
+  var LOOKAHEAD_HOURS=3;      // how soon before start we begin alerting
+  var showDemo=/[?&]demo=1/.test(location.search);
+
+  var map=L.map('map').setView([35.0456,-85.3097],10);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+  var markers=[], me=null, meCircle=null, items=[], filter='All';
+
+  function toRad(d){return d*Math.PI/180}
+  function toDeg(r){return r*180/Math.PI}
+  function miles(a,b){
+    var R=3958.8,dLat=toRad(b.lat-a.lat),dLng=toRad(b.lng-a.lng);
+    var x=Math.sin(dLat/2)**2+Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
+    return 2*R*Math.asin(Math.sqrt(x));
+  }
+  function bearing(a,b){
+    var y=Math.sin(toRad(b.lng-a.lng))*Math.cos(toRad(b.lat));
+    var x=Math.cos(toRad(a.lat))*Math.sin(toRad(b.lat))-Math.sin(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.cos(toRad(b.lng-a.lng));
+    return (toDeg(Math.atan2(y,x))+360)%360;
+  }
+  function angDiff(a,b){var d=Math.abs(a-b)%360;return d>180?360-d:d}
+  function fmt(t){return new Date(t).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+  function active(c){
+    var now=Date.now();
+    return new Date(c.end).getTime()>now;
+  }
+  function upcomingOrLive(c){
+    var now=Date.now(), s=new Date(c.start).getTime(), e=new Date(c.end).getTime();
+    return now<=e && now>=s-LOOKAHEAD_HOURS*3600e3;
+  }
+
+  function render(){
+    markers.forEach(function(m){map.removeLayer(m)});markers=[];
+    var list=document.getElementById('list');
+    var shown=items.filter(function(c){return filter==='All'||c.type===filter});
+    if(!shown.length){list.innerHTML='<div class="empty">No active or upcoming checkpoints have been reported.</div>';return}
+    list.innerHTML=shown.map(function(c){
+      var live=new Date(c.start).getTime()<=Date.now();
+      return '<div class="card"><h3>'+esc(c.title||c.location)+'</h3>'+
+        '<span class="tag '+(c.type==='DUI'?'dui':'road')+'">'+esc(c.type==='DUI'?'DUI':'ROADBLOCK')+'</span>'+
+        '<span class="tag '+(c.status==='verified'?'ver':'unv')+'">'+(c.status==='verified'?'VERIFIED':'UNVERIFIED')+'</span>'+
+        (live?'<span class="tag" style="background:#4a1416;color:#ff8a8c">ACTIVE NOW</span>':'')+
+        '<div class="mut" style="margin-top:6px">📍 '+esc(c.location)+'</div>'+
+        '<div class="mut">🕘 '+(c.time_note?esc(fmt(c.start).split(',').slice(0,2).join(','))+' · '+esc(c.time_note):fmt(c.start)+' – '+fmt(c.end))+'</div>'+(c.precision==='county-only'?'<div class="mut">Exact spot not published; map pin is approximate.</div>':'')+
+        '<div class="mut">'+esc(c.agency||'')+(c.source_url?' · <a href="'+esc(c.source_url)+'" target="_blank" rel="noopener">Source</a>':'')+
+        (c.last_verified?' · verified '+fmt(c.last_verified):'')+'</div></div>';
+    }).join('');
+    shown.forEach(function(c){
+      var m=L.circleMarker([c.lat,c.lng],{radius:10,color:c.type==='DUI'?'#ffb020':'#ff4d4f',fillOpacity:.6})
+        .addTo(map).bindPopup('<b>'+esc(c.title||c.location)+'</b><br>'+fmt(c.start)+' – '+fmt(c.end));
+      markers.push(m);
+    });
+    if(!me&&markers.length){map.fitBounds(L.featureGroup(markers).getBounds().pad(.3),{maxZoom:13})}
+  }
+
+  fetch(DATA_URL,{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
+    items=(d.checkpoints||[]).filter(function(c){return (!c.demo||showDemo)&&active(c)})
+      .sort(function(a,b){return new Date(a.start)-new Date(b.start)});
+    if(d.updated)document.getElementById('updated').textContent='Last updated '+fmt(d.updated);
+    render();
+  }).catch(function(){document.getElementById('list').innerHTML='<div class="empty">Could not load checkpoint data.</div>'});
+
+  document.getElementById('filterBtn').onclick=function(){
+    filter=filter==='All'?'DUI':filter==='DUI'?'Roadblock':'All';
+    this.textContent='Showing: '+filter;render();
+  };
+
+  // ---------- driver tracking ----------
+  var watchId=null,last=null,heading=null,wake=null;
+  var alertEl=document.getElementById('alert');
+
+  function setAlert(cls,html){alertEl.className=cls||'';alertEl.innerHTML=html||''}
+
+  function evaluate(pos){
+    var best=null;
+    items.filter(upcomingOrLive).forEach(function(c){
+      if(c.precision==='county-only')return; // no exact spot published; don't alert on a guess
+      var d=miles(pos,c),b=bearing(pos,c);
+      var ahead=heading==null?null:angDiff(heading,b)<=HEADING_TOLERANCE;
+      if(d<=ALERT_MILES&&(ahead===true||(ahead===null&&d<=1.5))){
+        if(!best||d<best.d)best={c:c,d:d,ahead:ahead};
+      }
+    });
+    if(!best){setAlert('');return}
+    var c=best.c,txt=(c.type==='DUI'?'DUI checkpoint':'Roadblock')+' ahead: '+esc(c.location);
+    var dist=best.d<0.2?'less than 1/4 mile':best.d.toFixed(1)+' mi';
+    var eta=pos.speed>2?Math.max(1,Math.round(best.d/(pos.speed/0.44704)*60))+' min':'';
+    var sub='About '+dist+' away'+(eta?' (~'+eta+')':'')+(best.ahead===null?' · direction unknown':' · you are heading toward it')+'. Have your license, registration and insurance ready.';
+    setAlert(best.d<=STOP_MILES?'stop':'warn','⚠️ PREPARE TO STOP — '+txt+'<small>'+sub+'</small>');
+    if(navigator.vibrate)navigator.vibrate(best.d<=STOP_MILES?[300,150,300]:[150]);
+  }
+
+  function onPos(p){
+    var cur={lat:p.coords.latitude,lng:p.coords.longitude,speed:p.coords.speed};
+    if(p.coords.heading!=null&&!isNaN(p.coords.heading)&&(p.coords.speed||0)>1){heading=p.coords.heading}
+    else if(last&&miles(last,cur)>0.012){heading=bearing(last,cur)}
+    if(!last||miles(last,cur)>0.012)last=cur;
+    if(!me){me=L.marker([cur.lat,cur.lng],{title:'You'}).addTo(map);meCircle=L.circle([cur.lat,cur.lng],{radius:p.coords.accuracy||30,color:'#3ea6ff',fillOpacity:.1}).addTo(map);map.setView([cur.lat,cur.lng],12)}
+    else{me.setLatLng([cur.lat,cur.lng]);meCircle.setLatLng([cur.lat,cur.lng]).setRadius(p.coords.accuracy||30)}
+    evaluate(cur);
+  }
+  function onErr(e){
+    setAlert('warn',e.code===1?'Location permission denied. Enable location for this site to get driving alerts.':'Could not get your location.');
+    stop();
+  }
+  function start(){
+    if(!navigator.geolocation){setAlert('warn','This browser does not support location.');return}
+    watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:2000,timeout:20000});
+    document.getElementById('trackBtn').style.display='none';
+    document.getElementById('stopBtn').style.display='';
+    document.getElementById('trackNote').textContent='Driving alerts are on. Keep this page open (screen on) for alerts to work.';
+    if(navigator.wakeLock){navigator.wakeLock.request('screen').then(function(w){wake=w}).catch(function(){})}
+  }
+  function stop(){
+    if(watchId!=null)navigator.geolocation.clearWatch(watchId);watchId=null;
+    if(wake){wake.release();wake=null}
+    document.getElementById('trackBtn').style.display='';
+    document.getElementById('stopBtn').style.display='none';
+  }
+  document.getElementById('trackBtn').onclick=start;
+  document.getElementById('stopBtn').onclick=function(){stop();setAlert('')};
+})();
+</script>
+<script src="install.js"></script>
+</body>
+</html>

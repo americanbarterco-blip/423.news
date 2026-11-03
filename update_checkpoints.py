@@ -4,7 +4,7 @@ write checkpoints.json for 423.news. Run by GitHub Actions on a schedule."""
 import hashlib, json, os, re, subprocess, sys, time, urllib.request, urllib.parse, datetime as dt
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "checkpoints", "checkpoints.json")
+OUT = os.path.join(ROOT, "checkpoints.json")
 CACHE = os.path.join(ROOT, "scripts", "geocode_cache.json")
 BASE = "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/{y}/{m}.pdf"
 UA = "423news-checkpoint-updater/1.0 (+https://423.news)"
