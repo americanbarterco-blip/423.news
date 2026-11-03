@@ -276,3 +276,24 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .fx-prog{margin-top:10px}.fx-bar{height:10px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden}.fx-bar i{display:block;height:100%;width:0;background:#ff5a00;transition:width .2s}
 .fx-pct{font-size:13px;color:var(--muted)}.fx-err{color:#ff8a80;margin-top:8px;min-height:1em}
 .fx-row{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}.fx-row span{flex:1;min-width:0}.fx-row small{display:block;color:var(--muted)}.fx-row button{background:transparent;border:1px solid var(--line);color:inherit;border-radius:8px;padding:5px 10px;cursor:pointer}
+
+/* weather alerts + rain timing */
+.fx-al-wrap{display:grid;gap:8px;margin-bottom:12px}
+.fx-al{border-radius:12px;border:1px solid;overflow:hidden;background:#1a0b0b;color:#fff}
+.fx-al.warn{border-color:#ef4444;background:linear-gradient(90deg,#7f1111,#3b0a0a)}
+.fx-al.watch{border-color:#f97316;background:linear-gradient(90deg,#7a3205,#3a1a06)}
+.fx-al.adv{border-color:#eab308;background:linear-gradient(90deg,#5c4a06,#2f2706)}
+.fx-al summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:11px 14px;align-items:baseline}
+.fx-al summary::-webkit-details-marker{display:none}
+.fx-al summary b{font-size:16px}.fx-al summary b:before{content:"⚠ "}
+.fx-al summary span{font-size:13px;opacity:.9;white-space:nowrap}
+.fx-al summary small{grid-column:1/-1;opacity:.8;font-size:12px}
+.fx-al-b{padding:4px 14px 14px;font-size:14px;line-height:1.5;border-top:1px solid rgba(255,255,255,.15);max-height:340px;overflow:auto}
+.fx-al-b p{margin:10px 0 0}.fx-al-more{font-size:13px;color:var(--muted)}
+.fx-rain{display:flex;gap:10px;align-items:center;padding:10px 3.2cqw;font-size:15px;color:#fff;background:linear-gradient(90deg,rgba(6,30,90,.95),rgba(8,40,110,.8));border-top:1px solid rgba(96,165,250,.35);border-bottom:1px solid rgba(96,165,250,.35)}
+.fx-rain[hidden]{display:none}.fx-rain span{font-size:20px}.fx-rain b{font-weight:600}
+.fx-rain.wet{background:linear-gradient(90deg,#0a3f9e,#0b2e78)}.fx-rain.soon{background:linear-gradient(90deg,#8a5a00,#3a2a06)}
+
+.fx-notify{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--s2);font-size:14px}
+.fx-notify button{background:var(--s2);border:1px solid var(--line);color:inherit;border-radius:99px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer}
+.fx-notify button.go{background:#ff5a00;border-color:#ff5a00;color:#fff}

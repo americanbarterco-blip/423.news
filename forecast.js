@@ -69,6 +69,84 @@
     });
   }
 
+  /* ---- severe weather alerts: National Weather Service (US), for the chosen city ---- */
+  function loadAlerts(city) {
+    var key = 'fxa_' + city.name, now = Date.now();
+    try { var c = JSON.parse(sessionStorage.getItem(key) || 'null'); if (c && now - c.t < 2 * 60 * 1000) return Promise.resolve(c.d); } catch (e) {}
+    return fetch('https://api.weather.gov/alerts/active?point=' + city.lat + ',' + city.lon, { headers: { Accept: 'application/geo+json' }, cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('alerts ' + r.status); return r.json(); })
+      .then(function (j) {
+        var rank = function (e) { return /Warning/.test(e) ? 0 : /Watch/.test(e) ? 1 : 2; };
+        var sev = { Extreme: 0, Severe: 1, Moderate: 2, Minor: 3, Unknown: 4 };
+        var list = (j.features || []).map(function (f) {
+          var p = f.properties || {};
+          return { event: p.event || 'Weather alert', severity: p.severity, headline: p.headline || '', area: p.areaDesc || '', ends: p.ends || p.expires || '',
+            desc: p.description || '', instr: p.instruction || '', sender: p.senderName || 'National Weather Service' };
+        }).sort(function (a, b) { return rank(a.event) - rank(b.event) || (sev[a.severity] || 4) - (sev[b.severity] || 4); });
+        try { sessionStorage.setItem(key, JSON.stringify({ t: now, d: list })); } catch (e) {}
+        return list;
+      });
+  }
+  function untilTxt(iso) {
+    if (!iso) return '';
+    var d = new Date(iso); if (isNaN(d)) return '';
+    var day = d.toDateString() === new Date().toDateString() ? '' : d.toLocaleDateString([], { weekday: 'short' }) + ' ';
+    return 'until ' + day + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+  function alertsHtml(list) {
+    if (!list.length) return '';
+    var shown = list.slice(0, 3), more = list.length - shown.length;
+    return '<div class="fx-al-wrap" role="region" aria-label="Weather alerts">' + shown.map(function (a, i) {
+      var cls = /Warning/.test(a.event) ? 'warn' : /Watch/.test(a.event) ? 'watch' : 'adv';
+      var area = a.area.length > 110 ? a.area.slice(0, 107) + '…' : a.area;
+      var body = esc(a.desc.length > 1100 ? a.desc.slice(0, 1097) + '…' : a.desc).replace(/\n\n/g, '<br><br>').replace(/\n/g, ' ');
+      return '<details class="fx-al ' + cls + '"' + (i === 0 && cls === 'warn' ? ' open' : '') + '><summary><b>' + esc(a.event) + '</b><span>' + esc(untilTxt(a.ends)) + '</span><small>' + esc(area) + '</small></summary>' +
+        '<div class="fx-al-b">' + body + (a.instr ? '<p><b>What to do:</b> ' + esc(a.instr) + '</p>' : '') + '<p class="muted">' + esc(a.sender) + '</p></div></details>';
+    }).join('') + (more > 0 ? '<div class="fx-al-more">+ ' + more + ' more alert' + (more > 1 ? 's' : '') + ' in effect. See weather.gov for the full list.</div>' : '') + '</div>';
+  }
+
+  /* ---- when rain starts / stops: Open-Meteo, 15-minute steps for the next 24 hours ---- */
+  function loadRain(city) {
+    var key = 'fxr_' + city.name, now = Date.now();
+    try { var c = JSON.parse(sessionStorage.getItem(key) || 'null'); if (c && now - c.t < 5 * 60 * 1000) return Promise.resolve(c.d); } catch (e) {}
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + city.lat + '&longitude=' + city.lon +
+      '&minutely_15=precipitation&forecast_minutely_15=96&precipitation_unit=inch&timezone=America%2FNew_York';
+    return fetch(url).then(function (r) { if (!r.ok) throw new Error('rain ' + r.status); return r.json(); }).then(function (j) {
+      var m = j.minutely_15; if (!m || !m.time) throw new Error('rain data');
+      var d = { t: m.time, p: m.precipitation };
+      try { sessionStorage.setItem(key, JSON.stringify({ t: now, d: d })); } catch (e) {}
+      return d;
+    });
+  }
+  function etNow() { return new Date().toLocaleString('sv-SE', { timeZone: 'America/New_York' }).slice(0, 16).replace(' ', 'T'); }
+  function clock(iso, base) {
+    var h = +iso.slice(11, 13), m = iso.slice(14, 16), ap = h >= 12 ? 'PM' : 'AM', h12 = h % 12 || 12;
+    var day = iso.slice(0, 10) === base.slice(0, 10) ? '' : 'tomorrow ';
+    return day + h12 + ':' + m + ' ' + ap;
+  }
+  function inTxt(iso, base) {
+    var mins = Math.round((Date.parse(iso + ':00Z') - Date.parse(base + ':00Z')) / 60000);
+    if (mins < 60) return 'in about ' + Math.max(mins, 5) + ' min';
+    var h = Math.floor(mins / 60), r = mins % 60;
+    return 'in about ' + h + ' hr' + (r >= 30 ? ' 30 min' : '');
+  }
+  function rainSummary(rd) {
+    var base = etNow(), T = rd.t, P = rd.p, WET = 0.01, cur = -1, i;
+    for (i = 0; i < T.length; i++) { if (T[i] <= base) cur = i; else break; }
+    if (cur < 0) cur = 0;
+    var wet = function (k) { return (P[k] || 0) >= WET; };
+    var strength = function (a, b) { var mx = 0; for (var k = a; k < b && k < P.length; k++) mx = Math.max(mx, P[k] || 0); return mx < 0.03 ? 'Light' : mx < 0.1 ? 'Moderate' : 'Heavy'; };
+    if (wet(cur)) {
+      var e = cur; while (e < T.length && (wet(e) || wet(e + 1))) e++;
+      if (e >= T.length) return { icon: '🌧️', cls: 'wet', text: 'Raining now, and it is expected to continue for the next 24 hours.' };
+      return { icon: '🌧️', cls: 'wet', text: strength(cur, e) + ' rain now. Expected to ease around ' + clock(T[e], base) + '.' };
+    }
+    for (i = cur + 1; i < T.length; i++) if (wet(i)) break;
+    if (i >= T.length) return { icon: '☀️', cls: 'dry', text: 'No rain expected in the next 24 hours.' };
+    var e2 = i; while (e2 < T.length && (wet(e2) || wet(e2 + 1))) e2++;
+    return { icon: '🌦️', cls: 'soon', text: strength(i, e2) + ' rain expected to start around ' + clock(T[i], base) + ' (' + inTxt(T[i], base) + ').' };
+  }
+
   /* ---- the board ---- */
   var WIND_SVG = '<svg viewBox="0 0 40 24" width="30" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M2 8h22a4.5 4.5 0 1 0-4.5-4.5"/><path d="M2 14h30a4.5 4.5 0 1 1-4.5 4.5"/><path d="M2 20h14"/></svg>';
   function cardHtml(d, idx) {
@@ -83,14 +161,24 @@
   function mountBoard(el) {
     var cityName = el.getAttribute('data-city') || saved() || 'Chattanooga';
     var showChips = el.getAttribute('data-chips') === '1';
-    el.innerHTML = '<div class="fx-board"><div class="fx-head"><img src="fx-header.jpg" alt="423.news. Accurate Local News and Weather. 5 Day Forecast" width="1536" height="288">' +
+    el.innerHTML = '<div class="fx-alerts"></div><div class="fx-board"><div class="fx-head"><img src="fx-header.jpg" alt="423.news. Accurate Local News and Weather. 5 Day Forecast" width="1536" height="288">' +
       '<div class="fx-city" aria-live="polite"></div></div>' +
+      '<div class="fx-rain" role="status" hidden></div>' +
       '<div class="fx-cards" role="list"><div class="fx-wait">Loading the forecast…</div></div>' +
       '<div class="fx-foot"><img src="fx-footer.jpg" alt="Your local weather authority. 423.news. Stay weather ready!" width="1536" height="119" loading="lazy"></div></div>' +
       (showChips ? '<div class="fx-chips" role="group" aria-label="Choose a city"></div>' : '') +
-      '<div class="fx-meta"></div>';
-    var cardsEl = el.querySelector('.fx-cards'), cityEl = el.querySelector('.fx-city'), chipsEl = el.querySelector('.fx-chips'), meta = el.querySelector('.fx-meta');
-    var timer = null;
+      '<div class="fx-notify"></div><div class="fx-meta"></div>';
+    var alertsEl = el.querySelector('.fx-alerts'), rainEl = el.querySelector('.fx-rain'), cardsEl = el.querySelector('.fx-cards'), cityEl = el.querySelector('.fx-city'), chipsEl = el.querySelector('.fx-chips'), meta = el.querySelector('.fx-meta');
+    var timer = null, notifyEl = el.querySelector('.fx-notify');
+    function notify() {
+      var pf = {}; try { pf = JSON.parse(localStorage.getItem('push_prefs') || 'null') || {}; } catch (e) {}
+      var wx = pf.topics && pf.topics.indexOf('weather') > -1;
+      notifyEl.innerHTML = wx
+        ? '<span>🔔 Severe weather alerts are on for this phone</span><button type="button" data-n="1">Change</button>'
+        : '<span>Get tornado, storm and flood warnings the moment they are issued.</span><button type="button" data-n="1" class="go">🔔 Turn on weather alerts</button>';
+    }
+    notifyEl.addEventListener('click', function (e) { if (e.target.closest('button[data-n]') && window.Push423) window.Push423.open({ weather: true }); });
+    el.__notify = notify; notify();
     function chips(cur) {
       if (!chipsEl) return;
       chipsEl.innerHTML = CITIES.map(function (c) { return '<button type="button" data-c="' + esc(c.name) + '" aria-pressed="' + (c.name === cur) + '">' + esc(c.name) + '</button>'; }).join('');
@@ -98,11 +186,18 @@
     function paint(name) {
       var city = find(name); cityEl.textContent = city.name + ', ' + city.st; chips(city.name);
       clearTimeout(timer);
+      var open = alertsEl.querySelector('details[open]') ? 1 : 0;
+      loadAlerts(city).then(function (l) { if (el.isConnected) alertsEl.innerHTML = alertsHtml(l); }).catch(function () { if (el.isConnected) alertsEl.innerHTML = ''; });
+      loadRain(city).then(function (rd) {
+        if (!el.isConnected) return;
+        var s = rainSummary(rd); rainEl.hidden = false; rainEl.className = 'fx-rain ' + s.cls;
+        rainEl.innerHTML = '<span aria-hidden="true">' + s.icon + '</span><b>' + esc(s.text) + '</b>';
+      }).catch(function () { if (el.isConnected) rainEl.hidden = true; });
       load(city).then(function (days) {
         if (!el.isConnected) return;
         cardsEl.innerHTML = days.map(cardHtml).join('');
-        meta.textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + ' · Forecast data: Open-Meteo.com';
-        timer = setTimeout(function () { if (el.isConnected) paint(city.name); }, 30 * 60 * 1000);
+        meta.textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + ' · Forecast and rain timing: Open-Meteo.com · Alerts: National Weather Service';
+        timer = setTimeout(function () { if (el.isConnected) paint(city.name); }, 3 * 60 * 1000);
       }).catch(function () {
         if (!el.isConnected) return;
         cardsEl.innerHTML = '<div class="fx-wait">The forecast could not be loaded right now. Trying again shortly…</div>';
@@ -303,5 +398,5 @@
     scan();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watch); else watch();
-  window.Forecast423 = { mountBoard: mountBoard, scan: scan };
+  window.Forecast423 = { mountBoard: mountBoard, scan: scan, refreshNotify: function () { document.querySelectorAll('[data-fx="board"]').forEach(function (n) { if (n.__notify) n.__notify(); }); } };
 })();

@@ -24,7 +24,7 @@
 
   function paintBtn(on) { var b = document.getElementById('pushBtn'); if (b) b.textContent = on ? '🔔 Notifications on' : '🔔 Get notifications'; }
 
-  function enable(topics, msg) {
+  function enable(topics, msg, quiet) {
     msg.textContent = 'Working…';
     return Notification.requestPermission().then(function (perm) {
       if (perm !== 'granted') throw new Error('Notifications are blocked. Allow them for this site in your browser settings, then try again.');
@@ -38,7 +38,7 @@
     }).then(function (r) {
       if (!r.ok) throw new Error('Could not save your choice. Try again.');
       paintBtn(true); close();
-      reg().then(function (r2) { r2.showNotification('Notifications are on', { body: "You'll get 423.news alerts here.", icon: 'icon-192.png', badge: 'icon-192.png' }); });
+      if (!quiet) reg().then(function (r2) { r2.showNotification('Notifications are on', { body: "You'll get 423.news alerts here.", icon: 'icon-192.png', badge: 'icon-192.png' }); });
     });
   }
   function disable() {
@@ -49,7 +49,12 @@
     }).then(function () { paintBtn(false); close(); });
   }
 
-  function open() {
+  var CITIES = ['Chattanooga', 'Cleveland', 'Athens', 'Knoxville', 'Morristown', 'Johnson City', 'Kingsport', 'Bristol'];
+  function prefs() { try { return JSON.parse(localStorage.getItem('push_prefs') || 'null') || {}; } catch (e) { return {}; } }
+  function savePrefs(o) { try { localStorage.setItem('push_prefs', JSON.stringify(o)); } catch (e) {} }
+
+  function open(opts) {
+    opts = opts || {};
     if (!supported || (ios && !standalone)) {
       modal('<h2 style="margin:0 0 8px;font-size:18px">Get 423.news alerts</h2><p style="color:#9eafc0;margin:0 0 12px">' +
         (ios && !standalone ? 'On iPhone, first add the app to your home screen: tap <b>Share</b>, then <b>Add to Home Screen</b>. Open it from there and tap this button again.'
@@ -58,30 +63,40 @@
       return;
     }
     current().then(function (sub) {
-      if (sub) {
-        var m = modal('<h2 style="margin:0 0 8px;font-size:18px">Notifications are on</h2><p style="color:#9eafc0;margin:0 0 12px">This phone will get 423.news alerts.</p>' +
-          '<button type="button" id="pushOff" style="' + BTN + ';background:#24384a;color:#fff">Turn off</button><button type="button" data-x style="' + BTN + ';background:#ff5a0a;color:#fff">Done</button>');
-        m.querySelector('#pushOff').onclick = function () { disable(); };
-        return;
-      }
-      var m2 = modal('<h2 style="margin:0 0 8px;font-size:18px">Get 423.news alerts</h2><p style="color:#9eafc0;margin:0 0 10px">Choose what you want on this phone:</p>' +
-        '<label style="display:flex;gap:8px;margin:6px 0"><input type="checkbox" id="tpB" checked><span><b>Breaking and alerts</b><br><span style="color:#9eafc0">Urgent items only</span></span></label>' +
-        '<label style="display:flex;gap:8px;margin:6px 0 12px"><input type="checkbox" id="tpC"><span><b>Every Claudia Green report</b><br><span style="color:#9eafc0">Includes unconfirmed scanner reports, labeled as such</span></span></label>' +
+      var pf = prefs(), have = pf.topics || (sub ? ['breaking'] : ['breaking', 'weather']);
+      var on = function (t) { return have.indexOf(t) > -1 || (t === 'weather' && opts.weather); };
+      var city = pf.city || 'all';
+      var cityOpts = '<option value="all"' + (city === 'all' ? ' selected' : '') + '>All eight cities</option>' + CITIES.map(function (c) { return '<option' + (c === city ? ' selected' : '') + '>' + c + '</option>'; }).join('');
+      var m = modal('<h2 style="margin:0 0 8px;font-size:18px">' + (sub ? 'Notification settings' : 'Get 423.news alerts') + '</h2><p style="color:#9eafc0;margin:0 0 10px">Choose what you want on this phone:</p>' +
+        '<label style="display:flex;gap:8px;margin:6px 0"><input type="checkbox" id="tpW"' + (on('weather') ? ' checked' : '') + '><span><b>Severe weather alerts</b><br><span style="color:#9eafc0">Tornado, severe storm and flash flood warnings, sent right away</span></span></label>' +
+        '<div id="tpWbox" style="margin:0 0 8px 26px"><select id="tpCity" style="width:100%;padding:8px;border-radius:8px;background:#0f2234;color:#e8eef5;border:1px solid #24384a;font:14px system-ui">' + cityOpts + '</select></div>' +
+        '<label style="display:flex;gap:8px;margin:6px 0"><input type="checkbox" id="tpB"' + (on('breaking') ? ' checked' : '') + '><span><b>Breaking news</b><br><span style="color:#9eafc0">Urgent items only</span></span></label>' +
+        '<label style="display:flex;gap:8px;margin:6px 0 12px"><input type="checkbox" id="tpC"' + (on('claudia') ? ' checked' : '') + '><span><b>Every Claudia Green report</b><br><span style="color:#9eafc0">Includes unconfirmed scanner reports, labeled as such</span></span></label>' +
         '<div id="pushMsg" style="color:#f87171;min-height:20px;margin-bottom:6px"></div>' +
-        '<button type="button" id="pushOn" style="' + BTN + ';background:#ff5a0a;color:#fff">Turn on</button><button type="button" data-x style="' + BTN + ';background:#24384a;color:#fff">Not now</button>');
-      m2.querySelector('#pushOn').onclick = function () {
-        var t = []; if (m2.querySelector('#tpB').checked) t.push('breaking'); if (m2.querySelector('#tpC').checked) t.push('claudia');
-        var msg = m2.querySelector('#pushMsg'); if (!t.length) { msg.textContent = 'Pick at least one.'; return; }
-        enable(t, msg).catch(function (e) { msg.textContent = (e && e.message) || 'Could not turn on notifications.'; });
+        '<button type="button" id="pushOn" style="' + BTN + ';background:#ff5a0a;color:#fff">' + (sub ? 'Save' : 'Turn on') + '</button>' +
+        (sub ? '<button type="button" id="pushOff" style="' + BTN + ';background:#24384a;color:#fff">Turn off</button>' : '<button type="button" data-x style="' + BTN + ';background:#24384a;color:#fff">Not now</button>'));
+      var wbox = m.querySelector('#tpWbox'), wchk = m.querySelector('#tpW');
+      var sync = function () { wbox.style.display = wchk.checked ? 'block' : 'none'; }; wchk.onchange = sync; sync();
+      if (sub) m.querySelector('#pushOff').onclick = function () { savePrefs({}); disable().then(function () { if (window.Forecast423 && Forecast423.refreshNotify) Forecast423.refreshNotify(); }); };
+      m.querySelector('#pushOn').onclick = function () {
+        var t = [], msg = m.querySelector('#pushMsg'), cv = m.querySelector('#tpCity').value;
+        if (m.querySelector('#tpB').checked) t.push('breaking');
+        if (m.querySelector('#tpC').checked) t.push('claudia');
+        if (wchk.checked) { t.push('weather'); t.push(cv === 'all' ? 'wx:all' : 'wx:' + cv); }
+        if (!t.length) { msg.textContent = 'Pick at least one.'; return; }
+        var chosen = t.filter(function (x) { return x.indexOf('wx:') !== 0; });
+        enable(t, msg, !!sub).then(function () { savePrefs({ topics: chosen, city: cv }); if (window.Forecast423 && Forecast423.refreshNotify) Forecast423.refreshNotify(); })
+          .catch(function (e) { msg.textContent = (e && e.message) || 'Could not turn on notifications.'; });
       };
     });
   }
+  window.Push423 = { open: open };
 
   function add() {
     var f = document.querySelector('footer .wrap'); if (!f || document.getElementById('pushBtn')) return;
     var b = document.createElement('button'); b.id = 'pushBtn'; b.type = 'button'; b.textContent = '🔔 Get notifications';
     b.style.cssText = 'display:block;margin:10px 0 0;background:#1479ff;color:#fff;border:0;border-radius:99px;padding:10px 18px;font:700 14px system-ui,sans-serif;cursor:pointer';
-    b.addEventListener('click', open); f.appendChild(b);
+    b.addEventListener('click', function () { open(); }); f.appendChild(b);
     if (supported) current().then(function (s) { paintBtn(!!s); }).catch(function () {});
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', add); else add();
