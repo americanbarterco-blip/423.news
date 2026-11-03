@@ -6,6 +6,7 @@
   /* Public anon key — safe in the browser. Row Level Security protects the data. */
   var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE';
   var MEDIA_BASE = SB_URL + '/storage/v1/object/public/news-media/';
+  var VIDEO_BASE = SB_URL + '/storage/v1/object/public/news-video/';
 
   var SECTIONS = {
     news:        { label: 'News',        emoji: '📰', blurb: 'Local reporting from across the region.' },
@@ -22,7 +23,7 @@
   ];
   var CLASSIFIED_TOPICS = [['all', 'All'], ['sell', 'For Sale'], ['buy', 'Wanted'], ['trade', 'Trade']];
   var TOPIC_LABEL = { events: 'Events', discussions: 'Discussions', lost: 'Lost & Found', announcements: 'Announcements', general: 'General', sell: 'For Sale', buy: 'Wanted', trade: 'Trade', photos: 'Photos' };
-  var POST_COLS = 'id,slug,section,topic,title,body,image_url,price,author_id,author_name,status,created_at';
+  var POST_COLS = 'id,slug,section,topic,title,body,image_url,video_url,price,author_id,author_name,status,created_at';
 
   if (!window.supabase || !window.supabase.createClient) {
     document.getElementById('app').innerHTML = '<div class="err">Could not load the data library. Check your connection and refresh.</div>';
@@ -40,6 +41,7 @@
     });
   }
   function isStaff() { return !!(state.profile && (state.profile.role === 'editor' || state.profile.role === 'admin')); }
+  window.News423 = { sb: sb, key: SB_KEY, isStaff: isStaff, profileLoaded: function () { return !!state.authReady; } };
   function toast(msg) {
     var t = $('#toast'); t.textContent = msg; t.style.display = 'block';
     clearTimeout(toast._t); toast._t = setTimeout(function () { t.style.display = 'none'; }, 3600);
@@ -52,6 +54,8 @@
     if (s < 86400 * 30) return Math.floor(s / 86400) + ' days ago';
     return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   }
+  function safeVid(u) { return (u && String(u).indexOf(VIDEO_BASE) === 0) ? u : ''; }
+  function vid(p) { var u = safeVid(p.video_url); return u ? '<video class="ugc-video" controls playsinline preload="metadata" src="' + esc(u) + '"></video>' : ''; }
   function safeImg(u) { return (u && String(u).indexOf(MEDIA_BASE) === 0) ? u : ''; }
   function money(n) { return n == null ? '' : '$' + Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
   function excerpt(t, n) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; }
@@ -85,7 +89,7 @@
   }
   function ugc(p) {
     return '<article class="panel ugc"><div class="byline"><b>' + esc(p.author_name) + '</b><span class="muted">' + esc(ago(p.created_at)) + ' · ' + esc(label(p)) + '</span></div>' +
-      (safeImg(p.image_url) ? media(p) : '') +
+      (safeImg(p.image_url) ? media(p) : '') + vid(p) +
       '<h3>' + esc(p.title) + '</h3><p class="muted">' + esc(excerpt(p.body, 160)) + '</p>' +
       '<div class="foot"><a href="' + href(p) + '">💬 Read &amp; comment</a><button type="button" data-share="' + esc(p.slug) + '">↗ Share</button></div></article>';
   }
@@ -194,7 +198,7 @@
           }).join('') + '</div>';
         }
         if (isStaff()) {
-          out += '<form id="streamForm" class="panel pad" style="margin:12px 0 24px"><b>Add live video (editors)</b><div class="hint">Paste a YouTube video, live stream or playlist link. It shows here and on the home page. Only use streams you have the right to embed.</div>' +
+          out += '<form id="streamForm" class="panel pad" style="margin:12px 0 24px"><b>Add live video (editors)</b><div class="hint">Paste a link from YouTube, Facebook, TikTok, X, Instagram, Vimeo or Twitch, or a direct .m3u8 / .mp4 stream. It shows here and on the home page. Only use streams you have the right to embed.</div>' +
             '<input name="title" placeholder="Title" maxlength="120" required><input name="url" placeholder="https://www.youtube.com/watch?v=…" required>' +
             '<input type="hidden" name="league" value="news">' +
             '<select name="kind"><option value="live">Live stream</option><option value="video">Video</option><option value="playlist">Playlist</option></select><button class="btn" type="submit">Add</button></form>';
@@ -234,6 +238,14 @@
     });
   }
 
+  views.forecast = function () {
+    document.title = '5-Day Forecast & Weather Videos • 423.news';
+    return Promise.resolve('<div class="fx-page"><div class="sech"><h1 style="margin:0">5-Day Forecast</h1><a href="conditions.html">Current conditions →</a></div>' +
+      '<div data-fx="board" data-chips="1"></div>' +
+      '<div class="sech" style="margin-top:26px"><h2>423.news Forecast Videos</h2></div><div data-fx="videos" data-limit="12"></div>' +
+      '<div data-fx="editor"></div></div>');
+  };
+
   views.story = function (slug) {
     return sb.from('news_posts').select(POST_COLS).eq('slug', slug).maybeSingle().then(function (r) {
       if (r.error) throw r.error;
@@ -247,7 +259,7 @@
         '<h1>' + esc(p.title) + '</h1>' +
         '<div class="muted">' + esc(p.author_name) + ' · ' + esc(ago(p.created_at)) + '</div>' +
         (p.price != null ? '<div class="price" style="margin-top:8px">' + esc(money(p.price)) + '</div>' : '') +
-        (safeImg(p.image_url) ? '<img class="hero-img" src="' + esc(safeImg(p.image_url)) + '" alt="">' : '') +
+        (safeImg(p.image_url) ? '<img class="hero-img" src="' + esc(safeImg(p.image_url)) + '" alt="">' : '') + vid(p) +
         '<div class="body">' + esc(p.body) + '</div>' +
         '<div class="row-actions"><button class="btn dark sm" data-share="' + esc(p.slug) + '">↗ Share</button>' +
         (canEdit ? '<button class="btn danger sm" data-delpost="' + esc(p.id) + '">Delete</button>' : '') + '</div>' +
@@ -421,6 +433,7 @@
     return st.kind === 'playlist' ? base + 'videoseries?list=' + encodeURIComponent(st.ref) : base + encodeURIComponent(st.ref) + '?rel=0';
   }
   function player(st) {
+    if (window.Embed423) return Embed423.html(st);
     return '<div class="vwrap"><iframe src="' + esc(embedSrc(st)) + '" title="' + esc(st.title) + '" loading="lazy" allow="accelerometer; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
   }
   state.streams = [];
@@ -452,7 +465,7 @@
         out += empty('No video yet', isStaff() ? 'Add a YouTube video, live stream or playlist below.' : 'Live streams and highlights will appear here.');
       }
       if (isStaff()) {
-        out += '<form id="streamForm" class="panel pad" style="margin:12px 0 24px"><b>Add video (editors)</b><div class="hint">Paste a YouTube video, live stream or playlist link. Only use streams you have the right to embed.</div>' +
+        out += '<form id="streamForm" class="panel pad" style="margin:12px 0 24px"><b>Add video (editors)</b><div class="hint">Paste a link from YouTube, Facebook, TikTok, X, Instagram, Vimeo or Twitch, or a direct .m3u8 / .mp4 stream. Only use streams you have the right to embed.</div>' +
           '<input name="title" placeholder="Title" maxlength="120" required><input name="url" placeholder="https://www.youtube.com/watch?v=…" required>' +
           '<select name="league">' + ['general', 'nfl', 'nba', 'ncaaf', 'ncaab', 'wwe'].map(function (l) { return '<option value="' + l + '">' + LEAGUE_NAME[l] + '</option>'; }).join('') + '</select>' +
           '<select name="kind"><option value="video">Video</option><option value="live">Live stream</option><option value="playlist">Playlist</option></select><button class="btn" type="submit">Add</button></form>';
@@ -479,7 +492,7 @@
       return '<h1>Review queue</h1><p class="muted">Submissions waiting for approval (' + rows.length + ').</p>' +
         (rows.length ? rows.map(function (p) {
           return '<div class="panel q-item"><span class="badge">' + esc(label(p)) + '</span> <span class="muted">by ' + esc(p.author_name) + ' · ' + esc(ago(p.created_at)) + '</span>' +
-            '<h3>' + esc(p.title) + '</h3>' + (safeImg(p.image_url) ? '<img src="' + esc(safeImg(p.image_url)) + '" alt="" style="max-width:240px;border-radius:8px">' : '') +
+            '<h3>' + esc(p.title) + '</h3>' + (safeImg(p.image_url) ? '<img src="' + esc(safeImg(p.image_url)) + '" alt="" style="max-width:240px;border-radius:8px">' : '') + vid(p) +
             '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(excerpt(p.body, 900)) + '</p>' +
             '<div class="row-actions"><button class="btn ok sm" data-setstatus="published" data-id="' + esc(p.id) + '">Approve</button>' +
             '<button class="btn dark sm" data-setstatus="rejected" data-id="' + esc(p.id) + '">Reject</button>' +
@@ -496,7 +509,7 @@
     return { name: parts[0] || 'home', a: parts[1], b: parts[2] };
   }
   function setActive(name) {
-    var map = { home: '#/home', news: '#/news', sports: '#/sports', scores: '#/scores', schools: '#/schools', outdoors: '#/outdoors', classifieds: '#/classifieds', community: '#/community', teams: '#/teams', government: '#/government' };
+    var map = { home: '#/home', forecast: '#/forecast', news: '#/news', sports: '#/sports', scores: '#/scores', schools: '#/schools', outdoors: '#/outdoors', classifieds: '#/classifieds', community: '#/community', teams: '#/teams', government: '#/government' };
     document.querySelectorAll('#nav a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === map[name]); });
   }
   function render() {
@@ -568,6 +581,8 @@
       '<label for="pb">Details</label><textarea id="pb" name="body" rows="7" maxlength="20000" required></textarea>' +
       '<div id="priceWrap" hidden><label for="pp">Price (USD, optional)</label><input id="pp" name="price" type="number" min="0" step="0.01" inputmode="decimal"></div>' +
       '<label for="pi">Photo (optional, up to 5 MB)</label><input id="pi" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/gif">' +
+      '<label for="pv">Video (optional, up to 50 MB: tap to record or choose one)</label><input id="pv" name="video" type="file" accept="video/mp4,video/quicktime,video/webm,video/*">' +
+      '<label style="display:flex;gap:8px;align-items:flex-start;margin-top:6px"><input type="checkbox" id="pvc" name="vconsent" style="width:auto;margin-top:3px"><span>I shot this video or have permission to share it, and 423.news may publish it after review.</span></label>' +
       '<div class="hint" id="pnote"></div><div id="perr" style="color:#f87171;min-height:20px"></div>' +
       '<div class="row-actions"><button class="btn" type="submit" id="psubmit">Submit</button><button class="btn dark" type="button" data-close>Cancel</button></div></form>');
     var sel = $('#ps');
@@ -577,6 +592,7 @@
       tw.innerHTML = list ? '<label for="ptp">Type</label><select id="ptp" name="topic">' + list.map(function (t) { return '<option value="' + t + '"' + (t === topic ? ' selected' : '') + '>' + TOPIC_LABEL[t] + '</option>'; }).join('') + '</select>' : '';
       $('#priceWrap').hidden = s !== 'classifieds';
       $('#pnote').textContent = (s === 'community' || s === 'classifieds' || isStaff()) ? 'Posts in this section go live right away.' : 'Stories are reviewed by an editor before they are published.';
+      if ($('#pv') && $('#pv').files && $('#pv').files.length) $('#pnote').textContent = 'Posts with a video are reviewed by an editor before they go live.';
     }
     sel.addEventListener('change', sync); sync();
   }
@@ -594,12 +610,25 @@
     });
   }
 
+  function uploadVideo(file) {
+    if (!file || !file.size) return Promise.resolve(null);
+    var ext = { 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm' }[file.type];
+    if (!ext) return Promise.reject(new Error('Video must be MP4, MOV or WebM.'));
+    if (file.size > 50 * 1024 * 1024) return Promise.reject(new Error('Video is larger than 50 MB. Record a shorter clip or trim it first.'));
+    var rand = Math.random().toString(36).slice(2, 10);
+    var path = state.user.id + '/' + Date.now() + '-' + rand + '.' + ext;
+    return sb.storage.from('news-video').upload(path, file, { contentType: file.type, upsert: false }).then(function (r) {
+      if (r.error) throw r.error;
+      return VIDEO_BASE + path;
+    });
+  }
+
   /* ---------- auth state ---------- */
   function loadProfile() {
-    if (!state.user) { state.profile = null; return Promise.resolve(); }
+    if (!state.user) { state.profile = null; state.authReady = true; return Promise.resolve(); }
     return sb.from('news_profiles').select('id,display_name,role').eq('id', state.user.id).maybeSingle().then(function (r) {
-      state.profile = r.data || null;
-    });
+      state.profile = r.data || null; state.authReady = true;
+    }, function () { state.authReady = true; });
   }
   function paintAccount() {
     var b = $('#acctBtn'), bb = $('#bAcct');
@@ -774,12 +803,16 @@
 
     if (f.id === 'postForm') {
       var d = new FormData(f), submit = $('#psubmit'), perr = $('#perr'); perr.textContent = '';
-      submit.disabled = true; submit.textContent = 'Posting…';
+      var vfile = d.get('video');
+      if (vfile && vfile.size && !d.get('vconsent')) { perr.textContent = 'Please confirm you shot the video or have permission to share it.'; return; }
+      submit.disabled = true; submit.textContent = (vfile && vfile.size) ? 'Uploading video…' : 'Posting…';
       var file = d.get('image');
-      uploadImage(file && file.size ? file : null).then(function (imgUrl) {
-        var section = d.get('section');
+      uploadImage(file && file.size ? file : null).then(function (iu) {
+        return uploadVideo(vfile && vfile.size ? vfile : null).then(function (vu) { return { img: iu, vid: vu }; });
+      }).then(function (up) {
+        var imgUrl = up.img, section = d.get('section');
         var price = section === 'classifieds' && d.get('price') !== '' && d.get('price') != null ? Number(d.get('price')) : null;
-        var row = { section: section, topic: d.get('topic') || null, title: (d.get('title') || '').toString().trim(), body: (d.get('body') || '').toString().trim(), image_url: imgUrl, price: price };
+        var row = { section: section, topic: d.get('topic') || null, title: (d.get('title') || '').toString().trim(), body: (d.get('body') || '').toString().trim(), image_url: imgUrl, video_url: up.vid, price: price };
         return sb.from('news_posts').insert(row).select('slug,status,section').single();
       }).then(function (r) {
         if (r.error) throw r.error;
@@ -805,9 +838,12 @@
     }
 
     if (f.id === 'streamForm') {
-      var sd = new FormData(f), url = (sd.get('url') || '').toString(), kind = sd.get('kind'), ref = kind === 'playlist' ? ytList(url) : ytId(url);
-      if (!ref) { toast('That does not look like a YouTube ' + (kind === 'playlist' ? 'playlist' : 'video') + ' link.'); return; }
-      sb.from('news_streams').insert({ title: (sd.get('title') || '').toString().trim(), league: sd.get('league'), kind: kind, ref: ref }).then(function (r) {
+      var sd = new FormData(f), url = (sd.get('url') || '').toString(), kind = sd.get('kind'), ref = null, provider = 'youtube';
+      var pr = window.Embed423 ? Embed423.parse(url) : null;
+      if (pr && pr.provider !== 'youtube') { provider = pr.provider; ref = pr.ref; if (kind === 'playlist') kind = 'video'; }
+      else ref = kind === 'playlist' ? ytList(url) : ytId(url);
+      if (!ref) { toast('That link is not supported. Use a YouTube, Facebook, TikTok, X, Instagram, Vimeo or Twitch link, or a direct .m3u8 / .mp4 link.'); return; }
+      sb.from('news_streams').insert({ title: (sd.get('title') || '').toString().trim(), league: sd.get('league'), kind: kind, ref: ref, provider: provider }).then(function (r) {
         if (r.error) toast(r.error.message); else { toast('Added'); scrollTop = false; render(); }
       });
       return;

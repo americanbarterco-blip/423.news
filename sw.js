@@ -2,7 +2,7 @@
    Safe by design: pages, scripts and data are always fetched fresh from the network first,
    so new uploads show up right away. Nothing from Supabase or other sites is touched.
    Bump VERSION to force every phone to drop old cached files. */
-var VERSION = 'v2';
+var VERSION = 'v4';
 var CACHE = '423news-' + VERSION;
 var PRECACHE = ['offline.html', 'icon-192.png', 'icon-512.png'];
 

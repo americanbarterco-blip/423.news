@@ -146,7 +146,7 @@
       });
       return true;
     }
-    if (/\.mp4(\?|$)/i.test(u)) { box.innerHTML = '<video controls autoplay muted playsinline src="' + esc(u) + '"></video>'; return true; }
+    if (/\.(mp4|webm|mov)(\?|$)/i.test(u)) { box.innerHTML = '<video controls autoplay muted playsinline src="' + esc(u) + '"></video>'; return true; }
     box.innerHTML = '<iframe src="' + esc(u) + '" title="' + esc(title) +
       '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>';
     return true;
@@ -192,7 +192,7 @@
 
   /* ---------------- live news: videos come from the News page (news_streams, league news) ---------------- */
   var newsStream = null, newsSig = '';
-  function newsUrl() { return CFG.videoUrl || (newsStream ? ytSrc(newsStream) + '&autoplay=1&mute=1' : ''); }
+  function newsUrl() { return CFG.videoUrl || (newsStream ? ytSrc(newsStream, true) : ''); }
   function newsTitle() { return CFG.videoUrl ? CFG.videoTitle : (newsStream ? newsStream.title : CFG.videoTitle); }
   function paintNewsVideo() {
     if (CFG.videoUrl) return;                   /* a fixed URL typed into home-live.js wins */
@@ -368,13 +368,15 @@
 
   /* ---------------- live sports: videos come from Scores & Live (news_streams) ---------------- */
   var sportsSig = '', sportsTimer = null;
-  function ytSrc(st) {
+  function ytSrc(st, auto) {
+    var em = window.Embed423 ? window.Embed423.src(st, { autoplay: !!auto }) : null;
+    if (em) return em.url;
     var b = 'https://www.youtube-nocookie.com/embed/';
     return st.kind === 'playlist' ? b + 'videoseries?list=' + encodeURIComponent(st.ref) : b + encodeURIComponent(st.ref) + '?rel=0';
   }
   /* newsOnly = true: videos posted on the News page (league news). false: everything else (sports). */
   function loadStreams(newsOnly) {
-    return fetch(SB_URL + '/rest/v1/news_streams?select=id,title,league,kind,ref&active=eq.true&league=' + (newsOnly ? 'eq.news' : 'neq.news') + '&order=sort.asc,created_at.desc&limit=12',
+    return fetch(SB_URL + '/rest/v1/news_streams?select=*&active=eq.true&league=' + (newsOnly ? 'eq.news' : 'neq.news') + '&order=sort.asc,created_at.desc&limit=12',
       { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } })
       .then(function (r) { if (!r.ok) throw new Error('streams ' + r.status); return r.json(); });
   }
