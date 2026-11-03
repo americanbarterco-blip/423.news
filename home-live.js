@@ -99,6 +99,17 @@
     '.hl-t.sev{background:#b91c1c}' +
     '.hl-row small{display:block;color:var(--muted)}' +
     '.hl-note{padding:12px 14px;font-size:13px;color:var(--muted)}' +
+    '.hl-t.warn{background:#c2410c}.hl-t.low{background:#475569}' +
+    '.hl-chips button i{font-style:normal;opacity:.8;margin-left:4px}' +
+    '.hl-clear{display:flex;gap:8px;align-items:center;padding:14px;font-size:14px}.hl-clear b{color:#16a34a;font-size:18px}' +
+    '.hl-acts{display:flex;gap:10px;align-items:center}.hl-acts button{background:var(--s2);border:1px solid var(--line);color:inherit;border-radius:99px;padding:3px 10px;font:inherit;font-size:12px;cursor:pointer}' +
+    '.hl-map{font-size:12px;text-decoration:underline;margin-left:8px}' +
+    '.hl-acts button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}' +
+    '.hl-mapbox[hidden]{display:none}.hl-map-el{height:340px;background:#1e293b;margin-top:10px}' +
+    '.hl-mapbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 14px;font-size:12px;color:var(--muted)}' +
+    '.hl-mapbar button,.hl-mapbar a{background:var(--s2);border:1px solid var(--line);color:inherit;border-radius:99px;padding:5px 12px;font:inherit;font-size:12px;cursor:pointer;text-decoration:none}' +
+    '.hl-pop{font-size:13px;line-height:1.4;color:#111}.hl-pop a{color:#1d4ed8;text-decoration:underline}' +
+    '.hl-foot{padding:8px 14px 12px;font-size:11px;color:var(--muted);border-top:1px solid var(--line)}.hl-foot a{text-decoration:underline;color:inherit}' +
     '.hl-side{display:grid;gap:16px;min-width:0;align-content:start}' +
     '.hl-claudia{max-height:260px;overflow:auto;padding:4px 14px 10px}.hl-claudia a{color:inherit;text-decoration:none}' +
     '#homeSports{display:grid;gap:16px;margin-bottom:22px}' +
@@ -201,6 +212,105 @@
     }).catch(function (e) { return { hub: h.name, ok: false, error: e.message, list: [] }; });
   }
 
+  var HUB_KEY = 'hl_hub', hubChosen = false;
+  function hubSave(n) { try { localStorage.setItem(HUB_KEY, n); } catch (e) {} }
+  function hubLoad() { try { return localStorage.getItem(HUB_KEY) || ''; } catch (e) { return ''; } }
+  function dist(a, b, c, d) { var r = Math.PI / 180, x = (c - a) * r, y = (d - b) * r * Math.cos((a + c) / 2 * r); return Math.sqrt(x * x + y * y) * 6371; }
+  function nearestHub(lat, lon) {
+    var best = null, bd = 1e9;
+    CFG.hubs.forEach(function (h) { var d = dist(lat, lon, h.lat, h.lon); if (d < bd) { bd = d; best = h; } });
+    return bd <= 60 ? best.name : null;
+  }
+  function pickStartHub(root) {
+    var saved = hubLoad();
+    if (saved && CFG.hubs.some(function (h) { return h.name === saved; })) { hubFilter = saved; hubChosen = true; return; }
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function (p) {
+        if (hubChosen) return;
+        var n = nearestHub(p.coords.latitude, p.coords.longitude);
+        if (n) { hubFilter = n; hubChosen = true; hubSave(n); paintTraffic(root); }
+      }, function () {}, { maximumAge: 600000, timeout: 6000 });
+    }
+  }
+  function sevClass(t) {
+    if (/^(Road closed|Accident|Flooding|Ice)$/.test(t.type)) return ' sev';
+    if (/^(Lane closed|Jam|Dangerous conditions|Fog|Broken down vehicle)$/.test(t.type)) return ' warn';
+    return ' low';
+  }
+  function sevRank(t) { var c = sevClass(t); return c === ' sev' ? 0 : c === ' warn' ? 1 : 2; }
+  function delayTxt(s) { if (!s) return ''; var m = Math.round(s / 60); return m >= 1 ? ' · about ' + m + ' min delay' : ''; }
+  function lenTxt(m) { if (!m || m < 160) return ''; return ' · ' + (m / 1609.34).toFixed(1) + ' mi'; }
+  function rowHtml(t) {
+    var place = t.from ? esc(t.from) + (t.to && t.to !== t.from ? ' → ' + esc(t.to) : '') : (t.to ? esc(t.to) : '');
+    var head = t.road ? esc(t.road) + ' · ' + esc(t.type) : esc(t.type);
+    var detail = (t.text && t.text !== t.type ? esc(t.text) + ' · ' : '') + esc(t.hub) + (place ? ' · ' + place : '') + esc(delayTxt(t.delay) + lenTxt(t.length));
+    var map = (t.lat != null && t.lon != null) ? ' <a class="hl-map" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query=' + t.lat + ',' + t.lon + '">Map</a>' : '';
+    return '<div class="hl-row"><span class="hl-t' + sevClass(t) + '">' + esc(t.type) + '</span><div><b>' + head + '</b>' + map + '<small>' + detail + '</small></div></div>';
+  }
+
+  /* ---------------- map view (Leaflet + OpenStreetMap, loaded only when the viewer opens Map) ---------------- */
+  var view = 'list', lmap = null, mlayer = null, meMark = null, fitSig = '', lfWait = null;
+  function loadLeaflet(cb) {
+    if (window.L && window.L.map) return cb();
+    if (lfWait) { lfWait.push(cb); return; }
+    lfWait = [cb];
+    var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(l);
+    var s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
+    s.onload = function () { var q = lfWait; lfWait = null; q.forEach(function (f) { f(); }); };
+    s.onerror = function () { var q = lfWait; lfWait = null; q.forEach(function (f) { f(new Error('map library')); }); };
+    document.head.appendChild(s);
+  }
+  function popHtml(t) {
+    var head = t.road ? esc(t.road) + ' · ' + esc(t.type) : esc(t.type);
+    var detail = (t.text && t.text !== t.type ? esc(t.text) + '<br>' : '') + esc(t.hub) + esc(delayTxt(t.delay) + lenTxt(t.length));
+    return '<div class="hl-pop"><b>' + head + '</b><br>' + detail + '<br><a target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/dir/?api=1&destination=' + t.lat + ',' + t.lon + '">Directions to here</a></div>';
+  }
+  function paintMap(root, rows) {
+    var box = root.querySelector('.hl-map-el'), note = root.querySelector('.hl-mapnote');
+    loadLeaflet(function (err) {
+      if (err || !window.L) { note.textContent = 'The map could not be loaded. Use the List view.'; return; }
+      var L = window.L;
+      if (!lmap) {
+        lmap = L.map(box).setView([35.9, -84.2], 8);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap contributors' }).addTo(lmap);
+        mlayer = L.layerGroup().addTo(lmap); fitSig = '';
+      }
+      lmap.invalidateSize(); mlayer.clearLayers();
+      var pts = [], missing = 0;
+      rows.forEach(function (t) {
+        if (t.lat == null || t.lon == null) { missing++; return; }
+        var c = sevClass(t), col = c === ' sev' ? '#b91c1c' : c === ' warn' ? '#c2410c' : '#475569';
+        L.circleMarker([t.lat, t.lon], { radius: 9, color: '#fff', weight: 2, fillColor: col, fillOpacity: 0.95 }).addTo(mlayer).bindPopup(popHtml(t));
+        pts.push([t.lat, t.lon]);
+      });
+      if (fitSig !== hubFilter) {            /* re-centre only when the viewer changes area, not on every refresh */
+        fitSig = hubFilter;
+        var hub = CFG.hubs.filter(function (x) { return x.name === hubFilter; })[0];
+        if (pts.length) lmap.fitBounds(pts, { padding: [30, 30], maxZoom: 14 });
+        else if (hub) lmap.setView([hub.lat, hub.lon], 11);
+        else lmap.setView([35.9, -84.2], 8);
+      }
+      note.textContent = pts.length + ' incident' + (pts.length === 1 ? '' : 's') + ' on the map' + (missing ? ' · ' + missing + ' without a map location (see List)' : '');
+    });
+  }
+  function showMe(root) {
+    var note = root.querySelector('.hl-mapnote');
+    if (!navigator.geolocation) { note.textContent = 'This browser cannot share your location.'; return; }
+    navigator.geolocation.getCurrentPosition(function (p) {
+      if (!lmap || !window.L) return;
+      var ll = [p.coords.latitude, p.coords.longitude];
+      if (meMark) meMark.remove();
+      meMark = window.L.circleMarker(ll, { radius: 8, color: '#fff', weight: 3, fillColor: '#2563eb', fillOpacity: 1 }).addTo(lmap).bindPopup('You are here');
+      lmap.setView(ll, 12);
+    }, function () { note.textContent = 'Location is blocked. Allow it in your browser settings to see where you are.'; }, { enableHighAccuracy: false, timeout: 8000 });
+  }
+  function applyView(root) {
+    var isMap = view === 'map';
+    root.querySelector('.hl-list').hidden = isMap;
+    root.querySelector('.hl-mapbox').hidden = !isMap;
+    root.querySelectorAll('.hl-view').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-view') === view)); });
+  }
+
   function paintTraffic(root) {
     var chips = root.querySelector('.hl-chips'), list = root.querySelector('.hl-list'), stamp = root.querySelector('.hl-stamp');
     if (!CFG.trafficKey) {
@@ -211,23 +321,28 @@
       return;
     }
     var names = ['All'].concat(CFG.hubs.map(function (h) { return h.name; }));
+    var counts = { All: 0 }, loaded = results.length > 0;
+    results.forEach(function (r) { counts[r.hub] = r.list.length; counts.All += r.list.length; });
     chips.innerHTML = names.map(function (n) {
-      return '<button type="button" data-hub="' + esc(n) + '" aria-pressed="' + (n === hubFilter) + '">' + esc(n) + '</button>';
+      return '<button type="button" data-hub="' + esc(n) + '" aria-pressed="' + (n === hubFilter) + '">' + esc(n) + (loaded ? '<i>' + (counts[n] || 0) + '</i>' : '') + '</button>';
     }).join('');
     var rows = [], failed = 0;
     results.forEach(function (r) {
       if (!r.ok) failed++;
       if (hubFilter === 'All' || hubFilter === r.hub) rows = rows.concat(r.list);
     });
-    rows.sort(function (a, b) { return (b.severe ? 1 : 0) - (a.severe ? 1 : 0); });
-    list.innerHTML = rows.length ? rows.map(function (t) {
-      return '<div class="hl-row"><span class="hl-t' + (t.severe ? ' sev' : '') + '">' + esc(t.type) + '</span><div>' +
-        esc(t.text || t.type) + '<small>' + esc(t.hub) + (t.from ? ' · ' + esc(t.from) : '') + (t.to ? ' → ' + esc(t.to) : '') + '</small></div></div>';
-    }).join('') : '<div class="hl-note">No incidents reported' + (hubFilter === 'All' ? ' in the 423 area' : ' near ' + esc(hubFilter)) + ' right now.</div>';
+    rows.sort(function (a, b) { return sevRank(a) - sevRank(b); });
+    var html;
+    if (!loaded) html = '<div class="hl-note">Loading traffic…</div>';
+    else if (rows.length) html = rows.map(rowHtml).join('');
+    else if (failed < results.length) html = '<div class="hl-clear"><b>✓</b><span>No incidents reported' + (hubFilter === 'All' ? ' in the 423 area' : ' near ' + esc(hubFilter)) + ' right now.</span></div>';
+    else html = '';
     if (failed) { var why = ''; results.some(function (r) { if (!r.ok) { why = r.error; return true; } });
-      var note = '<div class="hl-note">' + (failed === results.length ? 'Live traffic could not be loaded. ' : failed + ' area' + (failed > 1 ? 's' : '') + ' could not be loaded. ') + esc(why) + '</div>';
-      list.innerHTML = (failed === results.length ? '' : list.innerHTML) + note; }
-    stamp.textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      html += '<div class="hl-note">' + (failed === results.length ? 'Live traffic could not be loaded. ' : failed + ' area' + (failed > 1 ? 's' : '') + ' could not be loaded. ') + esc(why) + '</div>'; }
+    list.innerHTML = html;
+    applyView(root);
+    if (view === 'map' && loaded) paintMap(root, rows);
+    stamp.textContent = loaded ? 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
   }
 
   function refreshTraffic(root) {
@@ -322,8 +437,10 @@
       '<div class="hl"><div class="hl-h"><h2>Claudia Green</h2><a href="' + esc(CFG.claudiaUrl) + '" style="font-size:12px;text-decoration:underline">Open full</a></div>' +
       (CFG.claudiaImage ? '<div style="padding:12px 14px 0"><div class="hl-video" style="aspect-ratio:16/9;border-radius:12px"><img src="' + esc(CFG.claudiaImage) + '" alt="Claudia Green at the 423.news anchor desk (illustration)" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%"><span class="cg-cam" style="position:absolute;inset:0;border:0;background:none;aspect-ratio:auto;max-width:none;pointer-events:none"><span class="cg-tag" style="position:absolute;left:8px;top:8px;background:rgba(0,0,0,.65);color:#fff;font:700 11px system-ui;padding:5px 8px;border-radius:99px;text-transform:uppercase"data-idle="Studio">Studio</span></span><button type="button" class="cg-snd" style="position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.65);color:#fff;border:0;border-radius:99px;padding:7px 11px;font:600 12px system-ui;cursor:pointer">Enable voice</button></div><div class="hl-note" style="padding:6px 0 0">Claudia Green, 423.news’s AI correspondent. Illustration. <a href="#/tip" style="text-decoration:underline">Send Claudia a scanner clip</a></div></div>' : '') +
       '<div class="hl-claudia"><div class="hl-note">Loading…</div></div></div>' +
-      '<div class="hl"><div class="hl-h"><h2>Traffic · 423 area</h2><span class="muted hl-stamp"></span></div>' +
-      '<div class="hl-chips"></div><div class="hl-list"></div></div></div>';
+      '<div class="hl"><div class="hl-h"><h2>Traffic · 423 area</h2><span class="hl-acts"><span class="muted hl-stamp"></span><button type="button" class="hl-view" data-view="list" aria-pressed="true">List</button><button type="button" class="hl-view" data-view="map" aria-pressed="false">Map</button><button type="button" class="hl-refresh">Refresh</button></span></div>' +
+      '<div class="hl-chips"></div><div class="hl-list" aria-live="polite"></div>' +
+      '<div class="hl-mapbox" hidden><div class="hl-map-el"></div><div class="hl-mapbar"><button type="button" class="hl-me">📍 My location</button><a href="https://www.google.com/maps/dir/" target="_blank" rel="noopener noreferrer">Get directions</a><span class="hl-mapnote"></span></div></div>' +
+      '<div class="hl-foot">Don’t use while driving. <a href="report.html">Report a problem</a> · Traffic data © <a href="https://www.tomtom.com/" target="_blank" rel="noopener noreferrer">TomTom</a></div></div></div>';
     app.insertBefore(root, app.firstChild);
     var sports = document.createElement('section');
     sports.id = 'homeSports';
@@ -341,8 +458,15 @@
     clearInterval(newsTimer); newsTimer = setInterval(tickNews, 1000);
     root.querySelector('.hl-chips').addEventListener('click', function (e) {
       var b = e.target.closest('[data-hub]'); if (!b) return;
-      hubFilter = b.getAttribute('data-hub'); paintTraffic(root);
+      hubFilter = b.getAttribute('data-hub'); hubChosen = true; hubSave(hubFilter); paintTraffic(root);
     });
+    root.querySelector('.hl-refresh').addEventListener('click', function () { refreshTraffic(root); });
+    lmap = null; mlayer = null; meMark = null; fitSig = ''; view = 'list';
+    root.querySelectorAll('.hl-view').forEach(function (b) {
+      b.addEventListener('click', function () { view = b.getAttribute('data-view'); paintTraffic(root); });
+    });
+    root.querySelector('.hl-me').addEventListener('click', function () { showMe(root); });
+    results = []; pickStartHub(root);
     refreshTraffic(root);
     paintClaudia(root);
     clearInterval(timer);

@@ -31,15 +31,18 @@
 
   function v5(lat, lon, km, key) {
     var b = box(lat, lon, km);
-    var fields = '{incidents{type,properties{iconCategory,magnitudeOfDelay,events{description,code,iconCategory},from,to,length,delay,roadNumbers}}}';
+    var fields = '{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code,iconCategory},from,to,length,delay,roadNumbers}}}';
     var url = 'https://api.tomtom.com/traffic/services/5/incidentDetails?key=' + encodeURIComponent(key) +
       '&bbox=' + b.join(',') + '&fields=' + encodeURIComponent(fields) + '&language=en-US&timeValidityFilter=present';
     return get(url).then(function (raw) {
       return (raw.incidents || []).map(function (i) {
         var p = i.properties || {}, ev = (p.events && p.events[0]) || {}, cat = p.iconCategory != null ? p.iconCategory : ev.iconCategory;
         var type = TYPES[cat] || 'Incident', road = (p.roadNumbers || []).join(', ');
+        var g = i.geometry || {}, c = g.coordinates, pt = null;
+        if (c && c.length) { var q = g.type === 'LineString' ? c[0] : c; if (q && typeof q[0] === 'number') pt = { lon: q[0], lat: q[1] }; }
         return { type: type, text: ev.description || type, severe: !!SEVERE[cat] || (p.magnitudeOfDelay || 0) >= 3,
-          delay: p.delay || null, length: p.length || null, from: p.from || road || null, to: p.to || null };
+          delay: p.delay || null, length: p.length || null, from: p.from || road || null, to: p.to || null,
+          road: road || null, lat: pt ? pt.lat : null, lon: pt ? pt.lon : null };
       });
     });
   }
@@ -62,6 +65,8 @@
         if (e.status === 401 || e.status === 403 || e.status === 429) { e.message += ' [file v2, key ' + String(key).slice(0, 4) + '...' + String(key).slice(-2) + ']'; throw e; }     /* a key problem: v4 would fail the same way */
         return v4(lat, lon, km || 12, key).catch(function () { throw e; });         /* keep the first, clearer reason */
       }).then(function (list) {
+        var seen = {};
+        list = list.filter(function (x) { var k = [x.type, x.text, x.from, x.to].join('|'); if (seen[k]) return false; seen[k] = 1; return true; });
         list.sort(function (a, b) { return (b.severe ? 1 : 0) - (a.severe ? 1 : 0); });
         return list;
       });
