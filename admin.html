@@ -16,6 +16,7 @@ img,video{max-width:100%;max-height:200px;display:block;margin:6px 0;border-radi
 var FN = 'https://kdiwehqtezlhecxsoysj.supabase.co/functions/v1/admin'; /* your project URL + /functions/v1/admin */
 /* starting rows for "+ Add new". Only tables that people may add to by hand are listed. */
 var TPL = {
+  news_reports:{id:'booking-YYYYMMDD-01',ts:'2026-11-04T12:00:00Z',kind:'FIELD',dateline:'Bradley County, TN',confidence:'confirmed',headline:'Booked: FULL NAME, charge as listed',summary:'Per the Bradley County Sheriff\'s Office booking log for DATE, FULL NAME was booked on a charge of CHARGE AS LISTED. A booking is an accusation, not a finding of guilt.',tags:['booking','public-record'],scanner:[],sources:[{label:'Bradley County Sheriff\'s Office booking log',url:'https://www.bradleysheriff.com/booking-reports'}],safety:[],uncertain:['An arrest is not a conviction. This item will be updated if charges change.'],heard_on:null,paraphrase:null,published:false},
   news_posts:{slug:'my-story-slug',section:'news',topic:null,title:'Title',body:'Story text',image_url:null,price:null,author_id:null,author_name:'423.news',status:'published'},
   news_comments:{post_id:'PASTE-POST-ID-HERE',author_id:null,author_name:'423.news',body:'Comment text'},
   news_streams:{title:'Title',league:'general',kind:'video',ref:'YOUTUBE-VIDEO-ID',active:true,sort:0},
@@ -25,7 +26,6 @@ var TPL = {
 /* tables where a hand-added row can never work, because another job or sign-up creates them */
 var NOADD = {
   news_profiles:'Accounts are created when people sign up. Edit an existing row instead.',
-  news_reports:'Claudia files these from her desk. Edit an existing row instead.',
   news_scores:'Scores come from the sports sync. Edit an existing row instead.',
   news_headlines:'Headlines come from the sports sync. Edit an existing row instead.'
 };

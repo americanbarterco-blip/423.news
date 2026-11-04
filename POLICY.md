@@ -105,3 +105,21 @@ Signed-in readers can send Claudia a clip or a note (profile page, or `#/tip`). 
 - Public dispatch audio only. A private call, a phone recording or anything the sender is not allowed to share is deleted.
 - Names, street numbers, plates and ages in a note are never carried into a report.
 - Editors mark each tip used or dismissed. Clips can be deleted at any time.
+
+## 6. Booking records (public arrest logs) — separate from scanner reports
+
+Scanner-derived reports (section 1–5) **never contain names**. That does not change.
+
+Items based on an agency's **published booking log** are a different source and may name the person, under these rules:
+
+| Rule | Why |
+|---|---|
+| Source must be the agency's own public booking log, credited in the item | The record is public; the desk is repeating it, not discovering it. |
+| Never mix with scanner audio | A name seen in a booking log must not be attached to something heard on the radio. |
+| Say "booked on a charge of…" or "arrested on…". Never "guilty", "suspect", or motive | An arrest is an accusation. |
+| Every item carries: "An arrest is not a conviction." | Fairness. |
+| Name, charge as listed, date, agency only. No photos, home address, age, or family details | Minimum needed; reduces harm. |
+| Minors are never named | Juvenile records are protected. |
+| Update or remove when charges are dropped, dismissed, or the person is cleared, and note the change | Stale accusations do lasting damage. |
+| A person approves every item before it is published | No automatic publishing of named arrests. |
+| Takedown requests go to a named editor and are answered promptly | Accountability. |
