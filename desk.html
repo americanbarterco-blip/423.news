@@ -1389,71 +1389,10 @@ window.CLAUDIA_CONFIG = {
     claudia: {
       status: 'at-desk',
       on_air: false,
-      line: 'Monitoring overnight feeds. Nothing on air — two items in the queue.'
+      line: 'Live scanner data is not connected. No unverified sample incidents are being shown.'
     },
-    reports: [
-      {
-        id: 'seed-1', minutesAgo: 12, kind: 'BREAKING',
-        dateline: 'MULTI-COUNTY',
-        headline: 'Structure fire on the east corridor draws three departments',
-        summary: 'Dispatch traffic indicates a working fire in a commercial block, with a second alarm requested eight minutes in. No casualty figures confirmed. Claudia is holding the item on scanner corroboration only until a public information officer responds.',
-        confidence: 'unconfirmed',
-        tags: ['scanner', 'fire', 'developing'],
-        scanner: ['East corridor — Fire Ops 1']
-      },
-      {
-        id: 'seed-2', minutesAgo: 48, kind: 'SCANNER',
-        dateline: 'CITY DESK',
-        headline: 'Long overnight pursuit ends without injury, records show',
-        summary: 'Radio traffic across two channels described a low-speed pursuit that terminated near a retail park. Local records confirm a single arrest. The sheriff\'s office has not issued a release; this item is filed as scanner-sourced and marked for follow-up.',
-        confidence: 'developing',
-        tags: ['scanner', 'police'],
-        scanner: ['County Sheriff — Dispatch B']
-      },
-      {
-        id: 'seed-3', minutesAgo: 96, kind: 'VERIFIED',
-        dateline: 'STATEHOUSE',
-        headline: 'Transit authority confirms fare change takes effect next quarter',
-        summary: 'Verified against the board agenda and a signed notice posted to the authority website. The change moves the base fare for the first time in four years; public comment closes in three weeks.',
-        confidence: 'confirmed',
-        tags: ['verified', 'transit', 'policy'],
-        scanner: []
-      },
-      {
-        id: 'seed-4', minutesAgo: 165, kind: 'FIELD',
-        dateline: 'RIVER DISTRICT',
-        headline: 'Flood watch extended as upstream gauges climb past action stage',
-        summary: 'Two gauges upstream crossed action stage overnight. Crews are staging pumps at the low crossing. No evacuations ordered. Claudia is watching the 6 a.m. briefing before filing a full report.',
-        confidence: 'developing',
-        tags: ['weather', 'field'],
-        scanner: ['County EM — Operations']
-      },
-      {
-        id: 'seed-5', minutesAgo: 240, kind: 'VERIFIED',
-        dateline: '423.NEWS DESK',
-        headline: 'City council agenda adds late item on warehouse rezoning',
-        summary: 'Agenda published 14 hours before the meeting with a single added item. Documents are consistent across the clerk\'s portal and the public calendar. Hearing is open to comment.',
-        confidence: 'confirmed',
-        tags: ['verified', 'civic'],
-        scanner: []
-      }
-    ],
-    scanner: {
-      feeds: [
-        { name: 'County Fire — Ops 1', status: 'hot', listeners: 214 },
-        { name: 'County Sheriff — Dispatch B', status: 'active', listeners: 96 },
-        { name: 'City PD — Channel 2', status: 'active', listeners: 61 },
-        { name: 'County EMS — Med 1', status: 'idle', listeners: 12 },
-        { name: 'State Patrol — Post 7', status: 'idle', listeners: 7 }
-      ],
-      log: [
-        { minutesAgo: 3, feed: 'FIRE1', text: 'Second alarm requested, 1400 block commercial', grade: 'A' },
-        { minutesAgo: 11, feed: 'SO-B', text: 'Unit 21 clearing, report number issued', grade: 'C' },
-        { minutesAgo: 26, feed: 'FIRE1', text: 'Ventilation complete, primary search negative', grade: 'A' },
-        { minutesAgo: 40, feed: 'PD-2', text: 'Traffic stop, no further, code 4', grade: 'C' },
-        { minutesAgo: 58, feed: 'EMS1', text: 'Medic 4 transporting one, priority 2', grade: 'B' }
-      ]
-    }
+    reports: [],
+    scanner: { feeds: [], log: [] }
   };
 
   var OVERLAY_KEY = 'claudia.feed.overlay.v1';
@@ -1491,7 +1430,7 @@ window.CLAUDIA_CONFIG = {
 
   function normalize(feed) {
     var out = JSON.parse(JSON.stringify(feed || SEED));
-    out.reports = (out.reports || []).map(function (r, i) {
+    out.reports = (out.reports || []).filter(function (r) { return r.published !== false; }).map(function (r, i) {
       var min = r.minutesAgo != null ? r.minutesAgo : ago(r.ts);
       if (r.ts == null) r.ts = new Date(Date.now() - min * 60000).toISOString();
       r.minutesAgo = min;
