@@ -1,0 +1,18 @@
+# Local credentials and per-account feed configuration
+config.json
+.env
+.env.*
+!.env.example
+
+# Scanner captures, transcripts, inbox clips and generated work
+work/
+inbox/
+*.wav
+*.mp3
+*.m4a
+*.transcript.txt
+*.safe.txt
+
+# Python artifacts
+__pycache__/
+*.py[cod]

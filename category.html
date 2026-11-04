@@ -2992,7 +2992,7 @@ window.CLAUDIA_CONFIG = {
     return fetch(url, { cache: 'no-store' }).then(function (r) {
       if (!r.ok) throw new Error('feed ' + r.status);
       return r.json();
-    }).then(function (d) { return (d.reports || d || []).map(normalise); });
+    }).then(function (d) { return (d.reports || d || []).filter(function (r) { return r.published !== false; }).map(normalise); });
   }
 
   function loadFromSupabase(el) {

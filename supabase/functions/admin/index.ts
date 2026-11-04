@@ -1,0 +1,115 @@
+// Supabase Edge Function named "admin" (Verify JWT is OFF; it checks its own session token).
+// The signing secret and password hash live in the admin_auth table. Optional env overrides: SESSION_SECRET, ADMIN_PASSWORD, ADMIN_TABLES.
+const DEFAULT_TABLES = 'news_profiles,news_posts,news_comments,news_streams,news_reports,news_scores,news_headlines,events,hotspots';
+const URL_ = Deno.env.get('SUPABASE_URL')!, KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const H = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'content-type, authorization, apikey', 'Content-Type': 'application/json' };
+const enc = new TextEncoder();
+const hex = (b: ArrayBuffer) => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+const same = (a: string, b: string) => { if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0; };
+async function pbk(pw: string, salt: string) {
+  const k = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
+  return hex(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: enc.encode(salt), iterations: 100000, hash: 'SHA-256' }, k, 256));
+}
+let _sec = '';
+async function secret() {
+  if (_sec) return _sec;
+  _sec = Deno.env.get('SESSION_SECRET') || ((await (await rest('admin_auth?id=eq.1&select=secret')).json())[0] || {}).secret || '';
+  return _sec;
+}
+async function hmac(s: string) {
+  const k = await crypto.subtle.importKey('raw', enc.encode(await secret()), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return hex(await crypto.subtle.sign('HMAC', k, enc.encode(s)));
+}
+async function valid(tok: unknown) {
+  const [exp, sig] = String(tok || '').split('.');
+  return !!sig && Number(exp) > Date.now() && same(sig, await hmac(exp));
+}
+const rest = (path: string, o: RequestInit & { prefer?: string } = {}) => fetch(`${URL_}/rest/v1/${path}`, {
+  method: o.method, body: o.body,
+  headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json', Prefer: o.prefer || 'return=representation' }
+});
+async function check(pw: string) { // 'ok' | 'bad' | 'locked' — 5 wrong tries locks for 15 minutes
+  const r = (await (await rest('admin_auth?id=eq.1')).json())[0] || {};
+  if (r.locked_until && new Date(r.locked_until) > new Date()) return 'locked';
+  const ok = r.hash ? same(await pbk(pw, r.salt), r.hash) : same(pw, Deno.env.get('ADMIN_PASSWORD') || '\u0000');
+  let fails = ok ? 0 : (r.fails || 0) + 1, lock: string | null = null;
+  if (fails >= 5) { fails = 0; lock = new Date(Date.now() + 15 * 60000).toISOString(); }
+  await rest('admin_auth', { method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
+    body: JSON.stringify({ id: 1, salt: r.salt ?? null, hash: r.hash ?? null, fails, locked_until: lock }) });
+  return ok ? 'ok' : 'bad';
+}
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: H });
+  const j = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s, headers: H });
+  if (!await secret()) return j({ error: 'not configured' }, 500);
+  let b: any = {}; try { b = await req.json(); } catch { /* empty */ }
+  const a = b.action;
+  if (a === 'login') {
+    const c = await check(String(b.password || ''));
+    if (c === 'locked') return j({ error: 'locked' }, 429);
+    if (c !== 'ok') return j({ error: 'bad' }, 401);
+    const exp = Date.now() + 12 * 3600000;
+    return j({ token: exp + '.' + await hmac(String(exp)), expiresAt: exp });
+  }
+  if (!await valid(b.token)) return j({ error: 'auth' }, 401);
+  const tables = (Deno.env.get('ADMIN_TABLES') || DEFAULT_TABLES).split(',').map(s => s.trim()).filter(s => /^[a-z0-9_]+$/.test(s));
+  if (a === 'tables') return j({ tables });
+  if (a === 'change') {
+    const nw = String(b.next || '');
+    if (nw.length < 10) return j({ error: 'short' }, 400);
+    const c = await check(String(b.current || ''));
+    if (c === 'locked') return j({ error: 'locked' }, 429);
+    if (c !== 'ok') return j({ error: 'bad' }, 401);
+    const salt = crypto.randomUUID();
+    await rest('admin_auth', { method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
+      body: JSON.stringify({ id: 1, salt, hash: await pbk(nw, salt), fails: 0, locked_until: null }) });
+    return j({ ok: true });
+  }
+  if (a === 'deleteFile') { // allow only the public media buckets used by the site
+    const u = String(b.url || '');
+    const allowedBuckets = ['news-media', 'news-video', 'news-forecast'];
+    let bucket = '', encodedPath = '';
+    for (const candidate of allowedBuckets) {
+      const base = `${URL_}/storage/v1/object/public/${candidate}/`;
+      if (u.startsWith(base)) {
+        bucket = candidate;
+        encodedPath = u.slice(base.length).split('?')[0];
+        break;
+      }
+    }
+    if (!bucket || !encodedPath) return j({ error: 'url' }, 400);
+    let path = '';
+    try { path = decodeURIComponent(encodedPath); } catch { return j({ error: 'url' }, 400); }
+    if (!path || path.includes(String.fromCharCode(92)) || path.split('/').some(part => !part || part === '.' || part === '..')) {
+      return j({ error: 'url' }, 400);
+    }
+    const safePath = path.split('/').map(encodeURIComponent).join('/');
+    const r = await fetch(`${URL_}/storage/v1/object/${bucket}/${safePath}`, {
+      method: 'DELETE', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY }
+    });
+    return j({ ok: r.ok }, r.ok ? 200 : 400);
+  }
+  if (a === 'deleteUser') { // remove a login (auth user)
+    const uid = String(b.id || '');
+    if (!/^[0-9a-f-]{36}$/i.test(uid)) return j({ error: 'id' }, 400);
+    const r = await fetch(`${URL_}/auth/v1/admin/users/${uid}`, { method: 'DELETE', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } });
+    return j({ ok: r.ok }, r.ok ? 200 : 400);
+  }
+  const t = String(b.table || '');
+  if (!tables.includes(t)) return j({ error: 'table' }, 400);
+  if (a === 'list') { const r = await rest(`${t}?select=*&limit=200`); return j({ rows: await r.json() }, r.status); }
+  if (a === 'insert') {
+    const row = { ...(b.row || {}) }; delete row.id;
+    const r = await rest(t, { method: 'POST', body: JSON.stringify(row), prefer: 'return=minimal' });
+    return j({ ok: r.ok }, r.ok ? 200 : 400);
+  }
+  const id = encodeURIComponent(String(b.id ?? ''));
+  if (!id) return j({ error: 'id' }, 400);
+  if (a === 'update') {
+    const patch = { ...(b.patch || {}) }; delete patch.id;
+    const r = await rest(`${t}?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
+    return j({ ok: r.ok }, r.ok ? 200 : 400);
+  }
+  if (a === 'delete') { const r = await rest(`${t}?id=eq.${id}`, { method: 'DELETE', prefer: 'return=minimal' }); return j({ ok: r.ok }, r.ok ? 200 : 400); }
+  return j({ error: 'action' }, 400);
+});

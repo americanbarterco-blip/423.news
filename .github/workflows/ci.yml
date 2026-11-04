@@ -1,0 +1,42 @@
+name: 423.news checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Compile Python
+        run: python -m compileall -q .
+      - name: Validate scanner configuration example
+        run: python -m json.tool config.example.json > /dev/null
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Check JavaScript files
+        shell: bash
+        run: |
+          shopt -s nullglob
+          for file in ./*.js; do
+            echo "Checking $file"
+            node --check "$file"
+          done
+      - name: Check inline JavaScript in HTML pages
+        run: python tests/check_inline_js.py
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check Admin Edge Function source
+        run: deno check supabase/functions/admin/index.ts

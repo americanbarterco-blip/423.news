@@ -963,8 +963,8 @@ body.cg-page #nav a.on, body.cg-page #nav a:hover { border-bottom-color: var(--c
 
 /* ---------- latest incidents ---------- */
 .cg-latest { grid-area: latest; align-self: start; }
-.cg-cards { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
-.cg-cardl { flex: 1 0 230px; scroll-snap-align: start; display: grid; gap: 4px; padding: 12px; border-radius: 12px; background: var(--cg-panel2); border: 1px solid var(--cg-line); }
+.cg-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px; min-width: 0; }
+.cg-cardl { min-width: 0; width: 100%; display: grid; gap: 6px; padding: 12px; border-radius: 12px; background: var(--cg-panel2); border: 1px solid var(--cg-line); overflow-wrap: anywhere; }
 .cg-cardl:hover { border-color: var(--cg-cyan); }
 .cg-cardl .h { display: flex; align-items: center; gap: 10px; font-weight: 800; }
 .cg-cardl .h .cg-ico { width: 34px; height: 34px; }
@@ -1068,7 +1068,6 @@ body.cg-page #nav a.on, body.cg-page #nav a:hover { border-bottom-color: var(--c
       <a href="index.html#/classifieds">Classifieds</a>
       <a href="index.html#/community">citizen423report</a>
       <a href="index.html#/teams">My Teams</a>
-      <a href="desk.html">Live</a>
       <a href="index.html#/government">Government</a>
       <a href="https://423.singles" target="_blank" rel="noopener">423.singles</a>
     </nav>
@@ -1347,71 +1346,10 @@ window.CLAUDIA_CONFIG = {
     claudia: {
       status: 'at-desk',
       on_air: false,
-      line: 'Monitoring overnight feeds. Nothing on air — two items in the queue.'
+      line: 'Live scanner data is not connected. No unverified sample incidents are being shown.'
     },
-    reports: [
-      {
-        id: 'seed-1', minutesAgo: 12, kind: 'BREAKING',
-        dateline: 'MULTI-COUNTY',
-        headline: 'Structure fire on the east corridor draws three departments',
-        summary: 'Dispatch traffic indicates a working fire in a commercial block, with a second alarm requested eight minutes in. No casualty figures confirmed. Claudia is holding the item on scanner corroboration only until a public information officer responds.',
-        confidence: 'unconfirmed',
-        tags: ['scanner', 'fire', 'developing'],
-        scanner: ['East corridor — Fire Ops 1']
-      },
-      {
-        id: 'seed-2', minutesAgo: 48, kind: 'SCANNER',
-        dateline: 'CITY DESK',
-        headline: 'Long overnight pursuit ends without injury, records show',
-        summary: 'Radio traffic across two channels described a low-speed pursuit that terminated near a retail park. Local records confirm a single arrest. The sheriff\'s office has not issued a release; this item is filed as scanner-sourced and marked for follow-up.',
-        confidence: 'developing',
-        tags: ['scanner', 'police'],
-        scanner: ['County Sheriff — Dispatch B']
-      },
-      {
-        id: 'seed-3', minutesAgo: 96, kind: 'VERIFIED',
-        dateline: 'STATEHOUSE',
-        headline: 'Transit authority confirms fare change takes effect next quarter',
-        summary: 'Verified against the board agenda and a signed notice posted to the authority website. The change moves the base fare for the first time in four years; public comment closes in three weeks.',
-        confidence: 'confirmed',
-        tags: ['verified', 'transit', 'policy'],
-        scanner: []
-      },
-      {
-        id: 'seed-4', minutesAgo: 165, kind: 'FIELD',
-        dateline: 'RIVER DISTRICT',
-        headline: 'Flood watch extended as upstream gauges climb past action stage',
-        summary: 'Two gauges upstream crossed action stage overnight. Crews are staging pumps at the low crossing. No evacuations ordered. Claudia is watching the 6 a.m. briefing before filing a full report.',
-        confidence: 'developing',
-        tags: ['weather', 'field'],
-        scanner: ['County EM — Operations']
-      },
-      {
-        id: 'seed-5', minutesAgo: 240, kind: 'VERIFIED',
-        dateline: '423.NEWS DESK',
-        headline: 'City council agenda adds late item on warehouse rezoning',
-        summary: 'Agenda published 14 hours before the meeting with a single added item. Documents are consistent across the clerk\'s portal and the public calendar. Hearing is open to comment.',
-        confidence: 'confirmed',
-        tags: ['verified', 'civic'],
-        scanner: []
-      }
-    ],
-    scanner: {
-      feeds: [
-        { name: 'County Fire — Ops 1', status: 'hot', listeners: 214 },
-        { name: 'County Sheriff — Dispatch B', status: 'active', listeners: 96 },
-        { name: 'City PD — Channel 2', status: 'active', listeners: 61 },
-        { name: 'County EMS — Med 1', status: 'idle', listeners: 12 },
-        { name: 'State Patrol — Post 7', status: 'idle', listeners: 7 }
-      ],
-      log: [
-        { minutesAgo: 3, feed: 'FIRE1', text: 'Second alarm requested, 1400 block commercial', grade: 'A' },
-        { minutesAgo: 11, feed: 'SO-B', text: 'Unit 21 clearing, report number issued', grade: 'C' },
-        { minutesAgo: 26, feed: 'FIRE1', text: 'Ventilation complete, primary search negative', grade: 'A' },
-        { minutesAgo: 40, feed: 'PD-2', text: 'Traffic stop, no further, code 4', grade: 'C' },
-        { minutesAgo: 58, feed: 'EMS1', text: 'Medic 4 transporting one, priority 2', grade: 'B' }
-      ]
-    }
+    reports: [],
+    scanner: { feeds: [], log: [] }
   };
 
   var OVERLAY_KEY = 'claudia.feed.overlay.v1';
@@ -1449,7 +1387,7 @@ window.CLAUDIA_CONFIG = {
 
   function normalize(feed) {
     var out = JSON.parse(JSON.stringify(feed || SEED));
-    out.reports = (out.reports || []).map(function (r, i) {
+    out.reports = (out.reports || []).filter(function (r) { return r.published !== false; }).map(function (r, i) {
       var min = r.minutesAgo != null ? r.minutesAgo : ago(r.ts);
       if (r.ts == null) r.ts = new Date(Date.now() - min * 60000).toISOString();
       r.minutesAgo = min;
@@ -3065,18 +3003,21 @@ const J = (m, b) => ({ method: m, body: JSON.stringify(b || {}) });
 const CATS_RX = [['Police', /police|sheriff|law enforcement/], ['Fire', /fire|smoke|burn/], ['EMS', /\bems\b|medical|ambulance|rescue/],
   ['Traffic', /traffic|crash|accident|road|work zone|lane|i-\d+/], ['Weather', /weather|rain|storm|flood|nws|forecast|wind|snow|ice/]];
 function category(r) {
-  const tags = (r.tags || []).join(' ').toLowerCase();
-  for (const [c, rx] of CATS_RX) if (rx.test(tags)) return c;
-  const h = String(r.headline || '').toLowerCase();
-  for (const [c, rx] of CATS_RX) if (rx.test(h)) return c;
-  return 'Community';
+  const tags = Array.isArray(r.tags) ? r.tags.join(' ') : String(r.tags || '');
+  const metadata = [tags, r.category, r.type, r.kind].filter(Boolean).join(' ').toLowerCase();
+  for (const [c, rx] of CATS_RX) if (rx.test(metadata)) return c;
+  const headline = String(r.headline || '').toLowerCase();
+  for (const [c, rx] of CATS_RX) if (rx.test(headline)) return c;
+  return null;
 }
 function toIncident(r) {
+  const incidentCategory = category(r);
+  if (!incidentCategory) return null;
   const status = (String(r.confidence || '').toLowerCase() === 'confirmed' || String(r.kind).toUpperCase() === 'VERIFIED') ? 'verified'
     : String(r.confidence || '').toLowerCase() === 'developing' ? 'developing' : 'unverified';
   const safety = (r.safety || []).length ? '\n\nWhat it means for you:\n- ' + r.safety.join('\n- ') : '';
   const unc = (r.uncertain || []).length ? '\n\nStill unconfirmed:\n- ' + r.uncertain.join('\n- ') : '';
-  return { id: r.id, headline: r.headline, zone: '', category: category(r), status, location: r.dateline || '',
+  return { id: r.id, headline: r.headline, zone: '', category: incidentCategory, status, location: r.dateline || '',
     units: '', talkgroup: '', details: String(r.summary || '') + safety + unc, lat: null, lng: null, createdAt: r.ts, authorName: 'Claudia Green' };
 }
 async function loadReports(limit) {
@@ -3091,7 +3032,11 @@ async function loadReports(limit) {
   const d = await r.json(); return (d.reports || []).slice(0, limit);
 }
 async function api(path) {
-  if (path.startsWith('/wire')) { const n = Number((path.match(/limit=(\d+)/) || [])[1]) || 50; return { items: (await loadReports(n)).map(toIncident) }; }
+  if (path.startsWith('/wire')) {
+    const n = Number((path.match(/limit=(\d+)/) || [])[1]) || 50;
+    const reports = await loadReports(Math.min(n * 4, 200));
+    return { items: reports.map(toIncident).filter(Boolean).slice(0, n) };
+  }
   if (path === '/scanner/config') return { listenUrl: CFG.scannerListenUrl || '', listenName: CFG.scannerListenName || '', audioStreamUrl: CFG.scannerStreamUrl || '', audioCors: !!CFG.scannerStreamCors, mapTileUrl: CFG.mapTileUrl || '', mapAttribution: CFG.mapAttribution || '' };
   throw new Error('Not available on this page.');
 }
@@ -3099,8 +3044,8 @@ window.N423 = {
   api, J, toast, modal, closeM, form, fld, sel, dt,
   auth: () => toast('Sign-in is not part of this page. Reports are filed by the desk.'),
   canWire: () => false, getUser: () => null, app: () => document.getElementById('app'),
-  ZONES: ['423 area'], CATS: ['Police', 'Fire', 'EMS', 'Traffic', 'Weather', 'Community'],
-  readOnly: true, noZones: true, deskUrl: 'desk.html', mapView: { center: [35.75, -84.0], zoom: 7 },
+  ZONES: ['423 area'], CATS: ['Police', 'Fire', 'EMS', 'Traffic', 'Weather'],
+  readOnly: true, noZones: true, mapView: { center: [35.75, -84.0], zoom: 7 },
   personaNote: CFG.personaNote !== undefined ? CFG.personaNote : 'Claudia Green is 423.news’s AI correspondent. Recorded video, not a live broadcast.'
 };
 const go = () => { const m = location.hash.match(/^#\/claudia\/(.+)$/); const id = m ? decodeURIComponent(m[1]) : ''; if (window.Claudia.active()) window.Claudia.hash(id); else window.Claudia.mount(id); };
@@ -3127,7 +3072,6 @@ const CAT = {
   EMS: { c: 'var(--cg-ems)', hex: '#f4b000', icon: 'ems' },
   Traffic: { c: 'var(--cg-traffic)', hex: '#11c879', icon: 'warn' },
   Weather: { c: 'var(--cg-weather)', hex: '#8055ff', icon: 'wx' },
-  Community: { c: 'var(--cg-community)', hex: '#00cfff', icon: 'people' }
 };
 const STATUS = { unverified: 'Unverified', developing: 'Developing', verified: 'Verified', resolved: 'Resolved' };
 // Map centers for the coverage zones the server accepts (used only to recenter the map, never as incident locations).
@@ -3192,14 +3136,15 @@ const fresh = () => ({
   speaking: false, openId: null, mo: null, pendingHash: '', lastOpener: null
 });
 const isLocal = () => /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
-const demoAllowed = () => !S.demoOff && (S.demoOn || isLocal() || /[?&]demo=1\b/.test(location.hash + location.search));
+const demoPreviewOnly = () => /[?&]demo=1\b/.test(location.hash + location.search);
+const demoAllowed = () => !S.demoOff && (S.demoOn || isLocal() || demoPreviewOnly());
 
 /* ---------- data ---------- */
 const num = (v, lo, hi) => { if (v == null || v === '') return null; const n = Number(v); return Number.isFinite(n) && n >= lo && n <= hi ? n : null; };
 function norm(r, demo) {
-  if (!r || r.id == null || !r.headline) return null;
+  if (!r || r.id == null || !r.headline || !CAT[r.category]) return null;
   return {
-    id: String(r.id), headline: String(r.headline).slice(0, 200), zone: String(r.zone || ''), category: CAT[r.category] ? r.category : 'Community',
+    id: String(r.id), headline: String(r.headline).slice(0, 200), zone: String(r.zone || ''), category: r.category,
     status: STATUS[r.status] ? r.status : 'unverified', location: String(r.location || ''), units: String(r.units || ''), talkgroup: String(r.talkgroup || ''),
     details: String(r.details || ''), lat: num(r.lat, -90, 90), lng: num(r.lng, -180, 180), createdAt: r.createdAt || new Date().toISOString(),
     author: String(r.authorName || ''), demo: !!demo
@@ -3224,6 +3169,16 @@ async function refresh() {
   if (!S || S.busy) return;
   S.busy = true; setBusy(true);
   try {
+    if (demoPreviewOnly()) {
+      S.items = sortItems(demoItems());
+      S.source = 'demo';
+      S.status = 'ok';
+      S.err = '';
+      S.last = new Date();
+      S.firstLoad = false;
+      renderAll();
+      return;
+    }
     if (!navigator.onLine) throw Object.assign(new Error('You are offline. Showing the last reports received.'), { offline: true });
     const d = await N().api('/wire?limit=50');
     const map = new Map();
@@ -3257,7 +3212,7 @@ const stTag = s => `<span class="cg-tag st" data-st="${s}">${STATUS[s]}</span>`;
 const demoTag = i => i.demo ? '<span class="cg-tag demo">Demo</span>' : '';
 const iconBadge = c => `<span class="cg-ico" style="--c:${CAT[c].c}" aria-hidden="true">${ico(CAT[c].icon)}</span>`;
 const pillState = () => (S.status === 'loading' && !S.items.length) ? 'loading' : S.status === 'offline' ? 'offline' : S.status === 'error' ? 'error' : S.source === 'demo' ? 'demo' : (P.auto ? 'live' : 'paused');
-const PILL = { live: 'Live', demo: 'Demo', paused: 'Paused', offline: 'Offline', error: 'Feed error', loading: 'Connecting', none: 'No feed' };
+const PILL = { live: 'Wire online', demo: 'Demo preview', paused: 'Refresh paused', offline: 'Offline', error: 'Wire error', loading: 'Connecting', none: 'No feed' };
 const pill = () => { const s = pillState(); return `<span class="cg-pill" data-s="${s}">${PILL[s]}</span>`; };
 
 /* ---------- template ---------- */
@@ -3277,7 +3232,7 @@ function template() {
       <div class="cg-feed-tools"><button class="cg-sw" id="cgAuto" role="switch" aria-checked="${P.auto}"><span>Auto refresh</span><span class="tr"></span></button>
       <button class="cg-iconbtn" id="cgRefresh" aria-label="Refresh now" title="Refresh now">${ico('refresh')}</button></div></div>
     <p class="cg-stamp" id="cgStamp" style="margin:-4px 0 8px">Waiting for first update&hellip;</p>
-    <div class="cg-chips" id="cgChips" role="group" aria-label="Filter by category">${['All', 'Police', 'Fire', 'EMS', 'Traffic', 'Weather', 'Community'].map(c =>
+    <div class="cg-chips" id="cgChips" role="group" aria-label="Filter by category">${['All', 'Police', 'Fire', 'EMS', 'Traffic', 'Weather'].map(c =>
       `<button class="cg-chip" data-cat="${c}" aria-pressed="${c === 'All'}">${c === 'All' ? '' : `<span style="color:${CAT[c].hex}">${ico(CAT[c].icon)}</span>`}${c}</button>`).join('')}</div>
     <div class="cg-search"><input id="cgQ" type="search" placeholder="Search incidents" aria-label="Search incidents" autocomplete="off">
       <select id="cgZone" aria-label="Coverage area"><option value="">All zones</option>${Object.keys(ZONE_CENTER).map(z => `<option>${esc(z)}</option>`).join('')}</select></div>
@@ -3307,7 +3262,7 @@ function template() {
       <p class="cg-voice-note">Announcements use your device&rsquo;s synthesized voice and the report text shown here. They are not live radio and not an official dispatch.</p>
     </section>
     <section class="cg-panel" id="cgActions" aria-labelledby="cgQaH"><h2 id="cgQaH">Quick Actions</h2>
-      <div class="cg-qa"><button class="cg-btn ann" id="cgAnn">${ico('mic')}Make an Announcement</button><button class="cg-btn add" id="cgAdd">${ico('plus')}Add New Report</button>
+      <div class="cg-qa">${N().readOnly ? '' : `<button class="cg-btn ann" id="cgAnn">${ico('mic')}Make an Announcement</button><button class="cg-btn add" id="cgAdd">${ico('plus')}Add New Report</button>`}
       <button class="cg-btn sec wide" id="cgDesk">${ico('edit')}Open Publishing Desk</button></div><p class="cg-auth" id="cgAuthNote"></p></section>
     <section class="cg-panel" id="cgSources" aria-labelledby="cgSrcH"><h2 id="cgSrcH" style="margin-bottom:10px">Public Information Sources</h2>
       <div class="cg-srcs">${SOURCES.map(s => `<a class="cg-src" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer"><b>${esc(s.name)}</b><span>${esc(s.sub)}</span></a>`).join('')}</div>
@@ -3329,7 +3284,7 @@ function renderAll() {
   const p = pillState();
   $$('.cg-pill', S.root).forEach(e => { e.dataset.s = p; e.textContent = PILL[p]; });
   const stamp = $('#cgStamp', S.root);
-  stamp.textContent = S.last ? 'Last update: ' + S.last.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' }) + (P.auto ? '' : ' (auto refresh off)') : (S.status === 'loading' ? 'Waiting for first update\u2026' : 'No successful update yet');
+  stamp.textContent = S.last ? 'Wire updated: ' + S.last.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' }) + (P.auto ? ' · checking every 20 seconds' : ' · auto-refresh off') : (S.status === 'loading' ? 'Connecting to the 423.news wire…' : 'No successful wire update yet');
   const dm = $('#cgDemo', S.root);
   if (S.source === 'demo') { dm.hidden = false; dm.innerHTML = '<strong>Demo data.</strong> These incidents are examples for previewing the layout. They are not real reports. <button class="cg-btn sec" id="cgHideDemo" style="min-height:36px;margin-left:8px">Hide demo data</button>'; } else dm.hidden = true;
   renderFeed(); renderMap(); renderCards(); renderAuthNote(); renderAudio();
@@ -3359,7 +3314,7 @@ const announce = (() => { let last = ''; return m => { const l = $('#cgLive', S 
 function renderCards() {
   const c = $('#cgCards', S.root), top = filtered().slice(0, 6);
   c.innerHTML = top.length ? top.map(i => `<a class="cg-cardl" href="#/claudia/${encodeURIComponent(i.id)}" data-open="${esc(i.id)}"><span class="h">${iconBadge(i.category)}<span>${esc(i.category)}</span><time datetime="${esc(N().dt(i.createdAt).toISOString())}">${esc(tm(i.createdAt))}</time></span><b>${esc(i.headline)}</b><span class="l">${esc(i.location)}</span>${i.demo ? '<span class="cg-tag demo" style="justify-self:start">Demo</span>' : ''}</a>`).join('')
-    : '<p class="cg-note" style="margin:0">Nothing to show yet.</p>';
+    : '<p class="cg-note" style="margin:0">No local incident reports have been published yet. Community stories and general headlines are kept out of this incident feed.</p>';
 }
 
 function renderAuthNote() {
@@ -3606,7 +3561,7 @@ function reportForm() {
   }
 }
 function openDesk() {
-  const n = N(); if (n.deskUrl) { location.href = n.deskUrl; return; }
+  const n = N();
   if (needsAuth()) return;
   if (n.canWire()) { location.hash = '#/wire'; } else n.toast('The publishing desk is limited to approved press and admin accounts.');
 }

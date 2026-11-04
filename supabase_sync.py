@@ -3,13 +3,12 @@
 Claudia Green — push the desk into Supabase (for the GitHub Action)
 ===================================================================
 
-Reads the local desk state (data/feed.json + scanner/config.json), polls the
-Broadcastify rack, and upserts it into Supabase over PostgREST. No SDK, no
-dependencies.
+Reads the root-level feed.json and syncs it to existing Supabase tables.
+No SDK or third-party Python dependencies are required.
 
     SUPABASE_URL=https://xxxx.supabase.co \
     SUPABASE_SERVICE_KEY=... \
-    python3 scanner/supabase_sync.py
+    python3 supabase_sync.py
 
 Runs in the scheduled GitHub workflow (.github/workflows/desk.yml), which is
 also where you can add: capture a segment → paraphrase → file.
@@ -35,9 +34,10 @@ FEED = next((c for c in (Path(__file__).resolve().parent / "feed.json", ROOT / "
 URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 KEY = os.environ.get("SUPABASE_SERVICE_KEY", "").strip()
 
-if not URL or not KEY:
-    sys.exit("[sync] SUPABASE_URL and SUPABASE_SERVICE_KEY must be set "
-             "(service-role key — keep it in GitHub Secrets, never in the browser)")
+def require_credentials() -> None:
+    if not URL or not KEY:
+        raise SystemExit("[sync] SUPABASE_URL and SUPABASE_SERVICE_KEY must be set "
+                         "(service-role key — keep it in GitHub Secrets, never in the browser)")
 
 
 def call(method: str, path: str, body=None, prefer: str | None = None):
@@ -75,6 +75,7 @@ def sync_feeds(scanner: dict) -> int:
             "live_data": bool(f.get("live_data")),
             "priority": f.get("priority", 3),
             "tags": f.get("tags") or [],
+            "url": f.get("url") or "",
             "note": scanner.get("note"),
         })
     rows = [r for r in rows if r["name"]]
@@ -128,8 +129,11 @@ def sync_reports(reports: list) -> int:
             "uncertain": r.get("uncertain") or [],
             "heard_on": r.get("heard_on"),
             "paraphrase": r.get("paraphrase"),
-            "published": r.get("published", True),
         })
+        # Only write publication state when the local file explicitly carries it.
+        # Missing means "leave the existing database value unchanged".
+        if "published" in r:
+            rows[-1]["published"] = bool(r["published"])
     if not rows:
         return 0
     call("POST", "news_reports?on_conflict=id", rows, "resolution=merge-duplicates,return=minimal")
@@ -137,6 +141,7 @@ def sync_reports(reports: list) -> int:
 
 
 def main() -> int:
+    require_credentials()
     doc = load_local()
     scanner = doc.get("scanner", {})
     reports = doc.get("reports", [])

@@ -5,7 +5,7 @@
    Settings: window.CLAUDIA_VOICE = { voiceName:'', rate:1, pitch:1, feedUrl:'feed.json', pollSeconds:30, briefing:12 } */
 (function () {
   'use strict';
-  var C = Object.assign({ voiceName: '', rate: 1, pitch: 1.05, feedUrl: 'feed.json', pollSeconds: 30, briefing: 12 }, window.CLAUDIA_VOICE || {});
+  var C = Object.assign({ voiceName: '', rate: 1, pitch: 1.05, feedUrl: 'feed.json', pollSeconds: 30, briefing: 12, maxAgeHours: 48 }, window.CLAUDIA_VOICE || {});
   var synth = window.speechSynthesis;
   var enabled = false, seen = null, queue = [], busy = false, token = 0;
 
@@ -71,7 +71,8 @@
   }
 
   function items(d) {
-    return (d.reports || []).slice().sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); }); /* newest first */
+    var cutoff = Date.now() - Number(C.maxAgeHours || 48) * 3600000;
+    return (d.reports || []).filter(function (r) { return r.published !== false && Date.parse(r.ts) >= cutoff; }).slice().sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); }); /* newest first */
   }
   function toItem(r) { return { audio: r.audio || '', text: script(r) }; }
 
@@ -116,6 +117,8 @@
   function wire() {
     playVideo();
     document.querySelectorAll('.cg-snd').forEach(function (b) {
+      if (b.getAttribute('data-cg-wired') === '1') return;
+      b.setAttribute('data-cg-wired', '1');
       b.removeAttribute('onclick'); b.textContent = 'Enable voice';
       b.onclick = function () {
         if (!synth) { b.textContent = 'Voice not supported'; return; }
@@ -124,6 +127,6 @@
     });
   }
   document.addEventListener('DOMContentLoaded', function () { wire(); poll(); setInterval(poll, C.pollSeconds * 1000); });
-  new MutationObserver(function () { if (!document.hidden) playVideo(); }).observe(document.documentElement, { childList: true, subtree: true });
+  new MutationObserver(function () { if (!document.hidden) { wire(); playVideo(); } }).observe(document.documentElement, { childList: true, subtree: true });
   window.ClaudiaVoice = { voices: function () { return synth ? synth.getVoices().map(function (v) { return v.name + ' (' + v.lang + ')'; }) : []; }, setVoice: function (n) { set('cgVoice', n); } };
 })();

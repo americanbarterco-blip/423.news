@@ -1,0 +1,76 @@
+{
+  "data_path": "feed.json",
+  "work_dir": "work/scanner",
+  "status_endpoint": "",
+  "capture_seconds": 45,
+  "capture_cooldown": 300,
+  "feeds": [
+    {
+      "name": "Bradley County Sheriff, Cleveland Police, Fire Rescue and MAC",
+      "feed_id": "9119",
+      "page_url": "https://www.broadcastify.com/listen/feed/9119",
+      "priority": 1,
+      "hot_threshold": 40,
+      "tags": [
+        "Bradley",
+        "Cleveland",
+        "police",
+        "fire",
+        "ems"
+      ]
+    },
+    {
+      "name": "Hamilton County Public Safety",
+      "feed_id": "44571",
+      "page_url": "https://www.broadcastify.com/listen/feed/44571",
+      "priority": 1,
+      "hot_threshold": 40,
+      "tags": [
+        "Hamilton",
+        "Chattanooga",
+        "police",
+        "fire",
+        "ems"
+      ]
+    },
+    {
+      "name": "Chattanooga Police Department",
+      "feed_id": "45708",
+      "page_url": "https://www.broadcastify.com/listen/feed/45708",
+      "priority": 1,
+      "hot_threshold": 40,
+      "tags": [
+        "Hamilton",
+        "Chattanooga",
+        "police"
+      ]
+    },
+    {
+      "name": "Rhea County Public Safety",
+      "feed_id": "44617",
+      "page_url": "https://www.broadcastify.com/listen/feed/44617",
+      "priority": 2,
+      "hot_threshold": 25,
+      "tags": [
+        "Rhea",
+        "Dayton",
+        "police",
+        "fire",
+        "ems"
+      ]
+    },
+    {
+      "name": "Polk County Public Safety",
+      "feed_id": "37220",
+      "page_url": "https://www.broadcastify.com/listen/feed/37220",
+      "priority": 2,
+      "hot_threshold": 25,
+      "tags": [
+        "Polk",
+        "fire",
+        "sheriff",
+        "ems"
+      ]
+    }
+  ]
+}
