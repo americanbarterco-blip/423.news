@@ -75,6 +75,7 @@ def sync_feeds(scanner: dict) -> int:
             "live_data": bool(f.get("live_data")),
             "priority": f.get("priority", 3),
             "tags": f.get("tags") or [],
+            "url": f.get("url") or "",
             "note": scanner.get("note"),
         })
     rows = [r for r in rows if r["name"]]
@@ -128,8 +129,11 @@ def sync_reports(reports: list) -> int:
             "uncertain": r.get("uncertain") or [],
             "heard_on": r.get("heard_on"),
             "paraphrase": r.get("paraphrase"),
-            "published": r.get("published", True),
         })
+        # Only write publication state when the local file explicitly carries it.
+        # Missing means "leave the existing database value unchanged".
+        if "published" in r:
+            rows[-1]["published"] = bool(r["published"])
     if not rows:
         return 0
     call("POST", "news_reports?on_conflict=id", rows, "resolution=merge-duplicates,return=minimal")
