@@ -17,9 +17,10 @@ TWO_WORD = ["van buren"]  # extend if a two-word county is added above
 
 def month_names(today):
     names = []
-    for off in (0, 1):  # this month and next
+    for off in (-1, 0, 1):  # last month (diagnostic), this month, next month
         y, m = today.year, today.month + off
         if m > 12: y, m = y + 1, 1
+        if m < 1: y, m = y - 1, 12
         names.append((y, dt.date(y, m, 1).strftime("%B").upper()))
     return names
 
@@ -29,7 +30,7 @@ def fetch(url):
         with urllib.request.urlopen(req, timeout=60) as r:
             return r.read()
     except Exception as e:
-        print("skip", url, e); return None
+        print("skip", url.rsplit('/',1)[-1], e); return None
 
 def pdf_text(data):
     p = "/tmp/thp.pdf"
