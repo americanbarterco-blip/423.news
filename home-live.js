@@ -42,7 +42,8 @@
     /* Small Claudia Green feed on the home page (same-site page shown in a frame) */
     claudiaUrl: 'claudia-scanner.html',
     feedUrl: 'feed.json',   /* the same file the scanner page reads */
-    claudiaCount: 4,
+    claudiaCount: 5,
+    claudiaFreshHours: 24,   /* reports older than this disappear on their own */
     claudiaImage: 'claudia-studio.jpg',   /* still picture shown in her homepage card */
 
     /* Sports block: one big stream, three smaller ones in a row under it.
@@ -353,17 +354,31 @@
   /* ---------------- Claudia Green small feed ---------------- */
   function paintClaudia(root) {
     var el = root.querySelector('.hl-claudia'); if (!el) return;
-    fetch(CFG.feedUrl + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status); return r.json();
-    }).then(function (d) {
-      var list = (d.reports || []).slice().sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); }).slice(0, CFG.claudiaCount);
-      var line = d.claudia && d.claudia.line ? '<div class="hl-note" style="padding:8px 0">' + esc(d.claudia.line) + '</div>' : '';
-      el.innerHTML = line + (list.map(function (r) {
-        var t = new Date(r.ts), when = isNaN(t) ? '' : t.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    var cutoff = Date.now() - CFG.claudiaFreshHours * 3600e3, hdr = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
+    var live = fetch(SB_URL + '/rest/v1/news_reports?select=id,kind,dateline,headline,ts&published=eq.true&ts=gte.' + encodeURIComponent(new Date(cutoff).toISOString()) + '&order=ts.desc&limit=12', { headers: hdr, cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('reports ' + r.status); return r.json(); }).catch(function () { return null; });
+    var file = fetch(CFG.feedUrl + '?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('feed ' + r.status); return r.json(); }).catch(function () { return null; });
+    Promise.all([live, file]).then(function (x) {
+      var norm = function (s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 80); };
+      var stamp = root.querySelector('.hl-cstamp');
+      if (x[0] === null && x[1] === null) { el.innerHTML = '<div class="hl-note">Claudia Green’s reports could not be loaded. <a href="' + esc(CFG.claudiaUrl) + '" style="text-decoration:underline">Open her page</a>.</div>'; return; }
+      var rows = (x[0] || []).slice(), feed = x[1] || {}, seen = {};
+      rows.forEach(function (r) { seen[norm(r.headline)] = 1; });
+      (feed.reports || []).forEach(function (r) {      /* the scanner file only counts while it is fresh, and never twice */
+        var t = Date.parse(r.ts); if (isNaN(t) || t < cutoff || seen[norm(r.headline)]) return; seen[norm(r.headline)] = 1; rows.push(r);
+      });
+      rows = rows.filter(function (r) { return !isNaN(Date.parse(r.ts)) && Date.parse(r.ts) >= cutoff; })
+        .sort(function (a, b) { return Date.parse(b.ts) - Date.parse(a.ts); }).slice(0, CFG.claudiaCount);
+      var gen = Date.parse(feed.generated_at || ''), fresh = !isNaN(gen) && gen >= cutoff;
+      var line = fresh && feed.claudia && feed.claudia.line ? '<div class="hl-note" style="padding:8px 0">' + esc(feed.claudia.line) + '</div>' : '';
+      var ago = function (ts) { var s = Math.max(0, (Date.now() - Date.parse(ts)) / 1000); return s < 90 ? 'just now' : s < 3600 ? Math.floor(s / 60) + ' min ago' : s < 86400 ? Math.floor(s / 3600) + ' hr ago' : 'yesterday'; };
+      el.innerHTML = line + (rows.map(function (r) {
         return '<a class="hl-row" href="report.html?id=' + encodeURIComponent(r.id) + '"><span class="hl-t' + (/^(BREAKING|ALERT)/i.test(r.kind || '') ? ' sev' : '') + '">' +
-          esc(r.kind || 'Report') + '</span><div>' + esc(r.headline) + '<small>' + esc(r.dateline || '') + (when ? ' · ' + when : '') + '</small></div></a>';
-      }).join('') || '<div class="hl-note">No reports filed yet.</div>');
-    }).catch(function () { el.innerHTML = '<div class="hl-note">Claudia Green’s feed is not available right now. <a href="' + esc(CFG.claudiaUrl) + '" style="text-decoration:underline">Open her page</a>.</div>'; });
+          esc(r.kind || 'Report') + '</span><div>' + esc(r.headline) + '<small>' + esc(r.dateline || '') + (r.dateline ? ' · ' : '') + esc(ago(r.ts)) + '</small></div></a>';
+      }).join('') || '<div class="hl-note">No new reports in the last ' + CFG.claudiaFreshHours + ' hours. Claudia files here the moment something develops. <a href="' + esc(CFG.claudiaUrl) + '" style="text-decoration:underline">Earlier reports</a>.</div>');
+      if (stamp) stamp.textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    });
   }
 
   /* ---------------- live sports: videos come from Scores & Live (news_streams) ---------------- */
@@ -436,7 +451,7 @@
       '<div class="hl"><div class="hl-h"><h2><span class="hl-dot" id="hlDot"></span>Live news</h2><span class="muted" id="hlTag"></span></div>' +
       '<div class="hl-video" id="hlVideo"></div></div>' +
       '<div class="hl-side">' +
-      '<div class="hl"><div class="hl-h"><h2>Claudia Green</h2><a href="' + esc(CFG.claudiaUrl) + '" style="font-size:12px;text-decoration:underline">Open full</a></div>' +
+      '<div class="hl"><div class="hl-h"><h2>Claudia Green</h2><span class="hl-acts"><span class="muted hl-cstamp"></span><a href="' + esc(CFG.claudiaUrl) + '" style="font-size:12px;text-decoration:underline">All reports →</a></span></div>' +
       (CFG.claudiaImage ? '<div style="padding:12px 14px 0"><div class="hl-video" style="aspect-ratio:16/9;border-radius:12px"><img src="' + esc(CFG.claudiaImage) + '" alt="Claudia Green at the 423.news anchor desk (illustration)" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%"><span class="cg-cam" style="position:absolute;inset:0;border:0;background:none;aspect-ratio:auto;max-width:none;pointer-events:none"><span class="cg-tag" style="position:absolute;left:8px;top:8px;background:rgba(0,0,0,.65);color:#fff;font:700 11px system-ui;padding:5px 8px;border-radius:99px;text-transform:uppercase"data-idle="Studio">Studio</span></span><button type="button" class="cg-snd" style="position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.65);color:#fff;border:0;border-radius:99px;padding:7px 11px;font:600 12px system-ui;cursor:pointer">Enable voice</button></div><div class="hl-note" style="padding:6px 0 0">Claudia Green, 423.news’s AI correspondent. Illustration. <a href="#/tip" style="text-decoration:underline">Send Claudia a scanner clip</a></div></div>' : '') +
       '<div class="hl-claudia"><div class="hl-note">Loading…</div></div></div>' +
       '<div class="hl"><div class="hl-h"><h2>Traffic · 423 area</h2><span class="hl-acts"><span class="muted hl-stamp"></span><button type="button" class="hl-view" data-view="list" aria-pressed="true">List</button><button type="button" class="hl-view" data-view="map" aria-pressed="false">Map</button><button type="button" class="hl-refresh">Refresh</button></span></div>' +

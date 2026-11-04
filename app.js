@@ -167,12 +167,7 @@
         (showG.length ? '<div class="games" style="margin-bottom:26px">' + showG.map(gameCard).join('') + '</div>'
                       : '<p class="muted" style="margin-bottom:26px">No games on right now. <a href="#/scores" style="text-decoration:underline">See scores, video and headlines →</a></p>');
 
-      if (wire.length) {
-        out += '<div class="sech"><h2>Claudia Green</h2><a href="claudia-scanner.html">All reports →</a></div><div class="wire">' +
-          wire.map(function (w) {
-            return '<a href="report.html?id=' + encodeURIComponent(w.id) + '"><div><span class="badge">' + esc(w.kind) + '</span></div><div><h3>' + esc(w.headline) + '</h3><span class="muted">' + esc(w.dateline || '') + ' · ' + esc(ago(w.ts)) + '</span></div></a>';
-          }).join('') + '</div>';
-      }
+      /* Claudia Green's reports now live in the merged card at the top of the home page (home-live.js). */
       if (news.length > 4) {
         out += '<div class="sech"><h2>Latest</h2><a href="#/news">More news →</a></div><div class="g4">' + news.slice(4, 8).map(tile).join('') + '</div>';
         if (news.length > 8) out += '<div class="lower panel pad" style="margin-bottom:26px"><div style="grid-column:1/-1"><h2 class="sm">More stories</h2>' + news.slice(8, 16).map(mini).join('') + '</div></div>';

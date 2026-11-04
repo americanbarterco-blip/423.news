@@ -2,7 +2,7 @@
    Safe by design: pages, scripts and data are always fetched fresh from the network first,
    so new uploads show up right away. Nothing from Supabase or other sites is touched.
    Bump VERSION to force every phone to drop old cached files. */
-var VERSION = 'v4';
+var VERSION = 'v5';
 var CACHE = '423news-' + VERSION;
 var PRECACHE = ['offline.html', 'icon-192.png', 'icon-512.png'];
 
@@ -45,6 +45,7 @@ self.addEventListener('push', function (e) {
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data ? e.data.text() : '' }; }
   e.waitUntil(self.registration.showNotification(d.title || '423.news', {
     body: d.body || '', icon: 'icon-192.png', badge: 'icon-192.png', tag: d.tag || undefined,
+    requireInteraction: !!d.urgent, renotify: !!(d.urgent && d.tag), vibrate: d.urgent ? [300, 150, 300, 150, 600] : undefined,
     data: { url: d.url || 'index.html' }
   }));
 });
