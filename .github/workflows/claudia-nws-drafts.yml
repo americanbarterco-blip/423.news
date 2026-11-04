@@ -13,6 +13,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Check Python syntax
+        run: python3 -m py_compile nws_alerts.py
       - name: Fetch and save 423-area alerts as drafts
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
