@@ -8,8 +8,8 @@
   },
   "claudia": {
     "status": "at-desk",
-    "on_air": true,
-    "line": "On air with the Tri-Cities sweep — weather, I-26 work zones, early voting and two open safety cases."
+    "on_air": false,
+    "line": "Scanner status is not connected yet. Public feed links are available; no live audio stream is configured."
   },
   "reports": [
     {
@@ -254,98 +254,86 @@
   "scanner": {
     "provider": "Broadcastify",
     "connected": false,
-    "last_poll": "2026-10-29T09:11:49Z",
-    "note": "Broadcastify not connected — add BROADCASTIFY_API_KEY and per-feed page_url/stream_url in scanner/config.json. Rack values are not live.",
+    "note": "Public feed pages are listed, but the scanner monitor has not checked them yet. Audio capture requires an authorized stream URL.",
     "feeds": [
       {
-        "name": "County Fire — Ops 1",
-        "feed_id": "",
-        "status": "hot",
-        "listeners": 214,
+        "name": "Bradley County Sheriff, Cleveland Police, Fire Rescue and MAC",
+        "feed_id": "9119",
+        "url": "https://www.broadcastify.com/listen/feed/9119",
+        "status": "unknown",
+        "listeners": null,
         "priority": 1,
         "tags": [
+          "Bradley",
+          "Cleveland",
+          "police",
           "fire",
           "ems"
         ],
         "live_data": false
       },
       {
-        "name": "County Sheriff — Dispatch B",
-        "feed_id": "",
-        "status": "active",
-        "listeners": 96,
+        "name": "Hamilton County Public Safety",
+        "feed_id": "44571",
+        "url": "https://www.broadcastify.com/listen/feed/44571",
+        "status": "unknown",
+        "listeners": null,
         "priority": 1,
         "tags": [
-          "police"
-        ],
-        "live_data": false
-      },
-      {
-        "name": "City PD — Channel 2",
-        "feed_id": "",
-        "status": "active",
-        "listeners": 61,
-        "priority": 2,
-        "tags": [
-          "police"
-        ],
-        "live_data": false
-      },
-      {
-        "name": "County EMS — Med 1",
-        "feed_id": "",
-        "status": "idle",
-        "listeners": 12,
-        "priority": 2,
-        "tags": [
+          "Hamilton",
+          "Chattanooga",
+          "police",
+          "fire",
           "ems"
         ],
         "live_data": false
       },
       {
-        "name": "County EM — Operations",
-        "feed_id": "",
-        "status": "idle",
-        "listeners": 9,
+        "name": "Chattanooga Police Department",
+        "feed_id": "45708",
+        "url": "https://www.broadcastify.com/listen/feed/45708",
+        "status": "unknown",
+        "listeners": null,
         "priority": 1,
         "tags": [
-          "emergency-management",
-          "weather"
+          "Hamilton",
+          "Chattanooga",
+          "police"
+        ],
+        "live_data": false
+      },
+      {
+        "name": "Rhea County Public Safety",
+        "feed_id": "44617",
+        "url": "https://www.broadcastify.com/listen/feed/44617",
+        "status": "unknown",
+        "listeners": null,
+        "priority": 2,
+        "tags": [
+          "Rhea",
+          "Dayton",
+          "police",
+          "fire",
+          "ems"
+        ],
+        "live_data": false
+      },
+      {
+        "name": "Polk County Public Safety",
+        "feed_id": "37220",
+        "url": "https://www.broadcastify.com/listen/feed/37220",
+        "status": "unknown",
+        "listeners": null,
+        "priority": 2,
+        "tags": [
+          "Polk",
+          "fire",
+          "sheriff",
+          "ems"
         ],
         "live_data": false
       }
     ],
-    "log": [
-      {
-        "ts": "2026-10-29T02:30:31Z",
-        "feed": "FIRE1",
-        "text": "Second alarm requested, 1400 block commercial",
-        "grade": "A"
-      },
-      {
-        "ts": "2026-10-29T02:22:31Z",
-        "feed": "SO-B",
-        "text": "Unit 21 clearing, report number issued",
-        "grade": "C"
-      },
-      {
-        "ts": "2026-10-29T02:07:31Z",
-        "feed": "FIRE1",
-        "text": "Ventilation complete, primary search negative",
-        "grade": "A"
-      },
-      {
-        "ts": "2026-10-29T01:53:31Z",
-        "feed": "PD-2",
-        "text": "Traffic stop, no further, code 4",
-        "grade": "C"
-      },
-      {
-        "ts": "2026-10-29T01:35:31Z",
-        "feed": "EMS1",
-        "text": "Medic 4 transporting one, priority 2",
-        "grade": "B"
-      }
-    ]
+    "log": []
   }
 }
