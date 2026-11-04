@@ -1,8 +1,21 @@
-# Claudia Green — 423.news setup
+# Claudia Green — 423.news setup and operations
 
-This repository uses a flat layout. The scripts, public feed file, and site pages live at the repository root.
+This is the actual flat repository layout. The scripts are at the root beside `feed.json`, `index.html`, and the site assets. Older notes that refer to `scanner/`, `data/`, `assets/`, or `supabase/schema.sql` do not describe this repository.
 
-## 1. Configure the scanner status feeds
+## What is already running
+
+The connected Supabase project already contains the 423.news tables and RLS policies. Its active Edge Functions include `admin`, `claudia-desk`, `claudia-draft`, `claudia-scanner-ingest`, `sports-sync`, `weather-alerts`, and `push-send`.
+
+Existing database schedules are active:
+- Claudia desk feed: every 10 minutes.
+- Sports sync: every minute.
+- Severe-weather push checks: every 2 minutes.
+
+The existing Claudia desk function reads the configured NWS and local RSS sources and publishes those reports automatically while `news_desk_state.auto_enabled` is true. The scanner-ingest function uses a separate `scanner_auto_publish` setting; the current setting is false. This repository update does not change those live settings.
+
+## 1. Public Broadcastify status
+
+Copy the example config and run the status check:
 
 ```bash
 cp config.example.json config.json
@@ -10,59 +23,41 @@ python3 claudia.py doctor
 python3 claudia.py status
 ```
 
-The example config includes public Broadcastify feed pages for Bradley, Hamilton/Chattanooga, Rhea, and Polk counties. The status command reads the public feed pages and updates the local `feed.json` scanner rack. It does not need a Broadcastify API key for page-status checks.
+The example lists public feed pages for Bradley, Hamilton/Chattanooga, Rhea, and Polk counties. Public page status checks do not require an audio stream credential. The status workflow in `.github/workflows/claudia-scanner-status.yml` runs every 10 minutes and syncs the results to the existing Supabase scanner tables when the repository secrets `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are configured.
 
-The public page status is not an audio connection. Audio capture is intentionally disabled until you supply a stream URL or mount that your Broadcastify account is authorized to use. Do not paste account passwords or private credentials into `config.json`; the file is git-ignored.
+The public feed page being online is not the same as having an authorized audio stream. Audio capture is intentionally off until a permitted `stream_url` or `mount` is added to your private `config.json`.
 
-## 2. Run the status monitor
+## 2. Optional authorized audio capture
 
-```bash
-python3 claudia.py status
-python3 claudia.py watch --interval 60
-```
-
-`status` performs one check. `watch` repeats checks and only attempts audio capture for feeds that have an authorized stream configured. Use `Ctrl+C` to stop it.
-
-## 3. Optional audio capture
-
-Install FFmpeg on the worker machine, then add an authorized `stream_url` (or `mount`) to the matching feed object in your private `config.json`. Test it with:
+Install FFmpeg on a trusted worker and add the authorized feed stream URL or mount to the matching entry in `config.json`. Then:
 
 ```bash
 python3 listen.py resolve --feed "Bradley County Sheriff, Cleveland Police, Fire Rescue and MAC"
 python3 listen.py record --feed "Bradley County Sheriff, Cleveland Police, Fire Rescue and MAC" --seconds 30
 ```
 
-Broadcastify static audio URLs may require a paid account. The scripts do not bypass login, paywalls, access controls, or feed terms. If you do not have authorized stream access, keep the public feed-page status mode enabled and use the Broadcastify link to listen manually.
+Broadcastify static audio URLs may require a paid account. Do not paste account passwords into the config and do not bypass feed access controls or terms. If you do not have an authorized stream URL, use the public feed page manually.
 
-## 4. Supabase sync (optional)
+## 3. Scanner transcript and draft pipeline
 
-Set these as environment variables on a trusted worker or GitHub Actions secrets:
+The existing Supabase `claudia-scanner-ingest` function is active. It requires the `SCANNER_INGEST_TOKEN` and `ANTHROPIC_API_KEY` Edge Function secrets. It records a transcript, applies the safety/paraphrase gate, and files a report. Scanner auto-publishing is controlled separately by `news_desk_state.scanner_auto_publish`; it is currently disabled, so reports remain drafts for human review.
+
+The `paraphrase.py` helper provides local redact/check/build commands. Never publish raw dispatch transcripts or identifying details.
+
+## 4. Local report sync
+
+The root-level `supabase_sync.py` syncs the local `feed.json` into the existing tables. It requires:
 
 - `SUPABASE_URL`
-- `SUPABASE_SERVICE_KEY` (service-role key; never put it in the browser or commit it)
+- `SUPABASE_SERVICE_KEY` (service-role key; keep it in GitHub Secrets, never in browser code)
 
-Then run:
+It does not create tables or change RLS. Reports created by `claudia.py file` are marked `published=false`. Missing publication flags are omitted from the upsert so an existing published report is not accidentally unpublished.
 
-```bash
-python3 supabase_sync.py
-```
+## 5. What still needs provider setup
 
-The sync expects the existing tables `news_scanner_feeds`, `news_scanner_log`, and `news_reports`. It does not create tables or alter RLS. Ensure the tables and policies already exist before enabling the sync.
+- Continuous audio capture needs an always-on worker and authorized Broadcastify stream URLs.
+- Scanner AI drafting needs the Anthropic and ingest-token secrets.
+- Claudia's LiveKit audio room needs a working token endpoint and LiveKit URL/API credentials. The static repository currently points at `/api/livekit-token`; confirm that route exists on the deployed host before enabling the on-air room.
+- Traffic incidents need a valid TomTom key restricted to the production site domains.
 
-Scanner reports created by `claudia.py file` are drafts (`published=false`). The sync only changes a report's publication flag when the local report explicitly includes that field. An editor must approve a draft in Admin before it appears in the public feed.
-
-## 5. Weather alert drafts
-
-The separate `nws_alerts.py` workflow imports National Weather Service alerts for the configured Tennessee counties as unpublished drafts. It does not publish or delete reports. It requires the same two Supabase environment secrets and the existing `news_reports` table.
-
-## Important service dependencies
-
-The site itself remains static HTML/CSS/JavaScript and continues using the existing Supabase browser integration. Some optional functions require services that are not provisioned by source code alone:
-
-- Broadcastify authorized stream access for automatic audio capture.
-- A running worker/host for continuous scanner monitoring.
-- Supabase tables, RLS policies, and storage buckets already configured in the connected project.
-- A configured Cloudflare Pages Function and LiveKit project for Claudia's live audio room.
-- A restricted TomTom Traffic API key for traffic incidents.
-
-The app must display a disconnected/unconfigured state when any of those dependencies are absent. It must never label demo data as live or publish an unreviewed scanner report.
+The site must show a truthful disconnected/unconfigured state when one of these dependencies is missing. Do not display sample scanner logs as real incidents.
