@@ -71,7 +71,7 @@
   }
 
   function items(d) {
-    return (d.reports || []).slice().sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); }); /* newest first */
+    return (d.reports || []).filter(function (r) { return r.published !== false; }).slice().sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); }); /* newest first */
   }
   function toItem(r) { return { audio: r.audio || '', text: script(r) }; }
 
