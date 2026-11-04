@@ -3132,7 +3132,8 @@ const fresh = () => ({
   speaking: false, openId: null, mo: null, pendingHash: '', lastOpener: null
 });
 const isLocal = () => /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
-const demoAllowed = () => !S.demoOff && (S.demoOn || isLocal() || /[?&]demo=1\b/.test(location.hash + location.search));
+const demoPreviewOnly = () => /[?&]demo=1\b/.test(location.hash + location.search);
+const demoAllowed = () => !S.demoOff && (S.demoOn || isLocal() || demoPreviewOnly());
 
 /* ---------- data ---------- */
 const num = (v, lo, hi) => { if (v == null || v === '') return null; const n = Number(v); return Number.isFinite(n) && n >= lo && n <= hi ? n : null; };
@@ -3164,6 +3165,16 @@ async function refresh() {
   if (!S || S.busy) return;
   S.busy = true; setBusy(true);
   try {
+    if (demoPreviewOnly()) {
+      S.items = sortItems(demoItems());
+      S.source = 'demo';
+      S.status = 'ok';
+      S.err = '';
+      S.last = new Date();
+      S.firstLoad = false;
+      renderAll();
+      return;
+    }
     if (!navigator.onLine) throw Object.assign(new Error('You are offline. Showing the last reports received.'), { offline: true });
     const d = await N().api('/wire?limit=50');
     const map = new Map();
