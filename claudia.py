@@ -240,6 +240,8 @@ def find_feed(cfg: dict, name: str) -> dict:
 def cmd_capture(cfg: dict, name: str, seconds: int) -> Path:
     feed = find_feed(cfg, name)
     url = (feed.get("stream_url") or "").strip()
+    if not url and feed.get("mount"):
+        url = "https://audio.broadcastify.com/" + str(feed["mount"]).lstrip("/") + ".mp3"
     if not url:
         sys.exit(f"[claudia] feed {feed['name']!r} has no stream_url.\n"
                  f"          Open the feed while signed in to Broadcastify, copy the audio stream URL\n"
