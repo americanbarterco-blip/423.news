@@ -46,6 +46,9 @@ def pdf_text(data):
 ROW = re.compile(r"^\s*(\d{1,2})/(\d{1,2})/(\d{4})\s+(.*\S)\s*$")
 TYPE = re.compile(r"(sobriety|seat\s*-?\s*belt|d\.?\s?l\.?|driver'?s?\s+licen[sc]e)\s*$", re.I)
 
+def fix_county(c):
+    return re.sub(r"\bMc([a-z])", lambda m: "Mc" + m.group(1).upper(), c)
+
 def parse(text):
     rows = []
     for line in text.splitlines():
@@ -65,7 +68,7 @@ def parse(text):
         if kind_raw.startswith("sobriety"): typ, sub = "DUI", "Sobriety checkpoint"
         elif "belt" in kind_raw: typ, sub = "Roadblock", "Seat belt checkpoint"
         else: typ, sub = "Roadblock", "Driver license checkpoint"
-        rows.append(dict(date=dt.date(y, mo, d), county=county.title(), location=loc.strip(), type=typ, sub=sub))
+        rows.append(dict(date=dt.date(y, mo, d), county=fix_county(county.title()), location=loc.strip(), type=typ, sub=sub))
     return rows
 
 def load_cache():

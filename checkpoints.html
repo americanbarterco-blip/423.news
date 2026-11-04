@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Checkpoints &amp; Roadblocks — 423.news</title>
-<meta name="description" content="Publicly announced DUI/sobriety checkpoints and roadblocks in the 423 area, with live driving alerts.">
+<title>Checkpoints, Accidents &amp; Roadblocks — 423.news</title>
+<meta name="description" content="Publicly announced DUI/sobriety checkpoints and roadblocks plus live accidents in the 423 area, with driving alerts.">
 <meta name="theme-color" content="#050b12">
 <link rel="manifest" href="checkpoints.webmanifest">
 <link rel="apple-touch-icon" href="cp-icon-192.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 <link rel="stylesheet" href="site.css">
 <style>
-:root{--acc:var(--accent);--card:var(--panel);--mut:var(--muted);--red:#ff4d4f;--grn:#35c48a;--amb:#f5a524}
+:root{--mut:var(--muted);--red:#ff4d4f;--grn:#35c48a;--amb:#f5a524}
 main{max-width:900px;margin:0 auto;padding:16px}
 h1{font-size:1.5rem;margin:.2rem 0 .6rem}
 .note{color:var(--mut);font-size:.85rem;margin:.4rem 0 1rem}
@@ -23,17 +23,20 @@ h1{font-size:1.5rem;margin:.2rem 0 .6rem}
 .cbar button{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;font-size:.95rem;cursor:pointer}
 .cbar button.sec{background:var(--s2);border:1px solid var(--line);color:var(--text)}
 #map{height:360px;border-radius:12px;border:1px solid var(--line);margin-bottom:14px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
-.card h3{margin:0 0 4px;font-size:1rem}
-.tag{display:inline-block;font-size:.72rem;font-weight:700;border-radius:6px;padding:2px 7px;margin-right:6px;background:var(--line)}
-.tag.dui{background:#5a3b00;color:var(--amb)}
-.tag.road{background:#4a1416;color:#ff8a8c}
-.tag.ver{background:#0e3a29;color:var(--grn)}
-.tag.unv{background:#333;color:var(--mut)}
+.ccard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.ccard h3{margin:0 0 6px;font-size:1rem}
+.ctag{display:inline-block;font-size:.72rem;font-weight:700;border-radius:6px;padding:2px 7px;margin-right:6px;background:var(--line)}
+.ctag.dui{background:#5a3b00;color:var(--amb)}
+.ctag.road{background:#4a1416;color:#ff8a8c}
+.ctag.acc{background:#4a1416;color:#ff8a8c}
+.ctag.ver{background:#0e3a29;color:var(--grn)}
+.ctag.unv{background:#333;color:var(--mut)}
+.ctag.live{background:#0e2f4a;color:#6bb6ff}
 .mut{color:var(--mut);font-size:.85rem}
 .empty{color:var(--mut);text-align:center;padding:24px}
 .safety{border-left:3px solid var(--accent);padding:8px 12px;margin:16px 0;background:var(--panel);border-radius:0 8px 8px 0;font-size:.9rem}
 .cnav a{color:var(--muted);font-size:14px;font-weight:600;margin-left:18px}
+.accpin{font-size:22px;line-height:24px;text-align:center;filter:drop-shadow(0 1px 2px #000)}
 </style>
 </head>
 <body>
@@ -42,149 +45,262 @@ h1{font-size:1.5rem;margin:.2rem 0 .6rem}
   <span class="cnav" style="margin-left:auto"><a href="index.html">Home</a><a href="conditions.html">Conditions</a></span>
 </div></div></header>
 <main>
-  <h1>Checkpoints &amp; Roadblocks</h1>
-  <p class="note">Publicly announced DUI/sobriety checkpoints and roadblocks in the 423 area. Entries expire automatically. Always follow posted signs and officer instructions.</p>
+  <h1>Checkpoints, Accidents &amp; Roadblocks</h1>
+  <p class="note">Publicly announced DUI/sobriety checkpoints and roadblocks, plus live accidents and road closures in the 423 area. Checkpoint entries expire automatically. Always follow posted signs and officer instructions.</p>
   <div id="alert" role="alert" aria-live="assertive"></div>
   <div class="cbar">
     <button id="trackBtn">📍 Start driving alerts</button>
     <button class="sec" id="stopBtn" style="display:none">Stop</button>
+    <button class="sec" id="voiceBtn">🔈 Voice: Off</button>
     <button class="sec" id="filterBtn">Showing: All</button>
   </div>
-  <p class="note" id="trackNote">Driving alerts use your phone's location and direction of travel. Your location stays on your device and is never sent or stored. Don't operate your phone while driving: set up the alerts before you go, or have a passenger use it.</p>
+  <p class="note" id="trackNote">Driving alerts use your phone's location and direction of travel. Your location stays on your device and is never sent or stored. Don't operate your phone while driving: set up the alerts before you go, or have a passenger use it. Turn on Voice to hear alerts hands-free.</p>
   <div id="map"></div>
+  <p class="note" id="accStatus"></p>
   <div id="list"></div>
-  <div class="safety"><strong>Plan a safe ride.</strong> If you're drinking, use a designated driver, taxi, or rideshare. Checkpoint info is provided for public awareness and may change without notice.</div>
+  <div class="safety"><strong>Plan a safe ride.</strong> If you're drinking, use a designated driver, taxi, or rideshare. Information is provided for public awareness, may be delayed or incomplete, and may change without notice. Accident data comes from TomTom live traffic and can lag by several minutes.</div>
   <p class="note" id="updated"></p>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="tomtom.js"></script>
 <script>
 (function(){
+  'use strict';
+  // ---- tuning ----
   var DATA_URL='checkpoints.json';
-  var ALERT_MILES=5;          // start warning within this distance
-  var STOP_MILES=0.75;        // "prepare to stop" within this distance
-  var HEADING_TOLERANCE=50;   // degrees either side of the bearing to the checkpoint
-  var LOOKAHEAD_HOURS=3;      // how soon before start we begin alerting
+  var CP_ALERT_MI=5, CP_STOP_MI=0.75;      // checkpoints
+  var ACC_ALERT_MI=4, ACC_SLOW_MI=1.5;     // accidents / closures
+  var LOOKAHEAD_HOURS=3;                   // alert for checkpoints starting within this window
+  var ACC_RADIUS_KM=40;                    // TomTom query radius (their limit is a ~100 km box)
+  var POLL_DRIVING_MS=90000, POLL_IDLE_MS=240000;
+  var MIN_TRAIL_MI=0.025;                  // ~40 m of travel before we trust a bearing
+  var WEAK_GPS_M=200;
+  var LEVELS=[3,1,0.5];                    // miles at which voice repeats an alert
   var showDemo=/[?&]demo=1/.test(location.search);
 
-  var map=L.map('map').setView([35.0456,-85.3097],10);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
-  var markers=[], me=null, meCircle=null, items=[], filter='All';
-
+  // ---- helpers ----
   function toRad(d){return d*Math.PI/180}
   function toDeg(r){return r*180/Math.PI}
-  function miles(a,b){
-    var R=3958.8,dLat=toRad(b.lat-a.lat),dLng=toRad(b.lng-a.lng);
-    var x=Math.sin(dLat/2)**2+Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
-    return 2*R*Math.asin(Math.sqrt(x));
-  }
-  function bearing(a,b){
-    var y=Math.sin(toRad(b.lng-a.lng))*Math.cos(toRad(b.lat));
-    var x=Math.cos(toRad(a.lat))*Math.sin(toRad(b.lat))-Math.sin(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.cos(toRad(b.lng-a.lng));
-    return (toDeg(Math.atan2(y,x))+360)%360;
-  }
+  function miles(a,b){var R=3958.8,dLat=toRad(b.lat-a.lat),dLng=toRad(b.lng-a.lng);var x=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)*Math.sin(dLng/2);return 2*R*Math.asin(Math.sqrt(x))}
+  function bearing(a,b){var y=Math.sin(toRad(b.lng-a.lng))*Math.cos(toRad(b.lat));var x=Math.cos(toRad(a.lat))*Math.sin(toRad(b.lat))-Math.sin(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.cos(toRad(b.lng-a.lng));return (toDeg(Math.atan2(y,x))+360)%360}
   function angDiff(a,b){var d=Math.abs(a-b)%360;return d>180?360-d:d}
+  function blend(oldH,newH,w){var x=(1-w)*Math.sin(toRad(oldH))+w*Math.sin(toRad(newH)),y=(1-w)*Math.cos(toRad(oldH))+w*Math.cos(toRad(newH));return (toDeg(Math.atan2(x,y))+360)%360}
   function fmt(t){return new Date(t).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}
+  function hhmm(t){return new Date(t).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function $(id){return document.getElementById(id)}
+  function cone(d){return d>2?35:d>0.75?50:70}   // wide when close, narrow far away (fewer false alarms)
 
-  function active(c){
-    var now=Date.now();
-    return new Date(c.end).getTime()>now;
-  }
-  function upcomingOrLive(c){
-    var now=Date.now(), s=new Date(c.start).getTime(), e=new Date(c.end).getTime();
-    return now<=e && now>=s-LOOKAHEAD_HOURS*3600e3;
+  // ---- state ----
+  var map=L.map('map').setView([35.0456,-85.3097],9);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+  var layer=L.layerGroup().addTo(map);
+  var checkpoints=[], accidents=[], accFetchedAt=0, accError=null, accCenter=null;
+  var filter='All', fitted=false;
+  var me=null, meCircle=null, tracking=false, heading=null, headingAt=0, trail=[], lastD={}, spoken={}, lastAlertHtml='';
+  var voice=false;
+  try{voice=localStorage.getItem('cpVoice')==='1'}catch(_){}
+
+  // ---- data: checkpoints ----
+  function activeCp(c){return new Date(c.end).getTime()>Date.now()}
+  function liveCp(c){var n=Date.now(),s=new Date(c.start).getTime(),e=new Date(c.end).getTime();return n<=e&&n>=s-LOOKAHEAD_HOURS*3600e3}
+  function loadCheckpoints(){
+    return fetch(DATA_URL,{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
+      checkpoints=(d.checkpoints||[]).filter(function(c){return (!c.demo||showDemo)&&activeCp(c)}).sort(function(a,b){return new Date(a.start)-new Date(b.start)});
+      if(d.updated)$('updated').textContent='Checkpoint list updated '+fmt(d.updated);
+    }).catch(function(){checkpoints=[];$('list').innerHTML='<div class="empty">Could not load checkpoint data.</div>'});
   }
 
+  // ---- data: live accidents (TomTom, via the site's shared tomtom.js) ----
+  function cluster(list){   // merge duplicates within ~150 m
+    var out=[];
+    list.forEach(function(a){
+      for(var i=0;i<out.length;i++){if(out[i].type===a.type&&miles(out[i],a)<0.1){return}}
+      out.push(a);
+    });
+    return out;
+  }
+  function loadAccidents(lat,lng){
+    if(!window.TomTom||!TomTom.incidents){accError='Live accident data is not available.';render();return Promise.resolve()}
+    return TomTom.incidents(lat,lng,ACC_RADIUS_KM,'').then(function(list){
+      var seen=0;
+      accidents=cluster(list.filter(function(i){return (i.type==='Accident'||i.type==='Road closed')&&i.lat!=null&&i.lon!=null})
+        .map(function(i){seen++;return {id:'acc-'+i.type+'-'+i.lat.toFixed(4)+','+i.lon.toFixed(4),kind:'acc',type:i.type,text:i.text,road:i.road||i.from||'',from:i.from,to:i.to,
+          delayMin:i.delay?Math.round(i.delay/60):0,lengthM:i.length||0,severe:!!i.severe,lat:i.lat,lng:i.lon}}));
+      accFetchedAt=Date.now();accError=null;accCenter={lat:lat,lng:lng};
+    }).catch(function(e){accError=(e&&e.message)||'Live accident data is unavailable right now.'}).then(render);
+  }
+  function pollAccidents(force){
+    if(document.hidden&&!force)return;
+    var c=me?{lat:me.lat,lng:me.lng}:{lat:map.getCenter().lat,lng:map.getCenter().lng};
+    loadAccidents(c.lat,c.lng);
+  }
+
+  // ---- render ----
+  function visible(){
+    var out=[];
+    if(filter!=='Accidents')checkpoints.forEach(function(c){out.push({kind:'cp',d:c})});
+    if(filter!=='Checkpoints')accidents.forEach(function(a){out.push({kind:'acc',d:a})});
+    if(me)out.forEach(function(x){x.dist=miles(me,{lat:x.d.lat,lng:x.d.lng})});
+    out.sort(function(a,b){
+      if(me)return a.dist-b.dist;
+      if(a.kind!==b.kind)return a.kind==='acc'?-1:1;
+      return a.kind==='cp'?new Date(a.d.start)-new Date(b.d.start):(b.d.severe?1:0)-(a.d.severe?1:0);
+    });
+    return out;
+  }
   function render(){
-    markers.forEach(function(m){map.removeLayer(m)});markers=[];
-    var list=document.getElementById('list');
-    var shown=items.filter(function(c){return filter==='All'||c.type===filter});
-    if(!shown.length){list.innerHTML='<div class="empty">No active or upcoming checkpoints have been reported.</div>';return}
-    list.innerHTML=shown.map(function(c){
-      var live=new Date(c.start).getTime()<=Date.now();
-      return '<div class="card"><h3>'+esc(c.title||c.location)+'</h3>'+
-        '<span class="tag '+(c.type==='DUI'?'dui':'road')+'">'+esc(c.type==='DUI'?'DUI':'ROADBLOCK')+'</span>'+
-        '<span class="tag '+(c.status==='verified'?'ver':'unv')+'">'+(c.status==='verified'?'VERIFIED':'UNVERIFIED')+'</span>'+
-        (live?'<span class="tag" style="background:#4a1416;color:#ff8a8c">ACTIVE NOW</span>':'')+
-        '<div class="mut" style="margin-top:6px">📍 '+esc(c.location)+'</div>'+
-        '<div class="mut">🕘 '+(c.time_note?esc(fmt(c.start).split(',').slice(0,2).join(','))+' · '+esc(c.time_note):fmt(c.start)+' – '+fmt(c.end))+'</div>'+(c.precision==='county-only'?'<div class="mut">Exact spot not published; map pin is approximate.</div>':'')+
-        '<div class="mut">'+esc(c.agency||'')+(c.source_url?' · <a href="'+esc(c.source_url)+'" target="_blank" rel="noopener">Source</a>':'')+
-        (c.last_verified?' · verified '+fmt(c.last_verified):'')+'</div></div>';
-    }).join('');
-    shown.forEach(function(c){
-      var m=L.circleMarker([c.lat,c.lng],{radius:10,color:c.type==='DUI'?'#ffb020':'#ff4d4f',fillOpacity:.6})
-        .addTo(map).bindPopup('<b>'+esc(c.title||c.location)+'</b><br>'+fmt(c.start)+' – '+fmt(c.end));
-      markers.push(m);
+    layer.clearLayers();
+    var items=visible(), list=$('list');
+    var st=$('accStatus');
+    if(filter==='Checkpoints'){st.textContent=''}
+    else if(accError){st.textContent='Live accidents unavailable: '+accError}
+    else if(accFetchedAt){st.textContent='Live accidents updated '+hhmm(accFetchedAt)+' · refreshes automatically'}
+    else{st.textContent='Loading live accidents…'}
+    if(!items.length){list.innerHTML='<div class="empty">'+(filter==='Accidents'?'No accidents or closures reported nearby right now.':'No active or upcoming items have been reported.')+'</div>'}
+    else list.innerHTML=items.map(function(x){return x.kind==='cp'?cpCard(x):accCard(x)}).join('');
+    var pts=[];
+    items.forEach(function(x){
+      var c=x.d,m;
+      if(x.kind==='cp'){m=L.circleMarker([c.lat,c.lng],{radius:10,color:c.type==='DUI'?'#ffb020':'#ff4d4f',fillOpacity:.6}).bindPopup('<b>'+esc(c.title||c.location)+'</b><br>'+esc(c.location))}
+      else{m=L.marker([c.lat,c.lng],{icon:L.divIcon({html:'<div class="accpin">'+(c.type==='Accident'?'⚠️':'⛔')+'</div>',className:'',iconSize:[24,24]})}).bindPopup('<b>'+esc(c.type)+(c.road?' · '+esc(c.road):'')+'</b><br>'+esc(c.text))}
+      m.addTo(layer);pts.push([c.lat,c.lng]);
     });
-    if(!me&&markers.length){map.fitBounds(L.featureGroup(markers).getBounds().pad(.3),{maxZoom:13})}
+    if(!fitted&&pts.length&&!me){fitted=true;map.fitBounds(L.latLngBounds(pts).pad(.3),{maxZoom:12})}
+  }
+  function distTxt(x){return x.dist!=null?' · '+(x.dist<0.2?'<¼':x.dist.toFixed(1))+' mi away':''}
+  function cpCard(x){
+    var c=x.d,live=new Date(c.start).getTime()<=Date.now();
+    return '<div class="ccard"><h3>'+esc(c.title||c.location)+'</h3>'+
+      '<span class="ctag '+(c.type==='DUI'?'dui':'road')+'">'+(c.type==='DUI'?'DUI':'ROADBLOCK')+'</span>'+
+      '<span class="ctag '+(c.status==='verified'?'ver':'unv')+'">'+(c.status==='verified'?'VERIFIED':'UNVERIFIED')+'</span>'+
+      (live?'<span class="ctag road">ACTIVE NOW</span>':'')+
+      '<div class="mut" style="margin-top:6px">📍 '+esc(c.location)+distTxt(x)+'</div>'+
+      '<div class="mut">🕘 '+(c.time_note?esc(fmt(c.start).split(',').slice(0,2).join(','))+' · '+esc(c.time_note):fmt(c.start)+' – '+fmt(c.end))+'</div>'+
+      (c.precision==='county-only'?'<div class="mut">Exact spot not published; map pin is approximate.</div>':'')+
+      '<div class="mut">'+esc(c.agency||'')+(c.source_url?' · <a href="'+esc(c.source_url)+'" target="_blank" rel="noopener">Source</a>':'')+(c.last_verified?' · verified '+fmt(c.last_verified):'')+'</div></div>';
+  }
+  function accCard(x){
+    var a=x.d,route=a.from&&a.to?esc(a.from)+' → '+esc(a.to):esc(a.from||'');
+    return '<div class="ccard"><h3>'+(a.type==='Accident'?'⚠️ ':'⛔ ')+esc(a.type)+(a.road?' · '+esc(a.road):'')+'</h3>'+
+      '<span class="ctag acc">'+(a.type==='Accident'?'ACCIDENT':'ROAD CLOSED')+'</span><span class="ctag live">LIVE · TomTom</span>'+(a.severe?'<span class="ctag road">MAJOR</span>':'')+
+      '<div class="mut" style="margin-top:6px">'+esc(a.text)+distTxt(x)+'</div>'+
+      (route?'<div class="mut">'+route+'</div>':'')+
+      ((a.delayMin>=2||a.lengthM>=200)?'<div class="mut">'+(a.delayMin>=2?'Delay about '+a.delayMin+' min':'')+(a.delayMin>=2&&a.lengthM>=200?' · ':'')+(a.lengthM>=200?'backup '+(a.lengthM/1609).toFixed(1)+' mi':'')+'</div>':'')+'</div>';
   }
 
-  fetch(DATA_URL,{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
-    items=(d.checkpoints||[]).filter(function(c){return (!c.demo||showDemo)&&active(c)})
-      .sort(function(a,b){return new Date(a.start)-new Date(b.start)});
-    if(d.updated)document.getElementById('updated').textContent='Last updated '+fmt(d.updated);
-    render();
-  }).catch(function(){document.getElementById('list').innerHTML='<div class="empty">Could not load checkpoint data.</div>'});
-
-  document.getElementById('filterBtn').onclick=function(){
-    filter=filter==='All'?'DUI':filter==='DUI'?'Roadblock':'All';
-    this.textContent='Showing: '+filter;render();
+  // ---- filter / voice ----
+  $('filterBtn').onclick=function(){filter=filter==='All'?'Checkpoints':filter==='Checkpoints'?'Accidents':'All';this.textContent='Showing: '+filter;render()};
+  function paintVoice(){$('voiceBtn').textContent=voice?'🔊 Voice: On':'🔈 Voice: Off'}
+  $('voiceBtn').onclick=function(){
+    voice=!voice;try{localStorage.setItem('cpVoice',voice?'1':'0')}catch(_){}
+    paintVoice();
+    if(voice)say('Voice alerts on');   // also unlocks speech on iOS (needs a tap)
   };
+  paintVoice();
+  function say(t){try{if(window.speechSynthesis){speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.lang='en-US';speechSynthesis.speak(u)}}catch(_){}}
 
-  // ---------- driver tracking ----------
-  var watchId=null,last=null,heading=null,wake=null;
-  var alertEl=document.getElementById('alert');
+  // ---- driving alerts ----
+  var watchId=null,wake=null,pollTimer=null;
+  function setAlert(cls,html){$('alert').className=cls||'';$('alert').innerHTML=html||'';lastAlertHtml=html||''}
 
-  function setAlert(cls,html){alertEl.className=cls||'';alertEl.innerHTML=html||''}
-
-  function evaluate(pos){
-    var best=null;
-    items.filter(upcomingOrLive).forEach(function(c){
-      if(c.precision==='county-only')return; // no exact spot published; don't alert on a guess
-      var d=miles(pos,c),b=bearing(pos,c);
-      var ahead=heading==null?null:angDiff(heading,b)<=HEADING_TOLERANCE;
-      if(d<=ALERT_MILES&&(ahead===true||(ahead===null&&d<=1.5))){
-        if(!best||d<best.d)best={c:c,d:d,ahead:ahead};
-      }
+  function candidates(){
+    var out=[];
+    checkpoints.forEach(function(c){if(liveCp(c)&&c.precision!=='county-only')out.push({id:c.id,kind:'cp',d:c,max:CP_ALERT_MI,close:CP_STOP_MI})});
+    accidents.forEach(function(a){out.push({id:a.id,kind:'acc',d:a,max:ACC_ALERT_MI,close:ACC_SLOW_MI})});
+    return out;
+  }
+  function updateHeading(p){
+    var now=Date.now(),cur={lat:p.coords.latitude,lng:p.coords.longitude};
+    var spd=p.coords.speed;                         // m/s, may be null
+    if(p.coords.heading!=null&&!isNaN(p.coords.heading)&&spd>3){heading=heading==null?p.coords.heading:blend(heading,p.coords.heading,.6);headingAt=now}
+    else{
+      // find the oldest recent fix at least ~40 m back and use the bearing from there (steadier than the last two points)
+      for(var i=0;i<trail.length;i++){if(miles(trail[i],cur)>=MIN_TRAIL_MI){var b=bearing(trail[i],cur);heading=heading==null?b:blend(heading,b,.5);headingAt=now;break}}
+    }
+    if(heading!=null&&now-headingAt>20000)heading=null;   // stale heading: stop trusting it
+    trail.push({lat:cur.lat,lng:cur.lng,t:now});
+    while(trail.length&&(now-trail[0].t>30000||trail.length>12))trail.shift();
+    return cur;
+  }
+  function evaluate(cur,p){
+    var acc=p.coords.accuracy||0;
+    if(acc>WEAK_GPS_M){setAlert('warn','📡 GPS signal is weak. Alerts are paused until it improves.');return}
+    var moving=p.coords.speed!=null?p.coords.speed>1.5:(trail.length<2||miles(trail[trail.length-2],cur)>0.006);
+    var best=null,nextD={};
+    candidates().forEach(function(c){
+      var d=miles(cur,{lat:c.d.lat,lng:c.d.lng});nextD[c.id]=d;
+      if(d>c.max)return;
+      var prev=lastD[c.id],closing=prev==null||d<prev-0.008;
+      var ahead=heading==null?(d<=1&&closing):(angDiff(heading,bearing(cur,{lat:c.d.lat,lng:c.d.lng}))<=cone(d)&&closing);
+      if(ahead&&(!best||d<best.d))best={c:c,d:d,known:heading!=null};
     });
+    for(var k in nextD)lastD[k]=nextD[k];
+    if(!moving)return;                              // stopped (e.g. at a light): keep whatever is showing
     if(!best){setAlert('');return}
-    var c=best.c,txt=(c.type==='DUI'?'DUI checkpoint':'Roadblock')+' ahead: '+esc(c.location);
-    var dist=best.d<0.2?'less than 1/4 mile':best.d.toFixed(1)+' mi';
-    var eta=pos.speed>2?Math.max(1,Math.round(best.d/(pos.speed/0.44704)*60))+' min':'';
-    var sub='About '+dist+' away'+(eta?' (~'+eta+')':'')+(best.ahead===null?' · direction unknown':' · you are heading toward it')+'. Have your license, registration and insurance ready.';
-    setAlert(best.d<=STOP_MILES?'stop':'warn','⚠️ PREPARE TO STOP — '+txt+'<small>'+sub+'</small>');
-    if(navigator.vibrate)navigator.vibrate(best.d<=STOP_MILES?[300,150,300]:[150]);
+    var c=best.c,close=best.d<=c.close,dist=best.d<0.2?'less than ¼ mile':best.d.toFixed(1)+' miles';
+    var eta=p.coords.speed>2?Math.max(1,Math.round(best.d/(p.coords.speed/0.44704)*60))+' min':'';
+    var head,sub,say_;
+    if(c.kind==='cp'){
+      head=(c.d.type==='DUI'?'DUI checkpoint':'Roadblock')+' ahead: '+esc(c.d.location);
+      sub='Have your license, registration and insurance ready.';
+      say_=(c.d.type==='DUI'?'D U I checkpoint':'Roadblock')+' ahead in '+dist+'. Prepare to stop.';
+      setAlert(close?'stop':'warn','⚠️ '+(close?'PREPARE TO STOP — ':'')+head+'<small>About '+dist+' away'+(eta?' (~'+eta+')':'')+(best.known?' · you are heading toward it':' · direction unknown')+'. '+sub+'</small>');
+    }else{
+      var what=c.d.type==='Accident'?'Accident':'Road closed',onRoad=c.d.road?' on '+esc(c.d.road):'';
+      sub=(c.d.delayMin>=2?'Expect about '+c.d.delayMin+' min of delay. ':'')+(c.d.text&&c.d.text!==c.d.type?esc(c.d.text)+'. ':'')+'Slow down and watch for stopped traffic.';
+      say_=what+' ahead'+(c.d.road?' on '+c.d.road:'')+' in '+dist+'. Slow down.';
+      setAlert(close?'stop':'warn',(c.d.type==='Accident'?'⚠️ ':'⛔ ')+(close?'SLOW DOWN — ':'')+what+' ahead'+onRoad+'<small>About '+dist+' away'+(eta?' (~'+eta+')':'')+(best.known?'':' · direction unknown')+'. '+sub+'</small>');
+    }
+    // speak/vibrate once per level crossed, not on every GPS tick
+    var lvl=0;for(var i=0;i<LEVELS.length;i++){if(best.d<=LEVELS[i])lvl=i+1}
+    var key=c.id;if((spoken[key]||0)<lvl){spoken[key]=lvl;if(voice)say(say_);if(navigator.vibrate)navigator.vibrate(close?[300,150,300]:[150])}
   }
-
   function onPos(p){
-    var cur={lat:p.coords.latitude,lng:p.coords.longitude,speed:p.coords.speed};
-    if(p.coords.heading!=null&&!isNaN(p.coords.heading)&&(p.coords.speed||0)>1){heading=p.coords.heading}
-    else if(last&&miles(last,cur)>0.012){heading=bearing(last,cur)}
-    if(!last||miles(last,cur)>0.012)last=cur;
-    if(!me){me=L.marker([cur.lat,cur.lng],{title:'You'}).addTo(map);meCircle=L.circle([cur.lat,cur.lng],{radius:p.coords.accuracy||30,color:'#3ea6ff',fillOpacity:.1}).addTo(map);map.setView([cur.lat,cur.lng],12)}
+    var cur=updateHeading(p);
+    var first=!me;
+    if(first){me=L.marker([cur.lat,cur.lng],{title:'You'}).addTo(map);meCircle=L.circle([cur.lat,cur.lng],{radius:p.coords.accuracy||30,color:'#3ea6ff',fillOpacity:.1}).addTo(map);map.setView([cur.lat,cur.lng],11)}
     else{me.setLatLng([cur.lat,cur.lng]);meCircle.setLatLng([cur.lat,cur.lng]).setRadius(p.coords.accuracy||30)}
-    evaluate(cur);
+    me.lat=cur.lat;me.lng=cur.lng;
+    // refresh accidents if we have moved well away from where we last asked
+    if(first||!accCenter||miles(accCenter,cur)>12)pollAccidents(true);
+    evaluate(cur,p);
+    if(first)render();
   }
-  function onErr(e){
-    setAlert('warn',e.code===1?'Location permission denied. Enable location for this site to get driving alerts.':'Could not get your location.');
-    stop();
-  }
-  function start(){
+  function onErr(e){setAlert('warn',e.code===1?'Location permission denied. Enable location for this site to get driving alerts.':'Could not get your location.');stopTracking(true)}
+  function startTracking(){
     if(!navigator.geolocation){setAlert('warn','This browser does not support location.');return}
+    tracking=true;trail=[];heading=null;lastD={};spoken={};
     watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:2000,timeout:20000});
-    document.getElementById('trackBtn').style.display='none';
-    document.getElementById('stopBtn').style.display='';
-    document.getElementById('trackNote').textContent='Driving alerts are on. Keep this page open (screen on) for alerts to work.';
+    $('trackBtn').style.display='none';$('stopBtn').style.display='';
+    $('trackNote').textContent='Driving alerts are on. Keep this page open with the screen on for alerts to work.';
     if(navigator.wakeLock){navigator.wakeLock.request('screen').then(function(w){wake=w}).catch(function(){})}
+    schedule();
   }
-  function stop(){
+  function stopTracking(keepAlert){
+    tracking=false;
     if(watchId!=null)navigator.geolocation.clearWatch(watchId);watchId=null;
     if(wake){wake.release();wake=null}
-    document.getElementById('trackBtn').style.display='';
-    document.getElementById('stopBtn').style.display='none';
+    $('trackBtn').style.display='';$('stopBtn').style.display='none';
+    if(!keepAlert)setAlert('');
+    schedule();
   }
-  document.getElementById('trackBtn').onclick=start;
-  document.getElementById('stopBtn').onclick=function(){stop();setAlert('')};
+  $('trackBtn').onclick=startTracking;
+  $('stopBtn').onclick=function(){stopTracking(false)};
+
+  // ---- polling (only while the page is visible, to respect TomTom's daily quota) ----
+  function schedule(){clearInterval(pollTimer);pollTimer=setInterval(function(){pollAccidents(false)},tracking?POLL_DRIVING_MS:POLL_IDLE_MS)}
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden){
+      if(tracking&&navigator.wakeLock&&!wake){navigator.wakeLock.request('screen').then(function(w){wake=w}).catch(function(){})}
+      if(Date.now()-accFetchedAt>60000)pollAccidents(true);
+    }
+  });
+
+  // ---- go ----
+  loadCheckpoints().then(function(){render();return loadAccidents(map.getCenter().lat,map.getCenter().lng)});
+  schedule();
+  window.__cp={onPos:onPos,state:function(){return {heading:heading,accidents:accidents,tracking:tracking}}};  // test hook
 })();
 </script>
 <script src="install.js"></script>
