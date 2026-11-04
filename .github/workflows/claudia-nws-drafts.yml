@@ -1,5 +1,9 @@
 name: Claudia — NWS alert drafts
 on:
+  pull_request:
+    paths:
+      - "nws_alerts.py"
+      - ".github/workflows/claudia-nws-drafts.yml"
   schedule:
     - cron: "*/10 * * * *"
   workflow_dispatch:
@@ -16,6 +20,7 @@ jobs:
       - name: Check Python syntax
         run: python3 -m py_compile nws_alerts.py
       - name: Fetch and save 423-area alerts as drafts
+        if: ${{ github.event_name != 'pull_request' }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
