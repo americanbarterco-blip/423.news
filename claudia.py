@@ -3,7 +3,7 @@
 Claudia Green — Broadcastify scanner bridge for 423.news
 =========================================================
 
-Reads the public Broadcastify scanner feeds named in `scanner/config.json`,
+Reads the public Broadcastify scanner feeds named in `config.json`,
 keeps the site's scanner rack current, records short audio segments when a
 feed gets busy, and hands those segments off for transcription.
 
@@ -65,13 +65,13 @@ def now_z() -> str:
 def load_config(path: Path) -> dict:
     if not path.exists():
         sys.exit(f"[claudia] config not found: {path}\n"
-                 f"          copy scanner/config.example.json -> scanner/config.json and add your feeds")
+                 f"          copy config.example.json -> scanner/config.json and add your feeds")
     with path.open() as fh:
         return json.load(fh)
 
 
 def data_path(cfg: dict) -> Path:
-    p = Path(cfg.get("data_path", "../data/feed.json"))
+    p = Path(cfg.get("data_path", "feed.json"))
     return p if p.is_absolute() else (ROOT / p).resolve()
 
 
@@ -200,6 +200,7 @@ def cmd_status(cfg: dict, quiet: bool = False) -> dict:
             "listeners": st["listeners"],
             "priority": f.get("priority", 3),
             "tags": f.get("tags", []),
+            "url": f.get("page_url", ""),
             "live_data": st["connected"],
         }
         if not st["connected"] and f["name"] in prior:
@@ -362,14 +363,16 @@ def cmd_file(cfg: dict, report_path: Path) -> str:
             "uncertain": [str(s)[:180] for s in (r.get("uncertain") or [])][:5],
             "heard_on": r.get("heard_on") or (r.get("scanner") or [""])[0],
             "paraphrase": r.get("paraphrase"),
+            "published": False,
         })
         added += 1
 
     doc["reports"] = doc["reports"][:60]
     doc["claudia"] = doc.get("claudia") or {}
     if added:
-        doc["claudia"]["on_air"] = True
-        doc["claudia"]["line"] = f"On air — reading the {dt.datetime.now().strftime('%H:%M')} update."
+        doc["claudia"]["status"] = "at-desk"
+        doc["claudia"]["on_air"] = False
+        doc["claudia"]["line"] = "A new report draft is waiting for editor review."
     write_feed(cfg, doc)
     log(f"filed {added} report(s); feed now holds {len(doc['reports'])}")
     return doc["reports"][0]["id"] if doc["reports"] else ""
@@ -402,22 +405,27 @@ def cmd_watch(cfg: dict, interval: int) -> None:
 # --------------------------------------------------------------------------
 def cmd_doctor(cfg: dict) -> int:
     ok = True
+    feeds = cfg.get("feeds", [])
     print("Claudia Green — scanner doctor")
     print(f"  config           {DEFAULT_CONFIG}")
-    print(f"  feeds            {len(cfg.get('feeds', []))}")
-    print(f"  data file        {data_path(cfg)}  {'ok' if data_path(cfg).exists() else 'MISSING'}")
-    print(f"  ffmpeg           {shutil.which('ffmpeg') or 'NOT FOUND'}")
+    print(f"  feeds            {len(feeds)}")
+    print(f"  data file        {data_path(cfg)}  {'ok' if data_path(cfg).exists() else 'will be created on first status run'}")
+    print(f"  ffmpeg           {shutil.which('ffmpeg') or 'NOT FOUND (needed only for audio capture)'}")
     key = os.environ.get("BROADCASTIFY_API_KEY", "")
-    print(f"  API key          {'set (' + key[:4] + '…)' if key else 'NOT SET — page mode only'}")
-    print(f"  status endpoint  {cfg.get('status_endpoint') or '(none)'}")
-    for f in cfg.get("feeds", []):
-        has_stream = bool(f.get("stream_url"))
-        print(f"   - {f['name']:<32} stream_url {'yes' if has_stream else 'no'}")
-        if not has_stream:
+    print(f"  API key          {'set' if key else 'NOT SET — public page status only'}")
+    print(f"  status endpoint  {cfg.get('status_endpoint') or '(public feed pages)'}")
+    for f in feeds:
+        has_page = bool(f.get("page_url") or f.get("feed_id"))
+        has_stream = bool(f.get("stream_url") or f.get("mount"))
+        print(f"   - {f['name']:<32} page {'yes' if has_page else 'no'} | audio stream {'yes' if has_stream else 'not configured'}")
+        if not has_page:
             ok = False
-    if not key:
-        print("\n  Without BROADCASTIFY_API_KEY the rack polls public feed pages only;")
-        print("  stream capture needs per-feed stream_url from a signed-in session.")
+    if not feeds:
+        print("  No feeds configured. Add public feed IDs/page URLs to config.json.")
+        ok = False
+    if not any(f.get("stream_url") or f.get("mount") for f in feeds):
+        print("\n  Status monitoring can run from public feed pages.")
+        print("  Audio capture is disabled until you add an authorized stream_url or mount.")
     return 0 if ok else 1
 
 
