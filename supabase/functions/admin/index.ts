@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     if (!bucket || !encodedPath) return j({ error: 'url' }, 400);
     let path = '';
     try { path = decodeURIComponent(encodedPath); } catch { return j({ error: 'url' }, 400); }
-    if (!path || path.includes('\\\\') || path.split('/').some(part => !part || part === '.' || part === '..')) {
+    if (!path || path.includes(String.fromCharCode(92)) || path.split('/').some(part => !part || part === '.' || part === '..')) {
       return j({ error: 'url' }, 400);
     }
     const safePath = path.split('/').map(encodeURIComponent).join('/');
