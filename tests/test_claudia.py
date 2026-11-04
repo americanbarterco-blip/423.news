@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import claudia
+import supabase_sync
 
 
 class ClaudiaScannerTests(unittest.TestCase):
@@ -63,6 +64,29 @@ class ClaudiaScannerTests(unittest.TestCase):
                 block = claudia.cmd_status(cfg, quiet=True)
             self.assertEqual(block["feeds"][0]["url"], cfg["feeds"][0]["page_url"])
             self.assertFalse(block["feeds"][0]["capture_enabled"])
+
+
+class SupabaseSyncTests(unittest.TestCase):
+    def test_missing_publication_flag_never_defaults_to_publish(self):
+        with patch.object(supabase_sync, "call") as mocked:
+            supabase_sync.sync_reports([{
+                "id": "legacy-report",
+                "headline": "Existing local report",
+                "summary": "A previously filed report."
+            }])
+        rows = mocked.call_args.args[2]
+        self.assertNotIn("published", rows[0])
+
+    def test_explicit_draft_flag_is_preserved(self):
+        with patch.object(supabase_sync, "call") as mocked:
+            supabase_sync.sync_reports([{
+                "id": "new-draft",
+                "headline": "New report draft",
+                "summary": "Awaiting editor approval.",
+                "published": False
+            }])
+        rows = mocked.call_args.args[2]
+        self.assertIs(rows[0]["published"], False)
 
 
 if __name__ == "__main__":
