@@ -13,6 +13,11 @@ This branch is a broader, isolated repair pass. It keeps `main` unchanged and pr
 - Exposes Broadcastify source URLs in the synced feed rows.
 - Hides explicitly unpublished drafts from the Claudia public page, homepage fallback, and voice briefing.
 - Removes fabricated embedded scanner demo incidents/log lines from the Claudia pages. Empty/unavailable live data now appears as unavailable rather than invented incidents.
+- Filters Claudia's incident feed to Police, Fire, EMS, Traffic, and Weather reports; general Community stories and unrelated headlines are excluded instead of being mislabeled as incidents.
+- Hides the non-working announcement/report buttons on the read-only public desk, leaving the Publishing Desk link.
+- Rebuilds Latest Incidents cards as a responsive grid so headlines fit the phone screen without clipped horizontal cards.
+- Clarifies status labels as wire connectivity/refresh status, not scanner audio status.
+- Adds a `?demo=1` preview mode that uses clearly labeled fictional examples locally and does not call the report API.
 - Adds tests for scanner config, online status parsing, draft safety, and Supabase publication behavior.
 - Adds GitHub Actions validation for Python, JavaScript, inline scripts, and the example config.
 - Adds an optional scheduled scanner status sync workflow. It skips safely if Supabase repository secrets are not configured.
@@ -37,4 +42,4 @@ This branch is a broader, isolated repair pass. It keeps `main` unchanged and pr
 
 GitHub Actions reports green for the `423.news checks` workflow, including Python tests, JavaScript parsing, and Deno type-checking of the Admin function. The separate Cloudflare Workers Build check for this PR reported failure. Its build logs are not available through the current GitHub connection, so that failure must be investigated in the Cloudflare dashboard before merge. The Supabase project was inspected read-only: the expected 423.news tables and active Edge Functions exist, and the existing Claudia, sports, and weather database jobs were succeeding at the time of inspection.
 
-Do not merge or deploy until the user reviews the diff and approves it.
+Preview: open the branch's `claudia-scanner.html?demo=1` in a non-production preview host to see the demo-only interface. The preview mode never writes reports or publishes content. Do not merge or deploy until the user reviews the diff and approves it.
