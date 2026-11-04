@@ -201,6 +201,7 @@ def cmd_status(cfg: dict, quiet: bool = False) -> dict:
             "priority": f.get("priority", 3),
             "tags": f.get("tags", []),
             "url": f.get("page_url", ""),
+            "capture_enabled": bool(f.get("stream_url") or f.get("mount")),
             "live_data": st["connected"],
         }
         if not st["connected"] and f["name"] in prior:
@@ -387,7 +388,7 @@ def cmd_watch(cfg: dict, interval: int) -> None:
     while True:
         block = cmd_status(cfg, quiet=True)
         for row in block.get("feeds", []):
-            if row["status"] != "hot":
+            if row["status"] != "hot" or not row.get("capture_enabled"):
                 continue
             last = busy.get(row["name"], 0)
             if time.time() - last < int(cfg.get("capture_cooldown", 300)):
