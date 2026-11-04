@@ -71,7 +71,8 @@
   }
 
   function items(d) {
-    var cutoff = Date.now() - Number(C.maxAgeHours || 48) * 3600000;\n    return (d.reports || []).filter(function (r) { return r.published !== false && Date.parse(r.ts) >= cutoff; }).slice().sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); }); /* newest first */
+    var cutoff = Date.now() - Number(C.maxAgeHours || 48) * 3600000;
+    return (d.reports || []).filter(function (r) { return r.published !== false && Date.parse(r.ts) >= cutoff; }).slice().sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); }); /* newest first */
   }
   function toItem(r) { return { audio: r.audio || '', text: script(r) }; }
 
