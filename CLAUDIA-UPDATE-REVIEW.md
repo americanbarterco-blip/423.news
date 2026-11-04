@@ -1,30 +1,40 @@
-# Claudia update — review branch
+# 423.news — safe review branch
 
-This branch is a safe, limited first pass at the useful parts of the November 4 upload.
+This branch is a broader, isolated repair pass. It keeps `main` unchanged and preserves the existing Supabase project, schema, RLS, Edge Functions, database schedules, auth, and storage.
 
-## Included
-- `nws_alerts.py`: retrieves active National Weather Service alerts and creates or refreshes **unpublished drafts only** in the existing `news_reports` table.
-- `.github/workflows/claudia-nws-drafts.yml`: optional 10-minute schedule and manual run. It skips cleanly until both Supabase secrets are configured.
-- The alert importer is restricted to the ten 423-area Tennessee counties listed in the script.
-- Existing published reports are left unchanged. The importer does not publish, unpublish, or delete reports.
+## Changes in this branch
 
-## Deliberately not included yet
-- Scanner audio/transcription pipeline: the uploaded version imports `claudia.py`, `listen.py`, and `paraphrase.py`, but those required files and the matching workflow were not part of that commit. It cannot be installed as-is.
-- Continuous scanner server/bootstrap: requires separate server provisioning, Broadcastify feed permissions, credentials, and operational monitoring.
-- Chattanooga vehicle incident summaries: the source-column selection and time-window assumptions need validation against the live dataset before it can safely create reports.
-- Booking/arrest template and Admin changes: not added to the live Admin interface. The prior template used a fixed example ID and placeholder person/date/charge text, which could create incorrect records.
-- No Supabase schema, RLS, auth, storage, or existing checkpoint workflow changes.
+- Adds `config.example.json` for the actual flat repository layout, with verified public Broadcastify feed pages for Bradley, Hamilton/Chattanooga, Rhea, and Polk counties.
+- Fixes Claudia scanner path defaults so the scripts read/write the root `feed.json`, not a nonexistent `../data/feed.json`.
+- Recognizes the provider's explicit `Online` status in Broadcastify feed pages.
+- Prevents the watch loop from attempting audio capture unless an authorized stream URL or mount is configured.
+- Makes local scanner report filing draft-only and prevents it from falsely switching Claudia to on-air.
+- Changes Supabase sync so a missing `published` flag is omitted from the upsert instead of defaulting to `true`; explicit draft flags remain false.
+- Exposes Broadcastify source URLs in the synced feed rows.
+- Hides explicitly unpublished drafts from the Claudia public page, homepage fallback, and voice briefing.
+- Removes fabricated embedded scanner demo incidents/log lines from the Claudia pages. Empty/unavailable live data now appears as unavailable rather than invented incidents.
+- Adds tests for scanner config, online status parsing, draft safety, and Supabase publication behavior.
+- Adds GitHub Actions validation for Python, JavaScript, inline scripts, and the example config.
+- Adds an optional scheduled scanner status sync workflow. It skips safely if Supabase repository secrets are not configured.
+- Rewrites the root README and Claudia setup notes to match the real repository and existing Supabase architecture.
 
-## Setup required to test
-In GitHub repository Settings → Secrets and variables → Actions, add:
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_KEY` (service-role secret; never put this in browser code)
+## Intentionally not changed
 
-The Admin edge function must already allow `news_reports` in its `ADMIN_TABLES` setting for editors to review drafts in Admin. This branch does not change that function or its secrets.
+- No changes to `main`, production deployment, site domain, Supabase tables, RLS, auth, Storage buckets, existing Edge Functions, or database cron schedules.
+- No second NWS importer. The connected project already has an active Claudia desk job that processes NWS and RSS sources; a duplicate importer would create duplicate reports.
+- No automatic scanner audio recording. Public Broadcastify pages can show feed status, but audio capture requires authorized stream access and a worker.
+- No automatic publishing change. The existing Claudia desk currently publishes its configured NWS/RSS items automatically; scanner ingest auto-publishing is currently disabled in Supabase.
 
-## Test plan
-1. Run `python3 -m py_compile nws_alerts.py`.
-2. Run `python3 nws_alerts.py --dry-run` to inspect matching live alerts without writing.
-3. Run the GitHub Action manually after secrets are configured.
-4. Confirm drafts appear in Admin and that the homepage continues to show only `published=true` reports.
-5. Compare this branch with `main`; do not merge until approved.
+## External setup that cannot be fabricated
+
+- The scheduled scanner sync needs GitHub Actions secrets `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`.
+- Audio capture needs an authorized Broadcastify stream URL/mount and FFmpeg on a worker.
+- AI scanner drafting needs the existing Supabase Edge Function secrets `SCANNER_INGEST_TOKEN` and `ANTHROPIC_API_KEY`.
+- Claudia's LiveKit audio room needs a working deployed `/api/livekit-token` endpoint and LiveKit credentials; the repo alone does not provision those secrets or host routes.
+- Traffic incident data needs a valid TomTom key restricted to the production domain.
+
+## Verification
+
+GitHub Actions must report green for the new `423.news checks` workflow before this branch is considered ready. The Supabase project was inspected read-only: the expected 423.news tables and active Edge Functions exist, and the existing Claudia, sports, and weather database jobs were succeeding at the time of inspection.
+
+Do not merge or deploy until the user reviews the diff and approves it.
