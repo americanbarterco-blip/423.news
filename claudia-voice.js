@@ -117,6 +117,8 @@
   function wire() {
     playVideo();
     document.querySelectorAll('.cg-snd').forEach(function (b) {
+      if (b.getAttribute('data-cg-wired') === '1') return;
+      b.setAttribute('data-cg-wired', '1');
       b.removeAttribute('onclick'); b.textContent = 'Enable voice';
       b.onclick = function () {
         if (!synth) { b.textContent = 'Voice not supported'; return; }
@@ -125,6 +127,6 @@
     });
   }
   document.addEventListener('DOMContentLoaded', function () { wire(); poll(); setInterval(poll, C.pollSeconds * 1000); });
-  new MutationObserver(function () { if (!document.hidden) playVideo(); }).observe(document.documentElement, { childList: true, subtree: true });
+  new MutationObserver(function () { if (!document.hidden) { wire(); playVideo(); } }).observe(document.documentElement, { childList: true, subtree: true });
   window.ClaudiaVoice = { voices: function () { return synth ? synth.getVoices().map(function (v) { return v.name + ' (' + v.lang + ')'; }) : []; }, setVoice: function (n) { set('cgVoice', n); } };
 })();
