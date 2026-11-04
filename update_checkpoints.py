@@ -25,12 +25,18 @@ def month_names(today):
     return names
 
 def fetch(url):
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            return r.read()
-    except Exception as e:
-        print("skip", url.rsplit('/',1)[-1], e); return None
+    """Download with retries (tn.gov sometimes resets connections)."""
+    name = url.rsplit('/', 1)[-1]
+    for attempt in range(1, 5):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return r.read()
+        except Exception as e:
+            print("attempt", attempt, name, e)
+            time.sleep(3 * attempt)
+    print("skip", name)
+    return None
 
 def pdf_text(data):
     p = "/tmp/thp.pdf"
@@ -81,10 +87,14 @@ def geocode(q, cache):
 def main():
     today = dt.date.today()
     rows = []
-    for y, name in month_names(today):
+    current_ok = False
+    for i, (y, name) in enumerate(month_names(today)):
         data = fetch(BASE.format(y=y, m=name))
+        if i == 1 and data: current_ok = True
         if data:
             got = parse(pdf_text(data)); print(name, y, len(got), "rows"); rows += got
+    if not current_ok and "--force" not in sys.argv:
+        print("This month's PDF did not load; leaving existing checkpoints.json untouched"); return
     cache = load_cache(); items = []
     for r in rows:
         if r["date"] < today: continue
