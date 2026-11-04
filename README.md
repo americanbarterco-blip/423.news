@@ -8,6 +8,7 @@
 - `app.js` — Supabase auth, posts, comments, profiles, follows, video streams, scanner tips, and realtime updates.
 - `site.css`, `theme.css` — site styling and responsive layout.
 - `admin.html` — staff Admin interface, using the existing Supabase `admin` Edge Function.
+- `supabase/functions/admin/index.ts` — tracked source for that existing function; the review branch adds a safe delete path for the site's public media/video buckets. It is not deployed by GitHub Actions.
 - `claudia-scanner.html`, `desk.html`, `claudia-voice.js` — Claudia Green live-wire and desk interfaces.
 - `conditions.html`, `forecast.js`, `tomtom.js` — weather, alerts, and traffic features.
 - `events.html`, `hotspots.html`, `category.html`, `report.html` — supporting site pages.
