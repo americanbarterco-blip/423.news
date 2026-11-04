@@ -248,7 +248,7 @@
       if (!p) return empty('Story not found', 'It may have been removed or is still awaiting review.', '<a class="btn" href="#/home">Back to home</a>');
       document.title = p.title + ' • 423.news';
       var canEdit = state.user && (state.user.id === p.author_id || isStaff());
-      var html = '<article class="article"><a class="muted" href="#/' + p.section + '">← ' + esc(SECTIONS[p.section].label) + '</a>' +
+      var html = '<article class="article"><a class="muted" href="#/' + esc(SECTIONS[p.section] ? p.section : 'news') + '">← ' + esc((SECTIONS[p.section] || SECTIONS.news).label) + '</a>' +
         '<div style="margin-top:10px"><span class="badge">' + esc(label(p)) + '</span> ' +
         (p.status !== 'published' ? '<span class="st ' + esc(p.status) + '">' + esc(p.status) + '</span>' : '') + '</div>' +
         '<h1>' + esc(p.title) + '</h1>' +
@@ -297,7 +297,7 @@
   views.teams = function () {
     if (!state.user) return Promise.resolve(empty('Follow your teams', 'Sign in to pick the teams you follow and see their stories here.', '<button class="btn" data-auth="signin">Sign in</button>'));
     return Promise.all([
-      sb.from('news_follows').select('team').order('created_at', { ascending: true }),
+      sb.from('news_follows').select('team').eq('user_id', state.user.id).order('created_at', { ascending: true }),
       listPosts({ section: 'sports', limit: 100 })
     ]).then(function (r) {
       if (r[0].error) throw r[0].error;
