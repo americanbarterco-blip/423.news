@@ -35,6 +35,6 @@ This branch is a broader, isolated repair pass. It keeps `main` unchanged and pr
 
 ## Verification
 
-GitHub Actions must report green for the new `423.news checks` workflow before this branch is considered ready. The Supabase project was inspected read-only: the expected 423.news tables and active Edge Functions exist, and the existing Claudia, sports, and weather database jobs were succeeding at the time of inspection.
+GitHub Actions reports green for the `423.news checks` workflow, including Python tests, JavaScript parsing, and Deno type-checking of the Admin function. The separate Cloudflare Workers Build check for this PR reported failure. Its build logs are not available through the current GitHub connection, so that failure must be investigated in the Cloudflare dashboard before merge. The Supabase project was inspected read-only: the expected 423.news tables and active Edge Functions exist, and the existing Claudia, sports, and weather database jobs were succeeding at the time of inspection.
 
 Do not merge or deploy until the user reviews the diff and approves it.
