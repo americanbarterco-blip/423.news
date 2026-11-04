@@ -19,6 +19,8 @@ This repository is already the source for 423.news. Do not create a replacement 
 
 The current live host could not be independently verified from the public web fetcher during this review. Preserve the host already configured for `423.news`.
 
+The review branch includes an updated source file for the existing Supabase `admin` Edge Function. It must be deployed to the existing project to enable Admin deletion of `news-video` and `news-forecast` objects. Do not deploy it until the user approves the backend change.
+
 ## GitHub Actions secrets
 
 For the optional Claudia scanner status sync, add these in repository Settings → Secrets and variables → Actions:
