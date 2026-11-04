@@ -20,12 +20,13 @@ URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
 def request_json(url: str, method: str = "GET", body=None):
-    headers = {"User-Agent": UA, "Accept": "application/geo+json"}
+    is_supabase = bool(URL and url.startswith(URL + "/rest/v1/"))
+    headers = {"User-Agent": UA, "Accept": "application/json" if is_supabase else "application/geo+json"}
     data = None
+    if is_supabase:
+        headers.update({"apikey": KEY, "Authorization": f"Bearer {KEY}"})
     if body is not None:
-        headers.update({"apikey": KEY, "Authorization": f"Bearer {KEY}",
-                        "Content-Type": "application/json",
-                        "Prefer": "return=representation"})
+        headers.update({"Content-Type": "application/json", "Prefer": "return=representation"})
         data = json.dumps(body).encode()
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
@@ -58,29 +59,21 @@ def make_report(feature: dict):
     sent = p.get("sent") or dt.datetime.now(dt.timezone.utc).isoformat()
     expires = p.get("ends") or p.get("expires") or ""
     return {
-        "id": report_id(alert_id),
-        "ts": sent,
-        "kind": "VERIFIED",
+        "id": report_id(alert_id), "ts": sent, "kind": "VERIFIED",
         "dateline": ", ".join(counties) + (" County" if len(counties) == 1 else " Counties") + ", TN",
-        "confidence": "confirmed",
-        "headline": (p.get("headline") or event)[:180],
-        "summary": description,
-        "tags": ["weather", "nws", "alert", (p.get("severity") or "unknown").lower()],
-        "scanner": [],
-        "sources": [{"label": "National Weather Service", "url": "https://www.weather.gov/mrx/"}],
+        "confidence": "confirmed", "headline": (p.get("headline") or event)[:180],
+        "summary": description, "tags": ["weather", "nws", "alert", (p.get("severity") or "unknown").lower()],
+        "scanner": [], "sources": [{"label": "National Weather Service", "url": "https://www.weather.gov/mrx/"}],
         "safety": [instruction] if instruction else [],
         "uncertain": ["Official alert text; verify the alert remains active before publication."],
-        "heard_on": None,
-        "paraphrase": {"policy": "Official National Weather Service alert", "expires": expires},
+        "heard_on": None, "paraphrase": {"policy": "Official National Weather Service alert", "expires": expires},
         "published": False,
     }
 
 def save_draft(report: dict):
     base = f"{URL}/rest/v1/news_reports"
     query = urllib.parse.urlencode({"id": f"eq.{report['id']}", "select": "id,published"})
-    headers = {"apikey": KEY, "Authorization": f"Bearer {KEY}",
-               "Content-Type": "application/json", "Prefer": "return=minimal"}
-    existing = request_json(base + "?" + query, method="GET", body=None)
+    existing = request_json(base + "?" + query, method="GET")
     if existing:
         if existing[0].get("published") is True:
             print(f"kept already-published report unchanged: {report['id']}")

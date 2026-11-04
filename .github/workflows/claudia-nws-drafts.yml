@@ -14,11 +14,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Fetch and save 423-area alerts as drafts
-        if: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_KEY != '' }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python3 nws_alerts.py
-      - name: Explain missing credentials
-        if: ${{ secrets.SUPABASE_URL == '' || secrets.SUPABASE_SERVICE_KEY == '' }}
-        run: echo "Skipped safely. Add SUPABASE_URL and SUPABASE_SERVICE_KEY as GitHub Actions secrets to enable draft creation."
