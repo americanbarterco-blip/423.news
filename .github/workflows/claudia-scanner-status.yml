@@ -1,0 +1,38 @@
+name: Claudia — scanner status sync
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: claudia-scanner-status
+  cancel-in-progress: true
+
+jobs:
+  refresh-status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check scanner code
+        run: python3 -m py_compile claudia.py supabase_sync.py
+      - name: Refresh public feed status and sync to Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          BROADCASTIFY_API_KEY: ${{ secrets.BROADCASTIFY_API_KEY }}
+        shell: bash
+        run: |
+          if [[ -z "$SUPABASE_URL" || -z "$SUPABASE_SERVICE_KEY" ]]; then
+            echo "::warning::Scanner sync skipped. Add SUPABASE_URL and SUPABASE_SERVICE_KEY repository secrets to enable it."
+            exit 0
+          fi
+          python3 claudia.py --config config.example.json status
+          python3 supabase_sync.py
