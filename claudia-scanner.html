@@ -3561,7 +3561,7 @@ function reportForm() {
   }
 }
 function openDesk() {
-  const n = N(); if (n.deskUrl) { location.href = n.deskUrl; return; }
+  const n = N();
   if (needsAuth()) return;
   if (n.canWire()) { location.hash = '#/wire'; } else n.toast('The publishing desk is limited to approved press and admin accounts.');
 }
