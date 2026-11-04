@@ -366,6 +366,7 @@
       var rows = (x[0] || []).slice(), feed = x[1] || {}, seen = {};
       rows.forEach(function (r) { seen[norm(r.headline)] = 1; });
       (feed.reports || []).forEach(function (r) {      /* the scanner file only counts while it is fresh, and never twice */
+        if (r.published === false) return;
         var t = Date.parse(r.ts); if (isNaN(t) || t < cutoff || seen[norm(r.headline)]) return; seen[norm(r.headline)] = 1; rows.push(r);
       });
       rows = rows.filter(function (r) { return !isNaN(Date.parse(r.ts)) && Date.parse(r.ts) >= cutoff; })
