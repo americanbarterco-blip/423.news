@@ -65,7 +65,7 @@ def now_z() -> str:
 def load_config(path: Path) -> dict:
     if not path.exists():
         sys.exit(f"[claudia] config not found: {path}\n"
-                 f"          copy config.example.json -> scanner/config.json and add your feeds")
+                 f"          copy config.example.json -> config.json and add your feeds")
     with path.open() as fh:
         return json.load(fh)
 
@@ -125,7 +125,7 @@ def http_get(url: str, timeout: int = 15) -> str:
 # feed status
 # --------------------------------------------------------------------------
 LISTENER_RE = re.compile(r"([\d,]{1,7})\s*(?:people\s+)?(?:listening|listeners)", re.I)
-LIVE_RE = re.compile(r"(on\s+air|is\s+live|live\s+now|currently\s+live)", re.I)
+LIVE_RE = re.compile(r"(\bonline\b|on\s+air|is\s+live|live\s+now|currently\s+live)", re.I)
 
 
 def status_via_api(cfg: dict, feed: dict) -> dict | None:
@@ -217,7 +217,7 @@ def cmd_status(cfg: dict, quiet: bool = False) -> dict:
     block["last_poll"] = now_z()
     if not any_conn:
         block["note"] = ("Broadcastify not connected — add BROADCASTIFY_API_KEY and per-feed "
-                         "page_url/stream_url in scanner/config.json. Rack values are not live.")
+                         "page_url/stream_url in config.json. Rack values are not live.")
     else:
         block.pop("note", None)
     write_feed(cfg, feed)
@@ -233,7 +233,7 @@ def find_feed(cfg: dict, name: str) -> dict:
     for f in cfg.get("feeds", []):
         if f["name"].lower() == name.lower() or f.get("feed_id") == name:
             return f
-    sys.exit(f"[claudia] no feed matched {name!r}; check scanner/config.json")
+    sys.exit(f"[claudia] no feed matched {name!r}; check config.json")
 
 
 def cmd_capture(cfg: dict, name: str, seconds: int) -> Path:
@@ -242,7 +242,7 @@ def cmd_capture(cfg: dict, name: str, seconds: int) -> Path:
     if not url:
         sys.exit(f"[claudia] feed {feed['name']!r} has no stream_url.\n"
                  f"          Open the feed while signed in to Broadcastify, copy the audio stream URL\n"
-                 f"          (audio.broadcastify.com/<mount>.<ext>) into scanner/config.json.")
+                 f"          (audio.broadcastify.com/<mount>.<ext>) into config.json.")
     if not shutil.which("ffmpeg"):
         sys.exit("[claudia] ffmpeg not found on PATH")
 
