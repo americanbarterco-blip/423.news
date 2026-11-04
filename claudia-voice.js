@@ -5,7 +5,7 @@
    Settings: window.CLAUDIA_VOICE = { voiceName:'', rate:1, pitch:1, feedUrl:'feed.json', pollSeconds:30, briefing:12 } */
 (function () {
   'use strict';
-  var C = Object.assign({ voiceName: '', rate: 1, pitch: 1.05, feedUrl: 'feed.json', pollSeconds: 30, briefing: 12 }, window.CLAUDIA_VOICE || {});
+  var C = Object.assign({ voiceName: '', rate: 1, pitch: 1.05, feedUrl: 'feed.json', pollSeconds: 30, briefing: 12, maxAgeHours: 48 }, window.CLAUDIA_VOICE || {});
   var synth = window.speechSynthesis;
   var enabled = false, seen = null, queue = [], busy = false, token = 0;
 
@@ -71,7 +71,7 @@
   }
 
   function items(d) {
-    return (d.reports || []).filter(function (r) { return r.published !== false; }).slice().sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); }); /* newest first */
+    var cutoff = Date.now() - Number(C.maxAgeHours || 48) * 3600000;\n    return (d.reports || []).filter(function (r) { return r.published !== false && Date.parse(r.ts) >= cutoff; }).slice().sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); }); /* newest first */
   }
   function toItem(r) { return { audio: r.audio || '', text: script(r) }; }
 
