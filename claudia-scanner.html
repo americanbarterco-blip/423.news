@@ -3004,10 +3004,11 @@ const J = (m, b) => ({ method: m, body: JSON.stringify(b || {}) });
 const CATS_RX = [['Police', /police|sheriff|law enforcement/], ['Fire', /fire|smoke|burn/], ['EMS', /\bems\b|medical|ambulance|rescue/],
   ['Traffic', /traffic|crash|accident|road|work zone|lane|i-\d+/], ['Weather', /weather|rain|storm|flood|nws|forecast|wind|snow|ice/]];
 function category(r) {
-  const tags = (r.tags || []).join(' ').toLowerCase();
-  for (const [c, rx] of CATS_RX) if (rx.test(tags)) return c;
-  const h = String(r.headline || '').toLowerCase();
-  for (const [c, rx] of CATS_RX) if (rx.test(h)) return c;
+  const tags = Array.isArray(r.tags) ? r.tags.join(' ') : String(r.tags || '');
+  const metadata = [tags, r.category, r.type, r.kind].filter(Boolean).join(' ').toLowerCase();
+  for (const [c, rx] of CATS_RX) if (rx.test(metadata)) return c;
+  const headline = String(r.headline || '').toLowerCase();
+  for (const [c, rx] of CATS_RX) if (rx.test(headline)) return c;
   return null;
 }
 function toIncident(r) {
@@ -3032,7 +3033,11 @@ async function loadReports(limit) {
   const d = await r.json(); return (d.reports || []).slice(0, limit);
 }
 async function api(path) {
-  if (path.startsWith('/wire')) { const n = Number((path.match(/limit=(\d+)/) || [])[1]) || 50; return { items: (await loadReports(n)).map(toIncident).filter(Boolean) }; }
+  if (path.startsWith('/wire')) {
+    const n = Number((path.match(/limit=(\d+)/) || [])[1]) || 50;
+    const reports = await loadReports(Math.min(n * 4, 200));
+    return { items: reports.map(toIncident).filter(Boolean).slice(0, n) };
+  }
   if (path === '/scanner/config') return { listenUrl: CFG.scannerListenUrl || '', listenName: CFG.scannerListenName || '', audioStreamUrl: CFG.scannerStreamUrl || '', audioCors: !!CFG.scannerStreamCors, mapTileUrl: CFG.mapTileUrl || '', mapAttribution: CFG.mapAttribution || '' };
   throw new Error('Not available on this page.');
 }
