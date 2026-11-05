@@ -1045,6 +1045,24 @@ body.cg-page #nav a.on, body.cg-page #nav a:hover { border-bottom-color: var(--c
 <style>.nav{overflow-x:auto;flex-wrap:nowrap;white-space:nowrap;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.nav a{flex:0 0 auto}@media (max-width:1020px){.topbar-in{flex-wrap:wrap;height:auto;padding-top:8px;padding-bottom:6px;row-gap:4px}.nav{display:flex;order:9;flex:0 0 100%;margin-left:0;gap:18px;padding:6px 0 4px}.nav a{font-size:12.5px}}</style>
 <style>.cg-hero-portrait video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 15%}.cg-hero-portrait .cg-snd{position:absolute;z-index:3;left:6px;bottom:6px;background:rgba(0,0,0,.65);color:#fff;border:0;border-radius:99px;padding:5px 9px;font:600 11px system-ui,sans-serif;cursor:pointer}</style>
 <script src="tomtom.js"></script>
+<style>
+/* merged in from the old Conditions and Live pages */
+.cg-more { display: grid; gap: 14px; margin-top: 14px; }
+.cg-camwrap { position: relative; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; background: #000; }
+.cg-camwrap video { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; display: block; }
+.cg-camtag { position: absolute; left: 10px; top: 10px; background: rgba(0,0,0,.6); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 5px 9px; border-radius: 99px; }
+.cg-camsnd { position: absolute; right: 10px; bottom: 10px; background: rgba(0,0,0,.65); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 99px; padding: 7px 12px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.cg-studio-grid { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); gap: 16px; align-items: start; }
+@media (max-width: 800px) { .cg-studio-grid { grid-template-columns: 1fr; } }
+.cg-deskline { font-size: 14px; line-height: 1.5; color: var(--cg-muted); margin: 10px 0 0; }
+.cg-q { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.cg-q a { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline; padding: 10px 12px; border: 1px solid var(--cg-line); border-radius: 10px; color: inherit; text-decoration: none; }
+.cg-q b { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: #fff; background: #d9480f; border-radius: 5px; padding: 3px 7px; }
+.cg-q b.v { background: #1d4ed8; } .cg-q b.u { background: #475569; }
+.cg-q span { font-size: 14.5px; line-height: 1.35; } .cg-q small { display: block; color: var(--cg-muted); margin-top: 3px; font-size: 12px; }
+.cg-orders summary { cursor: pointer; font-weight: 700; padding: 8px 0; }
+.cg-orders p { font-size: 13px; line-height: 1.6; color: var(--cg-muted); margin: 6px 0; }
+</style>
 </head>
 <body>
 <header class="topbar">
@@ -1058,9 +1076,10 @@ body.cg-page #nav a.on, body.cg-page #nav a:hover { border-bottom-color: var(--c
       <a href="index.html#/home">Home</a>
       <a href="index.html#/news">News</a>
       <a href="claudia-scanner.html" class="on">Claudia Green</a>
-      <a href="conditions.html">Conditions</a>
+      <a href="index.html#/forecast">Forecast</a>
       <a href="events.html">423 Events</a>
       <a href="hotspots.html">Hot Spots</a>
+      <a href="checkpoints.html">Checkpoints</a>
       <a href="index.html#/sports">Sports</a>
       <a href="index.html#/scores">Scores &amp; Live</a>
       <a href="index.html#/schools">Schools</a>
@@ -1068,7 +1087,6 @@ body.cg-page #nav a.on, body.cg-page #nav a:hover { border-bottom-color: var(--c
       <a href="index.html#/classifieds">Classifieds</a>
       <a href="index.html#/community">citizen423report</a>
       <a href="index.html#/teams">My Teams</a>
-      <a href="desk.html">Live</a>
       <a href="index.html#/government">Government</a>
       <a href="https://423.singles" target="_blank" rel="noopener">423.singles</a>
     </nav>
@@ -2608,7 +2626,7 @@ window.CLAUDIA_CONFIG = {
       if (el) {
         el.innerHTML = body +
           '<div class="cmd-actions">' +
-          '<a class="btn ghost" href="conditions.html?area=' + encodeURIComponent(q) + '">Open full conditions page</a>' +
+          '<a class="btn ghost" href="claudia-scanner.html?area=' + encodeURIComponent(q) + '">Open full conditions page</a>' +
           '</div>';
       }
     }).catch(function (e) {
@@ -3100,7 +3118,7 @@ window.N423 = {
   auth: () => toast('Sign-in is not part of this page. Reports are filed by the desk.'),
   canWire: () => false, getUser: () => null, app: () => document.getElementById('app'),
   ZONES: ['423 area'], CATS: ['Police', 'Fire', 'EMS', 'Traffic', 'Weather', 'Community'],
-  readOnly: true, noZones: true, deskUrl: 'desk.html', mapView: { center: [35.75, -84.0], zoom: 7 },
+  readOnly: true, noZones: true, deskUrl: 'index.html#/review', mapView: { center: [35.75, -84.0], zoom: 7 },
   personaNote: CFG.personaNote !== undefined ? CFG.personaNote : 'Claudia Green is 423.news’s AI correspondent. Recorded video, not a live broadcast.'
 };
 const go = () => { const m = location.hash.match(/^#\/claudia\/(.+)$/); const id = m ? decodeURIComponent(m[1]) : ''; if (window.Claudia.active()) window.Claudia.hash(id); else window.Claudia.mount(id); };
@@ -3315,6 +3333,41 @@ function template() {
       <div class="cg-priv" style="margin-top:12px">${ico('shield')}<p>${N().readOnly ? 'Reports here follow the desk scanner policy: no names and no street numbers. This is not an emergency service: call 911.' : 'Police report locations are shown without house numbers. Do not send names, phone numbers or home addresses. This is not an emergency service: call 911.'}</p></div></section>
   </div>
   <section class="cg-panel cg-latest" aria-labelledby="cgLatH"><div class="cg-ph"><div class="cg-ph-l"><span style="color:var(--cg-muted);display:inline-flex;width:20px">${ico('clock')}</span><h2 id="cgLatH">Latest Incidents</h2></div></div><div class="cg-cards" id="cgCards"></div></section>
+</div>
+<div class="cg-more">
+  <section class="cg-panel cg-studio" id="cgStudio" aria-labelledby="cgStudioH">
+    <div class="cg-ph"><div class="cg-ph-l"><h2 id="cgStudioH">Studio &amp; the desk</h2></div><span class="cg-stamp" id="cgDeskStamp"></span></div>
+    <div class="cg-studio-grid">
+      <div>
+        <div class="cg-camwrap"><video id="cgCamVideo" src="claudia-onair.mp4" poster="claudia-poster.jpg" muted loop playsinline preload="metadata"></video><span class="cg-camtag">On camera</span><button type="button" class="cg-camsnd" id="cgCamSound">Sound on</button></div>
+        <p class="cg-deskline" id="cgDeskLine"></p>
+      </div>
+      <div>
+        <h3 class="cg-sub">On the desk now</h3>
+        <ul class="cg-q" id="cgQueue"><li class="cg-stamp">Loading her latest reports&hellip;</li></ul>
+        <details class="cg-orders" style="margin-top:12px"><summary>How Claudia files</summary>
+          <p>Scanner traffic is never printed as fact. Every radio-sourced item is filed as <em>unconfirmed</em> until a published record, an official release, or a second independent source corroborates it. Then it is re-filed as <em>verified</em>.</p>
+          <p>It is never printed as audio. She listens and writes her own account: no transcript, no quotes, no names, no street numbers, no medical detail.</p>
+          <p>Two-source minimum for anything that names a person. Corrections are appended, never deleted.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+  <section class="cg-panel cg-cond" id="cgCond" aria-labelledby="cgCondH">
+    <div class="cg-ph"><div class="cg-ph-l"><h2 id="cgCondH">Area conditions</h2></div><span class="cg-stamp" data-updated>&mdash;</span></div>
+    <p class="cg-voice-note" style="margin:0 0 10px">Any area: weather, alerts, traffic and crime radar.</p>
+    <div class="area-bar">
+      <input class="area-input" id="areaInput" type="text" placeholder="Any area: city, county, postcode, or lat,lon" autocomplete="off" aria-label="Area to look up">
+      <button class="btn" id="areaGo" type="button">Look up area</button>
+      <button class="btn ghost" id="areaHere" type="button">&#9678; Use my location</button>
+      <div class="chips" id="areaChips"></div>
+    </div>
+    <div class="cond-grid">
+      <div id="wxMount"></div><div id="tfMount"></div>
+      <div class="cond-span" id="radarMount"></div>
+    </div>
+    <p class="cg-voice-note">Weather and alerts come from Open-Meteo and the National Weather Service. Traffic incidents come from TomTom. The radar plots geocoded incidents from city open data. Scanner-derived signals are always unconfirmed.</p>
+  </section>
 </div>
 <footer class="cg-foot"><b>423<i>.</i>NEWS</b><span>Local News. Real Time.</span><span>Claudia Green Live Scanner Wire</span><a href="#/home">423.news</a><a href="#/reporting">All her reporting</a><span class="r">Stay Informed. Stay Safe.</span></footer>
 </div>`;
@@ -3668,6 +3721,69 @@ function bind() {
 }
 
 /* ---------- lifecycle (called by the site router) ---------- */
+/* ---------- area conditions + studio (merged in from the old Conditions and Live pages) ---------- */
+function whenVisible(el, fn, margin) {
+  if (!('IntersectionObserver' in window)) { fn(); return; }
+  const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); fn(); } }, { rootMargin: margin || '300px' });
+  io.observe(el);
+}
+function initCond() {
+  const root = S.root, CFG = window.CLAUDIA_CONFIG || {}, C = window.ClaudiaConditions, R = window.ClaudiaRadar;
+  const input = $('#areaInput', root), chips = $('#areaChips', root), box = $('#cgCond', root);
+  if (!input || !C || !R || !box) return;
+  const wx = $('#wxMount', root), tf = $('#tfMount', root), radar = $('#radarMount', root);
+  const load = area => {
+    if (!S || !S.mounted) return;
+    input.value = area;
+    wx.innerHTML = '<div class="wx-card"><div class="radar-loading mono">reading the sky over ' + esc(area) + '&hellip;</div></div>';
+    tf.innerHTML = '<div class="wx-card"><div class="radar-loading mono">checking the roads&hellip;</div></div>';
+    C.bundle(area).then(b => {
+      if (!S || !S.mounted) return;
+      wx.innerHTML = C.renderCard(b); tf.innerHTML = C.renderTrafficCard(b);
+      $$('[data-updated]', root).forEach(n => { n.textContent = 'synced ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); });
+      try { const u = new URL(location.href); u.searchParams.set('area', area); history.replaceState(history.state, '', u); } catch { /* ignore */ }
+    }).catch(e => { if (!S || !S.mounted) return; wx.innerHTML = '<div class="wx-card"><div class="wx-empty">' + esc(e && e.message || e) + '</div></div>'; tf.innerHTML = ''; });
+    R.mount(radar, { area });
+    try { localStorage.setItem('claudia.area', area); } catch { /* ignore */ }
+  };
+  chips.innerHTML = (CFG.surrounding || []).map(a => '<button class="chip" type="button" data-area="' + esc(a) + '">' + esc(a) + '</button>').join('');
+  chips.addEventListener('click', e => { const b = e.target.closest('[data-area]'); if (b) load(b.getAttribute('data-area')); });
+  $('#areaGo', root).addEventListener('click', () => { if (input.value.trim()) load(input.value.trim()); });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && input.value.trim()) load(input.value.trim()); });
+  const here = $('#areaHere', root);
+  here.addEventListener('click', () => {
+    here.textContent = 'Locating\u2026';
+    C.locate().then(c => C.reverse(c.lat, c.lon)).then(p => { here.innerHTML = '&#9678; Use my location'; load(p.label); })
+      .catch(err => { here.innerHTML = '&#9678; Use my location'; alert('Location unavailable: ' + (err && err.message || err)); });
+  });
+  let start = new URLSearchParams(location.search).get('area');
+  if (!start) { try { start = localStorage.getItem('claudia.area'); } catch { /* ignore */ } }
+  whenVisible(box, () => load(start || CFG.defaultArea || 'Johnson City, Tennessee'));
+}
+async function initStudio() {
+  const root = S.root, v = $('#cgCamVideo', root), snd = $('#cgCamSound', root);
+  if (v && 'IntersectionObserver' in window) new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) v.play().catch(() => {}); else v.pause(); }), { threshold: 0.35 }).observe(v);
+  if (v && snd) snd.addEventListener('click', () => { v.muted = !v.muted; snd.textContent = v.muted ? 'Sound on' : 'Sound off'; if (!v.muted) v.play().catch(() => {}); });
+  const SB = 'https://kdiwehqtezlhecxsoysj.supabase.co', KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE', FRESH_H = 24, cutoff = Date.now() - FRESH_H * 3600e3;
+  const norm = t => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 80);
+  const live = fetch(SB + '/rest/v1/news_reports?select=id,kind,dateline,headline,ts&published=eq.true&ts=gte.' + encodeURIComponent(new Date(cutoff).toISOString()) + '&order=ts.desc&limit=12', { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY }, cache: 'no-store' })
+    .then(r => { if (!r.ok) throw 0; return r.json(); }).catch(() => null);
+  const file = fetch('feed.json?t=' + Date.now(), { cache: 'no-store' }).then(r => { if (!r.ok) throw 0; return r.json(); }).catch(() => null);
+  const [a, b] = await Promise.all([live, file]);
+  if (!S || !S.mounted) return;
+  const q = $('#cgQueue', root), line = $('#cgDeskLine', root), stamp = $('#cgDeskStamp', root);
+  if (a === null && b === null) { q.innerHTML = '<li class="cg-stamp">Her reports could not be loaded right now.</li>'; return; }
+  const rows = (a || []).slice(), seen = {}; rows.forEach(r => { seen[norm(r.headline)] = 1; });
+  ((b && b.reports) || []).forEach(r => { const t = Date.parse(r.ts); if (isNaN(t) || t < cutoff || seen[norm(r.headline)]) return; seen[norm(r.headline)] = 1; rows.push(r); });
+  const list = rows.filter(r => !isNaN(Date.parse(r.ts)) && Date.parse(r.ts) >= cutoff).sort((x, y) => Date.parse(y.ts) - Date.parse(x.ts)).slice(0, 6);
+  const ago = ts => { const s = Math.max(0, (Date.now() - Date.parse(ts)) / 1000); return s < 90 ? 'just now' : s < 3600 ? Math.floor(s / 60) + ' min ago' : Math.floor(s / 3600) + ' hr ago'; };
+  q.innerHTML = list.length ? list.map(r => '<li><a href="report.html?id=' + encodeURIComponent(r.id) + '"><b class="' + (/verified/i.test(r.kind || '') ? 'v' : /^(breaking|alert)/i.test(r.kind || '') ? '' : 'u') + '">' + esc(r.kind || 'Report') + '</b><span>' + esc(r.headline) + '<small>' + esc(r.dateline || '') + (r.dateline ? ' \u00b7 ' : '') + esc(ago(r.ts)) + '</small></span></a></li>').join('')
+    : '<li class="cg-stamp">No new reports in the last ' + FRESH_H + ' hours. She files here the moment something develops.</li>';
+  const gen = Date.parse((b && b.generated_at) || ''), fresh = !isNaN(gen) && gen >= cutoff;
+  line.textContent = fresh && b.claudia && b.claudia.line ? b.claudia.line : 'At her desk. New reports appear here as soon as she files them.';
+  stamp.textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
 async function mount(hash) {
   leave(); S = fresh(); S.mounted = true;
   const n = N(), root = S.root = n.app();
@@ -3678,7 +3794,7 @@ async function mount(hash) {
   S.pendingHash = hash || '';
   const cfgP = n.api('/scanner/config').then(c => { S.cfg = Object.assign({}, c, window.CLAUDIA_CONFIG || {}); }).catch(() => { S.cfg = Object.assign({}, window.CLAUDIA_CONFIG || {}); });
   await Promise.all([cfgP, refresh()]);
-  renderAudio(); initMap(); loadWeather();
+  renderAudio(); initMap(); loadWeather(); initCond(); initStudio();
   S.timer = setInterval(() => { if (P.auto && !document.hidden) refresh(); }, REFRESH_MS);
 }
 function leave() {

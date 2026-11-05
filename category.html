@@ -816,9 +816,10 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
       <a href="index.html#/home">Home</a>
       <a href="index.html#/news">News</a>
       <a href="claudia-scanner.html">Claudia Green</a>
-      <a href="conditions.html">Conditions</a>
+      <a href="index.html#/forecast">Forecast</a>
       <a href="events.html">423 Events</a>
       <a href="hotspots.html">Hot Spots</a>
+      <a href="checkpoints.html">Checkpoints</a>
       <a href="index.html#/sports">Sports</a>
       <a href="index.html#/scores">Scores &amp; Live</a>
       <a href="index.html#/schools">Schools</a>
@@ -826,7 +827,6 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
       <a href="index.html#/classifieds">Classifieds</a>
       <a href="index.html#/community">citizen423report</a>
       <a href="index.html#/teams">My Teams</a>
-      <a href="desk.html">Live</a>
       <a href="index.html#/government">Government</a>
       <a href="https://423.singles" target="_blank" rel="noopener">423.singles</a>
     </nav>
@@ -861,7 +861,7 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
       </div>
       <div class="ln"></div>
       <div class="rl">Live desk open</div>
-      <a href="desk.html">Step into her studio →</a>
+      <a href="claudia-scanner.html">Step into her studio →</a>
       <a href="index.html">Live wire →</a>
       <a href="index.html#/tip">Send Claudia a scanner clip →</a>
     </div>
@@ -2426,7 +2426,7 @@ window.CLAUDIA_CONFIG = {
       if (el) {
         el.innerHTML = body +
           '<div class="cmd-actions">' +
-          '<a class="btn ghost" href="conditions.html?area=' + encodeURIComponent(q) + '">Open full conditions page</a>' +
+          '<a class="btn ghost" href="claudia-scanner.html?area=' + encodeURIComponent(q) + '">Open full conditions page</a>' +
           '</div>';
       }
     }).catch(function (e) {

@@ -235,7 +235,7 @@
 
   views.forecast = function () {
     document.title = '5-Day Forecast & Weather Videos • 423.news';
-    return Promise.resolve('<div class="fx-page"><div class="sech"><h1 style="margin:0">5-Day Forecast</h1><a href="conditions.html">Current conditions →</a></div>' +
+    return Promise.resolve('<div class="fx-page"><div class="sech"><h1 style="margin:0">5-Day Forecast</h1><a href="claudia-scanner.html">Area conditions →</a></div>' +
       '<div data-fx="board" data-chips="1"></div>' +
       '<div class="sech" style="margin-top:26px"><h2>423.news Forecast Videos</h2></div><div data-fx="videos" data-limit="12"></div>' +
       '<div data-fx="editor"></div></div>');
@@ -338,7 +338,7 @@
       '<form id="pushForm" class="panel pad" style="margin-bottom:12px"><p class="muted" style="margin-top:0">Goes to every phone that turned on 423.news alerts. Claudia\'s new reports already notify automatically.</p>' +
       '<label for="pft">Title</label><input id="pft" name="title" maxlength="80" required placeholder="e.g. Road closed on I-26">' +
       '<label for="pfb">Message</label><textarea id="pfb" name="body" rows="3" maxlength="200" required placeholder="One or two short sentences"></textarea>' +
-      '<label for="pfu">Link inside the site (optional)</label><input id="pfu" name="url" maxlength="300" placeholder="e.g. conditions.html">' +
+      '<label for="pfu">Link inside the site (optional)</label><input id="pfu" name="url" maxlength="300" placeholder="e.g. claudia-scanner.html">' +
       '<div id="pfmsg" class="muted" style="min-height:20px"></div>' +
       '<div class="row-actions"><button class="btn" type="submit" id="pfsubmit">Send notification</button></div></form>';
   }
