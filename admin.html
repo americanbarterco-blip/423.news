@@ -16,6 +16,7 @@ img,video{max-width:100%;max-height:200px;display:block;margin:6px 0;border-radi
 var FN = 'https://kdiwehqtezlhecxsoysj.supabase.co/functions/v1/admin'; /* your project URL + /functions/v1/admin */
 /* starting rows for "+ Add new". Only tables that people may add to by hand are listed. */
 var TPL = {
+  news_reports:{id:'booking-YYYYMMDD-01',ts:'2026-11-04T12:00:00Z',kind:'FIELD',dateline:'Bradley County, TN',confidence:'confirmed',headline:'Booked: FULL NAME, charge as listed',summary:'Per the Bradley County Sheriff\'s Office booking log for DATE, FULL NAME was booked on a charge of CHARGE AS LISTED. A booking is an accusation, not a finding of guilt.',tags:['booking','public-record'],scanner:[],sources:[{label:'Bradley County Sheriff\'s Office booking log',url:'https://www.bradleysheriff.com/booking-reports'}],safety:[],uncertain:['An arrest is not a conviction. This item will be updated if charges change.'],heard_on:null,paraphrase:null,published:false},
   news_posts:{slug:'my-story-slug',section:'news',topic:null,title:'Title',body:'Story text',image_url:null,price:null,author_id:null,author_name:'423.news',status:'published'},
   news_comments:{post_id:'PASTE-POST-ID-HERE',author_id:null,author_name:'423.news',body:'Comment text'},
   news_streams:{title:'Title',league:'general',kind:'video',ref:'YOUTUBE-VIDEO-ID',active:true,sort:0},
@@ -25,7 +26,6 @@ var TPL = {
 /* tables where a hand-added row can never work, because another job or sign-up creates them */
 var NOADD = {
   news_profiles:'Accounts are created when people sign up. Edit an existing row instead.',
-  news_reports:'Claudia files these from her desk. Edit an existing row instead.',
   news_scores:'Scores come from the sports sync. Edit an existing row instead.',
   news_headlines:'Headlines come from the sports sync. Edit an existing row instead.'
 };
@@ -41,19 +41,107 @@ function drawLogin(){
   var go=function(){var v=document.getElementById('pw').value;if(!v)return;call('login',{password:v}).then(function(r){document.getElementById('pw').value='';
     if(r.s===200){tok=r.j.token;sessionStorage.setItem('t423',tok);init()}else if(r.s===429)say('Too many attempts. Wait 15 minutes.');else if(r.s===0)say('Cannot reach the server.');else say('Incorrect password.')})};
   document.getElementById('go').onclick=go;document.getElementById('pw').onkeydown=function(e){if(e.key==='Enter')go()}}
-function init(){call('tables').then(function(r){if(r.s!==200)return;tables=r.j.tables||[];cur=tables[0]||'pw';draw()})}
+function init(){call('tables').then(function(r){if(r.s!==200)return;tables=(r.j.tables||[]).slice();var ai=tables.indexOf('news_ads');if(ai>0){tables.splice(ai,1);tables.unshift('news_ads')}cur=tables[0]||'pw';draw()})}
 function draw(){
-  var tabs=tables.concat(['pw']).map(function(t){return'<button class="'+(t===cur?'on':'')+'" data-t="'+esc(t)+'">'+(t==='pw'?'Password':esc(t))+'</button>'}).join('');
+  var tabs=tables.concat(['pw']).map(function(t){return'<button class="'+(t===cur?'on':'')+'" data-t="'+esc(t)+'">'+(t==='pw'?'Password':t==='news_ads'?'Ads':esc(t))+'</button>'}).join('');
   app.innerHTML='<div class="top"><h1>423.news Admin</h1><button class="g" id="lo">Log out</button></div><div class="tabs">'+tabs+'</div><div id="msg"></div><div id="body"></div>';
   document.getElementById('lo').onclick=function(){call('noop');out()};
   document.querySelector('.tabs').onclick=function(e){var b=e.target.closest('[data-t]');if(b){cur=b.getAttribute('data-t');draw()}};
-  if(cur==='pw')drawPw();else if(!tables.length)document.getElementById('body').innerHTML='<div class="card">No tables set yet. Add ADMIN_TABLES in the function secrets.</div>';else load()}
+  if(cur==='pw')drawPw();else if(cur==='news_ads')drawAds();else if(!tables.length)document.getElementById('body').innerHTML='<div class="card">No tables set yet. Add ADMIN_TABLES in the function secrets.</div>';else load()}
 function drawPw(){
   document.getElementById('body').innerHTML='<div class="card"><b>Change admin password</b><input id="c0" type="password" placeholder="Current password"><input id="c1" type="password" placeholder="New password (10+ characters)"><input id="c2" type="password" placeholder="New password again"><button id="sv">Change</button></div>';
   document.getElementById('sv').onclick=function(){var c0=c0v('c0'),c1=c0v('c1'),c2=c0v('c2');
     if(c1!==c2)return say('New passwords do not match.');if(c1.length<10)return say('Use at least 10 characters.');
     call('change',{current:c0,next:c1}).then(function(r){say(r.s===200?'Password changed.':r.s===429?'Too many attempts. Wait 15 minutes.':r.s===401?'Current password is incorrect.':'Could not change password.');if(r.s===200)['c0','c1','c2'].forEach(function(i){document.getElementById(i).value=''})})};
   function c0v(i){return document.getElementById(i).value}}
+
+/* ---------- Ads manager: upload, place, size, timing, edit ---------- */
+var adEdit=null;
+var AD_PAGES=[['index','Home and News'],['claudia-scanner','Claudia scanner feed'],['desk','Claudia live desk'],['conditions','Conditions'],['events','423 Events'],['hotspots','Hot Spots'],['category','Category pages'],['report','Report a problem']];
+function pagesVal(){var all=$('adall').checked;if(all)return'all';var v=AD_PAGES.filter(function(p){return $('adp-'+p[0]).checked}).map(function(p){return p[0]});return v.length?v.join(','):'all'}
+function pagesUi(){var all=$('adall').checked;AD_PAGES.forEach(function(p){$('adp-'+p[0]).disabled=all})}
+function $(i){return document.getElementById(i)}
+function adState(r){var n=Date.now();if(!r.active)return'Paused';if(r.starts_at&&new Date(r.starts_at).getTime()>n)return'Scheduled';if(r.ends_at&&new Date(r.ends_at).getTime()<=n)return'Expired';return'Live'}
+function toLocal(iso){if(!iso)return'';var d=new Date(iso);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)}
+function fromLocal(v){return v?new Date(v).toISOString():null}
+function b64(blob){return new Promise(function(ok,no){var f=new FileReader();f.onload=function(){ok(String(f.result).split(',')[1])};f.onerror=no;f.readAsDataURL(blob)})}
+function prepImage(file){ /* returns {type,data}; shrinks big photos so they upload from a phone */
+  var MAX=3*1024*1024-60000;
+  if(file.type==='image/gif'){return file.size>MAX?Promise.reject('GIF is over 3 MB. Use a smaller one.'):b64(file).then(function(d){return{type:'image/gif',data:d}})}
+  return new Promise(function(ok,no){var img=new Image(),u=URL.createObjectURL(file);
+    img.onload=function(){var w=img.naturalWidth,h=img.naturalHeight,sc=Math.min(1,1600/w),c=document.createElement('canvas');
+      c.width=Math.round(w*sc);c.height=Math.round(h*sc);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);
+      var type=file.type==='image/png'?'image/png':'image/jpeg';
+      c.toBlob(function(bl){if(!bl)return no('Could not read that image.');
+        if(bl.size>MAX&&type==='image/png'){type='image/jpeg';return c.toBlob(function(b2){b2&&b2.size<=MAX?b64(b2).then(function(d){ok({type:type,data:d})}):no('Image is too large.')},type,.85)}
+        if(bl.size>MAX)return no('Image is too large.');
+        b64(bl).then(function(d){ok({type:type,data:d})})},type,.88)};
+    img.onerror=function(){URL.revokeObjectURL(u);no('That file is not an image I can read.')};img.src=u})}
+function preview(){var p=$('adprev'),u=$('adimg').value,w=+$('adw').value||0,h=+$('adh').value||0;
+  if(!u){p.innerHTML='<small>Choose a file to see a preview.</small>';return}
+  var st=(w?'width:'+w+'px;max-width:100%;':'max-width:100%;')+(h?'height:'+h+'px;object-fit:'+$('adfit').value+';':'height:auto;')+'margin:0 auto;display:block';
+  p.innerHTML=$('adkind').value==='video'?'<video src="'+esc(u)+'" autoplay muted loop playsinline controls style="'+st+'"></video>':'<img src="'+esc(u)+'" alt="" style="'+st+'">'}
+function kindUi(){var v=$('adkind').value==='video',f=$('adfile');
+  f.accept=v?'video/mp4,video/webm':'image/jpeg,image/png,image/webp,image/gif';
+  $('adfilehint').textContent=v?'Ad video (MP4 or WebM, up to 25 MB; short clips of 5 to 15 seconds work best)':'Ad image (JPG, PNG, WebP or GIF; big photos are shrunk for you)'}
+function putFile(file){ /* big files go straight to storage through a one-time URL */
+  return call('adUploadUrl',{type:file.type,size:file.size}).then(function(r){
+    if(r.s!==200||!r.j.uploadUrl)throw (r.j.error==='size'?'That video is over 25 MB.':r.j.error==='type'?'Use an MP4 or WebM file.':'Could not start the upload.');
+    var fd=new FormData();fd.append('cacheControl','3600');fd.append('',file);
+    return fetch(r.j.uploadUrl,{method:'PUT',headers:{'x-upsert':'false'},body:fd}).then(function(u){if(!u.ok)throw 'Upload failed. Try a smaller or different file.';return r.j.url})})}
+function adForm(r){r=r||{};return'<div class="card"><b id="adhead">'+(r.id?'Edit ad':'New ad')+'</b><div id="msg"></div>'+
+ '<label for="adtitle"><small>Name (for you only)</small></label><input id="adtitle" maxlength="80" value="'+esc(r.title||'')+'">'+
+ '<label for="adslot"><small>Where it shows</small></label><select id="adslot" style="width:100%;padding:10px;margin:4px 0 8px;background:#000;color:var(--t);border:1px solid var(--l);border-radius:8px">'+
+ [['top','Top banner (under the header)'],['mid','In the page content'],['bottom','Bottom banner (above the footer)']].map(function(o){return'<option value="'+o[0]+'"'+((r.slot||'top')===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select>'+
+ '<label for="adkind"><small>Ad type</small></label><select id="adkind" style="width:100%;padding:10px;margin:4px 0 8px;background:#000;color:var(--t);border:1px solid var(--l);border-radius:8px"><option value="image"'+((r.kind||'image')==='image'?' selected':'')+'>Image</option><option value="video"'+(r.kind==='video'?' selected':'')+'>Video (plays silently, loops)</option></select>'+
+ '<label for="adfile"><small id="adfilehint"></small></label><input id="adfile" type="file">'+
+ '<input id="adimg" type="hidden" value="'+esc(r.image_url||'')+'"><div id="adprev" style="min-height:40px;overflow:hidden"></div>'+
+ '<div style="margin:6px 0 8px"><small>Which pages show it</small><label style="display:flex;gap:8px;align-items:center;margin:6px 0"><input id="adall" type="checkbox" style="width:auto;margin:0"'+((r.pages||'all')==='all'?' checked':'')+'> All pages</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 10px">'+AD_PAGES.map(function(p){var on=(r.pages||'all')!=='all'&&String(r.pages).split(',').indexOf(p[0])>-1;return'<label style="display:flex;gap:8px;align-items:center;font-size:13px"><input id="adp-'+p[0]+'" type="checkbox" style="width:auto;margin:0"'+(on?' checked':'')+'> '+p[1]+'</label>'}).join('')+'</div></div>'+
+ '<label for="adhref"><small>Where it links (https://…)</small></label><input id="adhref" inputmode="url" placeholder="https://advertiser.com" value="'+esc(r.href||'')+'">'+
+ '<label for="adalt"><small>Short description for screen readers</small></label><input id="adalt" maxlength="120" value="'+esc(r.alt||'')+'">'+
+ '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label for="adw"><small>Max width in px (0 = full width)</small></label><input id="adw" type="number" min="0" max="2000" value="'+(r.max_width||0)+'"></div>'+
+ '<div><label for="adh"><small>Height in px (0 = automatic)</small></label><input id="adh" type="number" min="0" max="1000" value="'+(r.height||0)+'"></div></div>'+
+ '<label for="adfit"><small>When a height is set, the image should</small></label><select id="adfit" style="width:100%;padding:10px;margin:4px 0 8px;background:#000;color:var(--t);border:1px solid var(--l);border-radius:8px"><option value="contain"'+((r.fit||'contain')==='contain'?' selected':'')+'>Fit inside (nothing cut off)</option><option value="cover"'+(r.fit==='cover'?' selected':'')+'>Fill the box (edges may be cropped)</option></select>'+
+ '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label for="adsecs"><small>Seconds on screen (3–600)</small></label><input id="adsecs" type="number" min="3" max="600" value="'+(r.seconds||20)+'"></div>'+
+ '<div><label for="adsort"><small>Order (lower shows first)</small></label><input id="adsort" type="number" value="'+(r.sort||0)+'"></div></div>'+
+ '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label for="adstart"><small>Starts (optional)</small></label><input id="adstart" type="datetime-local" value="'+toLocal(r.starts_at)+'"></div>'+
+ '<div><label for="adend"><small>Ends (optional)</small></label><input id="adend" type="datetime-local" value="'+toLocal(r.ends_at)+'"></div></div>'+
+ '<label style="display:flex;gap:8px;align-items:center;margin:6px 0"><input id="adactive" type="checkbox" style="width:auto;margin:0"'+(r.active===false?'':' checked')+'> Active</label>'+
+ '<button id="adsave">'+(r.id?'Save changes':'Add ad')+'</button>'+(r.id?'<button class="g" id="adcancel">Cancel</button>':'')+'</div>'}
+function drawAds(){
+  var b=$('body');b.innerHTML=adForm(adEdit)+'<div id="adlist">Loading…</div>';
+  ['adw','adh','adfit'].forEach(function(i){$(i).addEventListener('input',preview)});
+  $('adkind').onchange=function(){$('adimg').value='';kindUi();preview()};
+  $('adall').onchange=pagesUi;pagesUi();
+  kindUi();preview();
+  $('adfile').onchange=function(){var f=this.files[0];if(!f)return;
+    if($('adkind').value==='video'){say('Uploading video… this can take a minute.');
+      return putFile(f).then(function(u){$('adimg').value=u;preview();say('Video uploaded. Fill in the rest and tap save.')}).catch(function(m){say(String(m))})}
+    say('Preparing image…');
+    prepImage(f).then(function(p){say('Uploading…');return call('uploadAd',{type:p.type,data:p.data})}).then(function(r){
+      if(r.s===200&&r.j.url){$('adimg').value=r.j.url;preview();say('Image uploaded. Fill in the rest and tap save.')}else say('Upload failed ('+(r.j.error||r.s)+').')}).catch(function(m){say(String(m))})};
+  $('adsave').onclick=function(){
+    var href=$('adhref').value.trim(),img=$('adimg').value;
+    if(!img)return say('Upload a file first.');if(!/^https:\/\//i.test(href))return say('The link must start with https://');
+    var row={title:$('adtitle').value.trim(),slot:$('adslot').value,kind:$('adkind').value,pages:pagesVal(),image_url:img,href:href,alt:$('adalt').value.trim()||'Advertisement',
+      max_width:Math.max(0,+$('adw').value||0),height:Math.max(0,+$('adh').value||0),fit:$('adfit').value,
+      seconds:Math.min(600,Math.max(3,+$('adsecs').value||20)),sort:+$('adsort').value||0,starts_at:fromLocal($('adstart').value),ends_at:fromLocal($('adend').value),active:$('adactive').checked};
+    if(row.starts_at&&row.ends_at&&row.ends_at<=row.starts_at)return say('The end time must be after the start time.');
+    var p=adEdit&&adEdit.id?call('update',{table:'news_ads',id:adEdit.id,patch:row}):call('insert',{table:'news_ads',row:row});
+    p.then(function(r){if(r.s===200){say('Saved. Ads update on the site within 5 minutes.');adEdit=null;drawAds()}else say('Could not save. Check the fields.')})};
+  if($('adcancel'))$('adcancel').onclick=function(){adEdit=null;drawAds()};
+  call('list',{table:'news_ads'}).then(function(r){var L=$('adlist');if(r.s!==200){L.innerHTML='<div class="card">Could not load ads. Has the ads setup been run?</div>';return}
+    var rows=(r.j.rows||[]).sort(function(a,c){return a.slot<c.slot?-1:a.slot>c.slot?1:(a.sort-c.sort)});adRows=rows;
+    L.innerHTML=rows.length?rows.map(function(a,i){var st=adState(a);
+      return'<div class="card" data-i="'+i+'"><b>'+esc(a.title||a.alt||'Ad')+'</b> <small>'+esc(a.slot)+' · '+(a.kind==='video'?'video':'image')+' · '+st+'</small><br>'+
+      (a.kind==='video'?'<video src="'+esc(a.image_url)+'" muted playsinline preload="metadata" style="max-height:80px"></video>':'<img src="'+esc(a.image_url)+'" alt="" style="max-height:80px">')+
+      '<small>'+((a.pages||'all')==='all'?'all pages':'pages: '+esc(a.pages))+' · '+(a.max_width?a.max_width+'px wide':'full width')+' · '+(a.height?a.height+'px tall':'auto height')+' · '+a.seconds+'s'+(a.starts_at?' · from '+esc(new Date(a.starts_at).toLocaleString()):'')+(a.ends_at?' · until '+esc(new Date(a.ends_at).toLocaleString()):'')+'</small>'+
+      '<div class="act"><button data-ae="1">Edit</button><button class="g" data-ap="1">'+(a.active?'Pause':'Resume')+'</button><button class="d" data-ad="1">Delete</button></div></div>'}).join(''):'<div class="card"><small>No ads yet. Add one above. Until then each slot shows "Your ad here".</small></div>';
+    L.onclick=function(e){var c=e.target.closest('.card');if(!c||c.getAttribute('data-i')==null)return;var a=adRows[+c.getAttribute('data-i')];
+      if(e.target.getAttribute('data-ae')){adEdit=a;drawAds();window.scrollTo(0,0)}
+      else if(e.target.getAttribute('data-ap')){call('update',{table:'news_ads',id:a.id,patch:{active:!a.active}}).then(function(){drawAds()})}
+      else if(e.target.getAttribute('data-ad')){if(confirm('Delete this ad and its file permanently?'))call('delete',{table:'news_ads',id:a.id}).then(function(r){if(r.s===200)call('deleteFile',{url:a.image_url});say(r.s===200?'Deleted.':'Could not delete.');drawAds()})}}})}
+var adRows=[];
 function load(){
   document.getElementById('body').innerHTML='<input id="q" placeholder="Search '+esc(cur)+'" value="'+esc(q)+'"><button id="add">+ Add new</button><div id="addbox"></div><div id="rows">Loading…</div>';
   document.getElementById('q').oninput=function(e){q=e.target.value;paint()};
