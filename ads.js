@@ -10,8 +10,20 @@
   var CFG = Object.assign({ ads: { top: [], mid: [], bottom: [] }, contactUrl: 'mailto:ads@423.news' }, window.ADS_CFG || {});
   var SLOTS = ['top', 'mid', 'bottom'];
   var live = { top: [], mid: [], bottom: [] };
-  var PAGE = (location.pathname.split('/').pop() || 'index').replace(/\.html?$/i, '') || 'index';   /* e.g. index, desk, claudia-scanner */
-  function here(a) { var p = String(a.pages || 'all'); return p === 'all' || p.split(',').map(function (x) { return x.trim(); }).indexOf(PAGE) > -1; }
+  /* Page key used for targeting. Other files use their file name (desk, claudia-scanner...).
+     index.html is the app: its key is the section in the address, e.g. home, news, sports, schools. */
+  function pageKeys() {
+    var f = (location.pathname.split('/').pop() || 'index').replace(/\.html?$/i, '') || 'index';
+    if (f !== 'index') return [f];
+    var r = (location.hash || '#/home').replace(/^#\/?/, '').split('/')[0] || 'home';
+    return ['index', r];                 /* 'index' = every section of the app */
+  }
+  function here(a) {
+    var p = String(a.pages || 'all');
+    if (p === 'all') return true;
+    var keys = pageKeys();
+    return p.split(',').some(function (x) { return keys.indexOf(x.trim()) > -1; });
+  }
   var pos = {}, timers = {};
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -87,6 +99,7 @@
     var host = document.getElementById('app');
     if (host) new MutationObserver(place).observe(host, { childList: true });
     load();
+    window.addEventListener('hashchange', function () { setTimeout(function () { place(); document.querySelectorAll('.ad-slot').forEach(function (el) { pos[el.getAttribute('data-slot')] = null; paint(el); }); }, 80); });
     setInterval(function () { if (!document.hidden) load(); }, 5 * 60 * 1000);   /* picks up new, paused and expired ads */
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();

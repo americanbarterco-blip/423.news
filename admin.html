@@ -57,7 +57,7 @@ function drawPw(){
 
 /* ---------- Ads manager: upload, place, size, timing, edit ---------- */
 var adEdit=null;
-var AD_PAGES=[['index','Home and News'],['claudia-scanner','Claudia scanner feed'],['desk','Claudia live desk'],['conditions','Conditions'],['events','423 Events'],['hotspots','Hot Spots'],['category','Category pages'],['report','Report a problem']];
+var AD_PAGES=[['home','Home'],['news','News'],['sports','Sports'],['scores','Scores'],['teams','Teams'],['schools','Schools'],['outdoors','Outdoors'],['government','Government'],['community','Community'],['classifieds','Classifieds'],['forecast','Forecast'],['claudia-scanner','Claudia scanner feed'],['desk','Claudia live desk'],['conditions','Conditions'],['events','423 Events'],['hotspots','Hot Spots'],['category','Category pages'],['report','Report a problem']];
 function pagesVal(){var all=$('adall').checked;if(all)return'all';var v=AD_PAGES.filter(function(p){return $('adp-'+p[0]).checked}).map(function(p){return p[0]});return v.length?v.join(','):'all'}
 function pagesUi(){var all=$('adall').checked;AD_PAGES.forEach(function(p){$('adp-'+p[0]).disabled=all})}
 function $(i){return document.getElementById(i)}
@@ -92,7 +92,7 @@ function putFile(file){ /* big files go straight to storage through a one-time U
 function adForm(r){r=r||{};return'<div class="card"><b id="adhead">'+(r.id?'Edit ad':'New ad')+'</b><div id="msg"></div>'+
  '<label for="adtitle"><small>Name (for you only)</small></label><input id="adtitle" maxlength="80" value="'+esc(r.title||'')+'">'+
  '<label for="adslot"><small>Where it shows</small></label><select id="adslot" style="width:100%;padding:10px;margin:4px 0 8px;background:#000;color:var(--t);border:1px solid var(--l);border-radius:8px">'+
- [['top','Top banner (under the header)'],['mid','In the page content'],['bottom','Bottom banner (above the footer)']].map(function(o){return'<option value="'+o[0]+'"'+((r.slot||'top')===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select>'+
+ [['top','Top banner (under the header)'],['mid','In the page content'],['bottom','Bottom banner (above the footer)'],['live','Commercial break in the homepage live video']].map(function(o){return'<option value="'+o[0]+'"'+((r.slot||'top')===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select>'+
  '<label for="adkind"><small>Ad type</small></label><select id="adkind" style="width:100%;padding:10px;margin:4px 0 8px;background:#000;color:var(--t);border:1px solid var(--l);border-radius:8px"><option value="image"'+((r.kind||'image')==='image'?' selected':'')+'>Image</option><option value="video"'+(r.kind==='video'?' selected':'')+'>Video (plays silently, loops)</option></select>'+
  '<label for="adfile"><small id="adfilehint"></small></label><input id="adfile" type="file">'+
  '<input id="adimg" type="hidden" value="'+esc(r.image_url||'')+'"><div id="adprev" style="min-height:40px;overflow:hidden"></div>'+
@@ -108,8 +108,15 @@ function adForm(r){r=r||{};return'<div class="card"><b id="adhead">'+(r.id?'Edit
  '<div><label for="adend"><small>Ends (optional)</small></label><input id="adend" type="datetime-local" value="'+toLocal(r.ends_at)+'"></div></div>'+
  '<label style="display:flex;gap:8px;align-items:center;margin:6px 0"><input id="adactive" type="checkbox" style="width:auto;margin:0"'+(r.active===false?'':' checked')+'> Active</label>'+
  '<button id="adsave">'+(r.id?'Save changes':'Add ad')+'</button>'+(r.id?'<button class="g" id="adcancel">Cancel</button>':'')+'</div>'}
+function brkCard(s){return'<div class="card"><b>Live video commercial breaks</b><div id="bmsg"></div><small>The homepage live video plays for a while, then a break shows the ads you add with the slot "Commercial break in the homepage live video". Changes reach the site within a minute.</small>'+
+ '<label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input id="bon" type="checkbox" style="width:auto;margin:0"'+(s.breaks_on===false?'':' checked')+'> Breaks on</label>'+
+ '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label for="blive"><small>Minutes of live video (1–120)</small></label><input id="blive" type="number" min="1" max="120" value="'+(s.live_minutes||9)+'"></div>'+
+ '<div><label for="bad"><small>Minutes of ads (0–30)</small></label><input id="bad" type="number" min="0" max="30" value="'+(s.ad_minutes==null?1:s.ad_minutes)+'"></div></div><button id="bsave">Save break settings</button></div>'}
 function drawAds(){
-  var b=$('body');b.innerHTML=adForm(adEdit)+'<div id="adlist">Loading…</div>';
+  var b=$('body');b.innerHTML='<div id="brk"></div>'+adForm(adEdit)+'<div id="adlist">Loading…</div>';
+  call('list',{table:'news_ad_settings'}).then(function(r){var s=(r.s===200&&(r.j.rows||[])[0])||{};$('brk').innerHTML=brkCard(s);
+    $('bsave').onclick=function(){var p={live_minutes:Math.min(120,Math.max(1,+$('blive').value||9)),ad_minutes:Math.min(30,Math.max(0,+$('bad').value||0)),breaks_on:$('bon').checked,updated_at:new Date().toISOString()};
+      call('update',{table:'news_ad_settings',id:1,patch:p}).then(function(x){$('bmsg').innerHTML='<small>'+(x.s===200?'Saved.':'Could not save. Has ads-setup-2.sql been run?')+'</small>'})}});
   ['adw','adh','adfit'].forEach(function(i){$(i).addEventListener('input',preview)});
   $('adkind').onchange=function(){$('adimg').value='';kindUi();preview()};
   $('adall').onchange=pagesUi;pagesUi();

@@ -153,29 +153,62 @@
     return true;
   }
 
-  /* news feed: live for liveMinutes, then adMinutes of commercials, repeating on the clock */
-  var newsPhase = null, newsTimer = null;
+  /* news feed: live for live_minutes, then ad_minutes of commercials, repeating on the clock.
+     Timing and the commercials are managed in Admin -> Ads (slot "Commercial break in the live video").
+     With no commercials added, or breaks turned off, the live video simply plays without breaks. */
+  var newsPhase = null, newsTimer = null, adTimer = null, breakTimer = null;
+  var brk = { live: CFG.liveMinutes, ad: CFG.adMinutes, on: true, ads: [] };
+  function adItems() {
+    if (brk.ads.length) return brk.ads;
+    return (CFG.adUrls || []).filter(function (u) { return /^https:\/\//i.test(u); }).map(function (u) { return { kind: 'video', url: u, href: '', alt: 'Commercial', secs: 15 }; });
+  }
+  function breaksOn() { return brk.on && brk.live > 0 && brk.ad > 0 && adItems().length > 0; }
   function inAd() {
-    var cyc = CFG.liveMinutes + CFG.adMinutes;
-    return Math.floor(Date.now() / 60000) % cyc >= CFG.liveMinutes;
+    if (!breaksOn()) return false;
+    return Math.floor(Date.now() / 60000) % (brk.live + brk.ad) >= brk.live;
   }
   function secsToNextPhase() {
-    var cycMs = (CFG.liveMinutes + CFG.adMinutes) * 60000, pos = Date.now() % cycMs, edge = inAd() ? cycMs : CFG.liveMinutes * 60000;
+    var cycMs = (brk.live + brk.ad) * 60000, pos = Date.now() % cycMs, edge = inAd() ? cycMs : brk.live * 60000;
     return Math.max(0, Math.ceil((edge - pos) / 1000));
   }
+  function loadBreaks() {
+    var H = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
+    var st = fetch(SB_URL + '/rest/v1/news_ad_settings?select=*&id=eq.1', { headers: H, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return null; });
+    var ads = fetch(SB_URL + '/rest/v1/news_ads?select=*&slot=eq.live&order=sort.asc,created_at.asc', { headers: H, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return null; });
+    Promise.all([st, ads]).then(function (x) {
+      if (x[0] && x[0][0]) { brk.live = x[0][0].live_minutes; brk.ad = x[0][0].ad_minutes; brk.on = x[0][0].breaks_on !== false; }
+      if (x[1]) brk.ads = x[1].filter(function (a) { return /^https:\/\//i.test(a.image_url || ''); }).map(function (a) {
+        return { kind: a.kind === 'video' ? 'video' : 'image', url: a.image_url, href: /^https:\/\//i.test(a.href || '') ? a.href : '', alt: a.alt || 'Commercial', secs: a.seconds || 15 };
+      });
+    });
+  }
   function mountAds(box) {
-    var list = (CFG.adUrls || []).filter(function (u) { return /^https:\/\//i.test(u); });
-    if (!list.length) {
-      box.innerHTML = '<div class="hl-empty">Commercial break<br>Live news returns shortly.</div>';
-      return;
+    var list = adItems(), i = 0, fails = 0;
+    clearTimeout(adTimer);
+    box.innerHTML = '<div style="position:relative;width:100%;height:100%"><div class="hl-adm" style="width:100%;height:100%"></div></div>';
+    var m = box.querySelector('.hl-adm'), wrap = m.parentNode;
+    function link(a) {
+      var old = wrap.querySelector('.hl-adlink'); if (old) old.remove();
+      if (!a.href) return;
+      var l = document.createElement('a'); l.className = 'hl-adlink'; l.href = a.href; l.target = '_blank'; l.rel = 'sponsored noopener noreferrer';
+      l.textContent = 'Learn more'; l.style.cssText = 'position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.7);color:#fff;padding:6px 10px;border-radius:8px;font:600 13px system-ui;text-decoration:none';
+      wrap.appendChild(l);
     }
-    var i = 0, fails = 0;
-    box.innerHTML = '<video autoplay muted playsinline controls></video>';
-    var v = box.firstChild;
-    function next() { v.src = list[i++ % list.length]; var p = v.play(); if (p && p.catch) p.catch(function () {}); }
-    v.addEventListener('ended', next);
-    v.addEventListener('error', function () { if (++fails < list.length * 2) next(); });
-    next();
+    function show() {
+      var a = list[i++ % list.length];
+      link(a);
+      if (a.kind === 'image') {
+        m.innerHTML = '<img src="' + esc(a.url) + '" alt="' + esc(a.alt) + '" style="width:100%;height:100%;object-fit:contain;display:block">';
+        adTimer = setTimeout(show, Math.max(3, a.secs) * 1000);
+      } else {
+        m.innerHTML = '<video autoplay muted playsinline style="width:100%;height:100%;object-fit:contain;background:#000"></video>';
+        var v = m.firstChild;
+        v.addEventListener('ended', show);
+        v.addEventListener('error', function () { if (++fails < list.length * 2) show(); });
+        v.src = a.url; var p = v.play(); if (p && p.catch) p.catch(function () {});
+      }
+    }
+    show();
   }
   function tickNews() {
     var box = document.getElementById('hlVideo'), tag = document.getElementById('hlTag'), dot = document.getElementById('hlDot');
@@ -183,6 +216,7 @@
     var ad = inAd(), s = secsToNextPhase();
     if (ad !== newsPhase) {
       newsPhase = ad;
+      clearTimeout(adTimer);
       if (hlsInst) { try { hlsInst.destroy(); } catch (e) {} hlsInst = null; }
       if (ad) { mountAds(box); dot.classList.remove('on'); }
       else dot.classList.toggle('on', mountStream(box, newsUrl(), newsTitle(),
@@ -471,6 +505,7 @@
       var sx = document.getElementById('homeSports');
       if (sx && !document.hidden) { paintSports(sx); paintNewsVideo(); }
     }, CFG.sportsRefreshSeconds * 1000);
+    loadBreaks(); clearInterval(breakTimer); breakTimer = setInterval(function () { if (!document.hidden) loadBreaks(); }, 60000);
     newsPhase = null; tickNews();
     clearInterval(newsTimer); newsTimer = setInterval(tickNews, 1000);
     root.querySelector('.hl-chips').addEventListener('click', function (e) {
