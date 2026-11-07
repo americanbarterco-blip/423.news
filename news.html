@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Local News • 423.news</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#050b12">
+<meta name="description" content="Latest local news, investigative coverage, and developing stories across the 423 area code in East Tennessee and North Georgia.">
+<link rel="canonical" href="https://423.news/news.html">
+<meta name="robots" content="index, follow, max-image-preview:large">
+
+<meta property="og:site_name" content="423.news">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Local News • 423.news">
+<meta property="og:description" content="Local news, government reporting, and developing stories for East Tennessee and North Georgia.">
+<meta property="og:url" content="https://423.news/news.html">
+<meta property="og:image" content="https://423.news/icon-512.png">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@423news">
+
+<link rel="stylesheet" href="site.css">
+<style>
+#nav{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#nav::-webkit-scrollbar{display:none}#nav a{flex:0 0 auto;white-space:nowrap}
+.news-grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));margin-top:16px}
+.ncard{background:var(--panel,#0f1d2c);border:1px solid var(--line,#24384a);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.ncard img{width:100%;height:180px;object-fit:cover;background:#14263a}
+.npad{padding:16px;flex:1;display:flex;flex-direction:column}
+.ncard h3{margin:8px 0 6px;font-size:18px;line-height:1.3}
+.ncard p{margin:0 0 12px;font-size:14px;color:var(--muted,#9eafc0);flex:1}
+.nmeta{font-size:12px;color:var(--muted,#9eafc0);display:flex;justify-content:space-between;align-items:center}
+.wire-strip{background:var(--s2,#0c1b2b);border:1px solid var(--line,#24384a);border-radius:12px;padding:12px 16px;margin:16px 0;display:flex;align-items:center;justify-content:space-between}
+.wire-strip a{color:var(--accent,#ff5a0a);font-weight:700;text-decoration:underline}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="bar">
+  <a href="index.html" class="logo" aria-label="423.news home"><span class="wm"><span><b>423</b>.news</span><small>LOCAL NEWS</small></span></a>
+</div><nav id="nav"><a href="index.html">Home</a><a href="news.html" class="on">News</a><a href="claudia-scanner.html">Claudia Green</a><a href="traffic.html">Traffic</a><a href="checkpoints.html">Checkpoints</a><a href="sports.html">Sports</a><a href="events.html">Events</a><a href="hotspots.html">Hot Spots</a><a href="community.html">citizen423report</a><a href="https://423.singles" target="_blank" rel="noopener">423.singles</a></nav></div></header>
+
+<main><div class="wrap">
+  <h1>Local News Across the 423</h1>
+  <p class="muted">Independent local coverage for Chattanooga, Cleveland, the Tri-Cities, and North Georgia.</p>
+
+  <div class="wire-strip">
+    <span>🚨 <strong>Breaking Dispatch Wire:</strong> Real-time police &amp; fire radio reports</span>
+    <a href="claudia-scanner.html">Open Claudia's Live Wire &rarr;</a>
+  </div>
+
+  <div id="newsList" class="news-grid"><p class="muted">Loading local stories&hellip;</p></div>
+</div></main>
+
+<footer><div class="wrap">&copy; 423.news — Independent local reporting for East Tennessee and North Georgia.</div></footer>
+
+<script>
+var SUPA_URL='https://kdiwehqtezlhecxsoysj.supabase.co', SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE';
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+fetch(SUPA_URL+'/rest/v1/news_reports?select=*&published=eq.true&order=ts.desc&limit=30',{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
+.then(function(r){return r.ok?r.json():Promise.reject(r.status)})
+.then(function(rows){
+  var el=document.getElementById('newsList');
+  if(!rows||!rows.length){el.innerHTML='<p class="muted">No reports filed yet today. Check back shortly.</p>';return}
+  el.innerHTML=rows.map(function(r){
+    var d=new Date(r.ts).toLocaleDateString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    var link='report.html?id='+encodeURIComponent(r.id);
+    return '<article class="ncard"><div class="npad">'+
+      '<div class="nmeta"><span>'+esc(r.dateline||'423 Desk')+'</span><time>'+esc(d)+'</time></div>'+
+      '<h3><a href="'+esc(link)+'">'+esc(r.headline)+'</a></h3>'+
+      '<p>'+esc((r.summary||'').slice(0,180))+'&hellip;</p>'+
+      '<a href="'+esc(link)+'" style="font-weight:700;color:var(--accent,#ff5a0a)">Read full report &rarr;</a>'+
+      '</div></article>';
+  }).join('');
+}).catch(function(){
+  fetch('feed.json').then(function(r){return r.json()}).then(function(d){
+    var rows=(d.reports||[]);
+    var el=document.getElementById('newsList');
+    el.innerHTML=rows.map(function(r){
+      var link='report.html?id='+encodeURIComponent(r.id);
+      return '<article class="ncard"><div class="npad"><div class="nmeta"><span>'+esc(r.dateline||'423')+'</span></div><h3><a href="'+esc(link)+'">'+esc(r.headline)+'</a></h3><p>'+esc((r.summary||'').slice(0,180))+'&hellip;</p><a href="'+esc(link)+'" style="font-weight:700;color:var(--accent,#ff5a0a)">Read full report &rarr;</a></div></article>';
+    }).join('');
+  });
+});
+</script>
+</body>
+</html>

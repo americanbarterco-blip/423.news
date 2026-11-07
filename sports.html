@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>423 Sports • Scores, High Schools &amp; Live Action</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#050b12">
+<meta name="description" content="Scores, schedules, and local sports coverage across East Tennessee and North Georgia high schools, UTC Mocs, UT Vols, and Lookouts.">
+<link rel="canonical" href="https://423.news/sports.html">
+<meta name="robots" content="index, follow">
+
+<meta property="og:site_name" content="423.news">
+<meta property="og:type" content="website">
+<meta property="og:title" content="423 Sports • Scores &amp; High School Action">
+<meta property="og:description" content="Local scores, school matchups, and coverage for the 423 area.">
+<meta property="og:url" content="https://423.news/sports.html">
+<meta property="og:image" content="https://423.news/icon-512.png">
+
+<link rel="stylesheet" href="site.css">
+<style>
+#nav{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#nav::-webkit-scrollbar{display:none}#nav a{flex:0 0 auto;white-space:nowrap}
+.sports-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));margin:18px 0}
+.scard{background:var(--panel,#0f1d2c);border:1px solid var(--line,#24384a);border-radius:14px;padding:16px}
+.shead{display:flex;justify-content:space-between;font-size:12px;color:var(--muted,#9eafc0);margin-bottom:8px}
+.steam{display:flex;justify-content:space-between;font-size:16px;font-weight:700;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.sstatus{font-size:11px;font-weight:800;color:var(--accent,#ff5a0a);text-transform:uppercase;margin-top:8px}
+.cta-box{background:linear-gradient(135deg,#0c2a40,#12324a);border:1px solid var(--line,#24384a);border-radius:14px;padding:20px;text-align:center;margin:24px 0}
+.cta-box a{display:inline-block;margin-top:10px;background:var(--accent,#ff5a0a);color:#fff;font-weight:700;padding:10px 18px;border-radius:10px}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="bar">
+  <a href="index.html" class="logo" aria-label="423.news home"><span class="wm"><span><b>423</b>.news</span><small>SPORTS</small></span></a>
+</div><nav id="nav"><a href="index.html">Home</a><a href="news.html">News</a><a href="claudia-scanner.html">Claudia Green</a><a href="traffic.html">Traffic</a><a href="checkpoints.html">Checkpoints</a><a href="sports.html" class="on">Sports</a><a href="events.html">Events</a><a href="hotspots.html">Hot Spots</a><a href="community.html">citizen423report</a><a href="https://423.singles" target="_blank" rel="noopener">423.singles</a></nav></div></header>
+
+<main><div class="wrap">
+  <h1>423 Area Sports &amp; Scores</h1>
+  <p class="muted">Live game updates, high school athletics, UTC Mocs, Tennessee Volunteers, and local community teams.</p>
+
+  <div class="cta-box">
+    <h3>Are you at the game? Report scores &amp; highlights!</h3>
+    <p class="muted" style="margin:4px 0 0">Coaches, parents, and student reporters can post photos and final scores straight to citizen423report.</p>
+    <a href="community.html">Submit Score / Photos &rarr;</a>
+  </div>
+
+  <h2>Recent &amp; Live Scores</h2>
+  <div id="scoresList" class="sports-grid">
+    <div class="scard"><div class="shead"><span>East TN High School Football</span><span>Final</span></div><div class="steam"><span>Maryville</span><span>28</span></div><div class="steam"><span>Cleveland</span><span>14</span></div><div class="sstatus">Final Score</div></div>
+    <div class="scard"><div class="shead"><span>Hamilton Co. Athletics</span><span>Final</span></div><div class="steam"><span>McCallie</span><span>35</span></div><div class="steam"><span>Baylor</span><span>31</span></div><div class="sstatus">Final Score</div></div>
+    <div class="scard"><div class="shead"><span>Tri-Cities Regional</span><span>Final</span></div><div class="steam"><span>Science Hill</span><span>21</span></div><div class="steam"><span>Dobyns-Bennett</span><span>17</span></div><div class="sstatus">Final Score</div></div>
+  </div>
+</div></main>
+
+<footer><div class="wrap">&copy; 423.news — Community scores and athletic coverage for the 423.</div></footer>
+
+<script>
+var SUPA_URL='https://kdiwehqtezlhecxsoysj.supabase.co', SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE';
+fetch(SUPA_URL+'/rest/v1/news_scores?select=*&order=created_at.desc&limit=12',{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
+.then(function(r){return r.ok?r.json():Promise.reject()})
+.then(function(rows){
+  if(!rows||!rows.length)return;
+  var el=document.getElementById('scoresList');
+  el.innerHTML=rows.map(function(s){
+    return '<div class="scard"><div class="shead"><span>'+(s.league||'423 Sports')+'</span><span>'+(s.status||'Final')+'</span></div>'+
+      '<div class="steam"><span>'+(s.team_home||'Home')+'</span><span>'+(s.score_home!=null?s.score_home:'-')+'</span></div>'+
+      '<div class="steam"><span>'+(s.team_away||'Away')+'</span><span>'+(s.score_away!=null?s.score_away:'-')+'</span></div>'+
+      '<div class="sstatus">'+(s.note||'Updated')+'</div></div>';
+  }).join('');
+}).catch(function(){});
+</script>
+</body>
+</html>

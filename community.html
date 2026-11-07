@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>citizen423report • Community Voices &amp; News Tips</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#050b12">
+<meta name="description" content="Local citizen reporting, neighborhood news, scanner clips, and community voices across the 423 area code.">
+<link rel="canonical" href="https://423.news/community.html">
+<meta name="robots" content="index, follow">
+
+<meta property="og:site_name" content="423.news">
+<meta property="og:type" content="website">
+<meta property="og:title" content="citizen423report • Community Voices">
+<meta property="og:description" content="Report news, submit photos, and read grassroots neighborhood stories.">
+<meta property="og:url" content="https://423.news/community.html">
+<meta property="og:image" content="https://423.news/icon-512.png">
+
+<link rel="stylesheet" href="site.css">
+<style>
+#nav{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#nav::-webkit-scrollbar{display:none}#nav a{flex:0 0 auto;white-space:nowrap}
+.c-box{background:var(--panel,#0f1d2c);border:1px solid var(--line,#24384a);border-radius:14px;padding:22px;margin:18px 0}
+.c-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));margin-top:20px}
+.c-card{background:var(--s2,#0c1b2b);border:1px solid var(--line,#24384a);border-radius:12px;padding:16px}
+.c-card h3{margin:6px 0;font-size:17px}
+.c-card p{font-size:14px;color:var(--muted,#9eafc0);line-height:1.5}
+.submit-btn{background:var(--accent,#ff5a0a);color:#fff;border:0;border-radius:10px;padding:12px 20px;font-weight:700;font-size:15px;cursor:pointer}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="bar">
+  <a href="index.html" class="logo" aria-label="423.news home"><span class="wm"><span><b>423</b>.news</span><small>COMMUNITY</small></span></a>
+</div><nav id="nav"><a href="index.html">Home</a><a href="news.html">News</a><a href="claudia-scanner.html">Claudia Green</a><a href="traffic.html">Traffic</a><a href="checkpoints.html">Checkpoints</a><a href="sports.html">Sports</a><a href="events.html">Events</a><a href="hotspots.html">Hot Spots</a><a href="community.html" class="on">citizen423report</a><a href="https://423.singles" target="_blank" rel="noopener">423.singles</a></nav></div></header>
+
+<main><div class="wrap">
+  <h1>citizen423report</h1>
+  <p class="muted">Your voice, your neighborhood. Real reports from everyday residents across East Tennessee and North Georgia.</p>
+
+  <div class="c-box">
+    <h2>Submit a Community Report or Scanner Tip</h2>
+    <p class="muted">See something happening? Have photos of weather damage, a traffic backup, or a local milestone?</p>
+    <a href="index.html#/community" class="submit-btn" style="display:inline-block;text-decoration:none">Post a Report / Send Scanner Clip &rarr;</a>
+  </div>
+
+  <h2>Recent Community Reports</h2>
+  <div id="commList" class="c-grid"><p class="muted">Loading community submissions&hellip;</p></div>
+</div></main>
+
+<footer><div class="wrap">&copy; 423.news — Community submissions are moderated for privacy and public safety.</div></footer>
+
+<script>
+var SUPA_URL='https://kdiwehqtezlhecxsoysj.supabase.co', SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE';
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+fetch(SUPA_URL+'/rest/v1/news_posts?select=*&status=eq.published&order=created_at.desc&limit=15',{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
+.then(function(r){return r.ok?r.json():Promise.reject()})
+.then(function(rows){
+  var el=document.getElementById('commList');
+  if(!rows||!rows.length){el.innerHTML='<p class="muted">No community submissions yet. Be the first to report!</p>';return}
+  el.innerHTML=rows.map(function(p){
+    var d=new Date(p.created_at).toLocaleDateString([],{month:'short',day:'numeric'});
+    return '<article class="c-card">'+
+      '<span style="font-size:12px;color:var(--muted)">'+(p.author_name||'Community Member')+' &bull; '+d+'</span>'+
+      '<h3>'+esc(p.title||'Community Update')+'</h3>'+
+      '<p>'+esc((p.body||'').slice(0,220))+'&hellip;</p>'+
+      '</article>';
+  }).join('');
+}).catch(function(){});
+</script>
+</body>
+</html>

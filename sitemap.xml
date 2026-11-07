@@ -6,9 +6,19 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://423.news/news.html</loc>
+    <changefreq>hourly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
     <loc>https://423.news/claudia-scanner.html</loc>
     <changefreq>always</changefreq>
     <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://423.news/traffic.html</loc>
+    <changefreq>hourly</changefreq>
+    <priority>0.90</priority>
   </url>
   <url>
     <loc>https://423.news/checkpoints.html</loc>
@@ -16,9 +26,19 @@
     <priority>0.90</priority>
   </url>
   <url>
+    <loc>https://423.news/sports.html</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
     <loc>https://423.news/report.html</loc>
     <changefreq>always</changefreq>
-    <priority>0.90</priority>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://423.news/community.html</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
     <loc>https://423.news/category.html</loc>
@@ -33,6 +53,6 @@
   <url>
     <loc>https://423.news/hotspots.html</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.70</priority>
+    <priority>0.75</priority>
   </url>
 </urlset>
