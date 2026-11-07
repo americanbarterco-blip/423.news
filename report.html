@@ -4,7 +4,29 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Report — 423.news</title>
-<meta name="description" content="A report from Claudia Green on 423.news: what happened, what it means for you, and what is still unconfirmed.">
+<meta name="description" content="Verified public safety and live scanner accounts from Claudia Green on 423.news across East Tennessee and North Georgia.">
+<link rel="canonical" href="https://423.news/report.html">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+
+<!-- Geo & Local Relevance -->
+<meta name="geo.region" content="US-TN">
+<meta name="geo.placename" content="East Tennessee / North Georgia">
+
+<!-- Open Graph / Social Sharing (Facebook, Nextdoor, LinkedIn) -->
+<meta property="og:site_name" content="423.news">
+<meta property="og:type" content="article">
+<meta id="ogTitle" property="og:title" content="Live Dispatch & Scanner Report — 423.news">
+<meta id="ogDesc" property="og:description" content="What happened, what it means for you, and current verification status from 423.news.">
+<meta id="ogImage" property="og:image" content="https://423.news/claudia-poster.jpg">
+<meta id="ogUrl" property="og:url" content="https://423.news/report.html">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@423news">
+<meta id="twTitle" name="twitter:title" content="Live Dispatch & Scanner Report — 423.news">
+<meta id="twDesc" name="twitter:description" content="What happened, what it means for you, and current verification status from 423.news.">
+<meta id="twImage" name="twitter:image" content="https://423.news/claudia-poster.jpg">
+
 <style>
 :root { color-scheme: dark; --bg:#050b12; --panel:#081522; --s2:#0c1b2b; --line:#24384a; --text:#f7fafc; --muted:#9eafc0;
   --accent:#ff5a0a; --ok:#2fd18b; --warn:#ffb020; --blue:#3b9bff; }
@@ -32,7 +54,6 @@ h1 { font-size:clamp(26px,6.4vw,38px); line-height:1.15; margin:0 0 14px; letter
 .meta svg { width:16px; height:16px; flex:none; transform:translateY(3px); }
 .meta strong { color:var(--text); font-weight:600; }
 .card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px; }
-/* ---- audio ---- */
 .audio { background:linear-gradient(135deg,#0c2036,#14243f 55%,#2a1a2e); border-color:#2a4561; margin-bottom:22px; }
 .a-row { display:flex; align-items:center; gap:14px; }
 .play { width:60px; height:60px; border-radius:50%; border:0; background:#fff; color:#0b1522; cursor:pointer; display:grid; place-items:center; flex:none; }
@@ -58,7 +79,6 @@ h1 { font-size:clamp(26px,6.4vw,38px); line-height:1.15; margin:0 0 14px; letter
 .restart { background:none; border:0; color:#cfe0f5; font:inherit; font-size:13px; font-weight:600; cursor:pointer; text-decoration:underline; padding:4px; }
 .a-note { margin:12px 0 0; font-size:12.5px; color:#b9c8da; line-height:1.5; }
 .a-err { color:#ffd48a; }
-/* ---- body ---- */
 h2 { font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:26px 0 10px; font-weight:800; display:flex; align-items:center; gap:10px; }
 h2::before { content:""; width:4px; height:16px; background:var(--accent); border-radius:2px; }
 .story p { margin:0 0 14px; font-size:17.5px; line-height:1.65; }
@@ -79,7 +99,6 @@ ul.pts.unk li::before { background:transparent; border:2px solid var(--warn); }
 .more a:hover { border-color:#3a566e; }
 .state { text-align:center; padding:60px 10px; color:var(--muted); }
 #toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:#f4f4f5; color:#09090b; padding:10px 18px; border-radius:12px; font-weight:600; display:none; z-index:20; max-width:92vw; }
-.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
 </style>
 </head>
 <body>
@@ -92,9 +111,6 @@ ul.pts.unk li::before { background:transparent; border:2px solid var(--warn); }
 <div id="toast" role="status"></div>
 
 <script>
-/* ---- settings you can edit ----
-   EXTRA_DISCLOSURE: one more sentence shown in the notice at the bottom, e.g. a line saying how the
-   reports are written. Leave '' to show nothing extra. */
 var SETTINGS = { EXTRA_DISCLOSURE: '', EMERGENCY: 'In an emergency, call 911.' };
 
 (function () {
@@ -129,7 +145,36 @@ function labels(r) {
   return b.join('');
 }
 
-/* ---- Claudia's voice: the device's own text-to-speech reading the written report ---- */
+function injectStructuredData(r, canonUrl) {
+  var old = document.getElementById('report-schema');
+  if (old) old.remove();
+  var s = document.createElement('script');
+  s.id = 'report-schema';
+  s.type = 'application/ld+json';
+  s.text = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "mainEntityOfPage": { "@type": "WebPage", "@id": canonUrl },
+    "headline": r.headline,
+    "datePublished": r.ts,
+    "dateModified": r.ts,
+    "description": (r.summary || '').slice(0, 200),
+    "articleSection": r.kind || "Public Safety",
+    "author": {
+      "@type": "Person",
+      "name": "Claudia Green",
+      "jobTitle": "Independent Correspondent"
+    },
+    "publisher": {
+      "@type": "NewsMediaOrganization",
+      "name": "423.news",
+      "url": "https://423.news",
+      "logo": { "@type": "ImageObject", "url": "https://423.news/icon-512.png" }
+    }
+  });
+  document.head.appendChild(s);
+}
+
 function voice(r, card) {
   var synth = window.speechSynthesis;
   var parts = [r.headline].concat(String(r.summary || '').split(/(?<=[.!?])\s+/));
@@ -181,8 +226,18 @@ function voice(r, card) {
 
 function render(r, all) {
   var t = when(r.ts), lat = parseFloat(r.lat), lng = parseFloat(r.lng), hasGeo = isFinite(lat) && isFinite(lng);
-  var url = location.href;
+  var canonUrl = 'https://423.news/report.html?id=' + encodeURIComponent(r.id);
   document.title = r.headline + ' — 423.news';
+
+  // Update dynamic meta for crawlers & link previews
+  var desc = (r.summary || '').slice(0, 180);
+  document.getElementById('ogTitle').setAttribute('content', r.headline);
+  document.getElementById('ogDesc').setAttribute('content', desc);
+  document.getElementById('ogUrl').setAttribute('content', canonUrl);
+  document.getElementById('twTitle').setAttribute('content', r.headline);
+  document.getElementById('twDesc').setAttribute('content', desc);
+  injectStructuredData(r, canonUrl);
+
   var paras = paragraphs(r.summary).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('');
   var list = function (arr, cls) { return arr && arr.length ? '<ul class="pts ' + (cls || '') + '">' + arr.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : ''; };
   var src = (r.sources || []).map(function (s) {
@@ -219,7 +274,12 @@ function render(r, all) {
     (r.safety && r.safety.length ? '<section><h2>What it means for you</h2>' + list(r.safety) + '</section>' : '') +
     (r.uncertain && r.uncertain.length ? '<section><h2>Still unconfirmed</h2>' + list(r.uncertain, 'unk') + '</section>' : '') +
     (src ? '<section class="src"><h2>Sources</h2>' + src + '</section>' : '') +
-    '<div class="actions"><button class="btn pri" type="button" id="share">Share</button><a class="btn" href="claudia-scanner.html">More reports</a></div>' +
+    '<div class="actions">' +
+      '<button class="btn pri" type="button" id="share">Share Story</button>' +
+      '<a class="btn" href="https://twitter.com/intent/tweet?text=' + encodeURIComponent(r.headline + ' — 423.news') + '&url=' + encodeURIComponent(canonUrl) + '" target="_blank" rel="noopener noreferrer">Post to X</a>' +
+      '<a class="btn" href="https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(canonUrl) + '" target="_blank" rel="noopener noreferrer">Facebook</a>' +
+      '<a class="btn" href="claudia-scanner.html">Live Wire</a>' +
+    '</div>' +
     '<div class="notice"><b>Not an official report.</b> ' +
       (heard ? 'This was picked up from public radio traffic and stays unconfirmed until a published record or a second source backs it up. ' : 'Claudia writes from public sources and grades each report for confidence. ') +
       'Details can change. Check official sources before you act. ' + esc(SETTINGS.EMERGENCY) + (SETTINGS.EXTRA_DISCLOSURE ? ' ' + esc(SETTINGS.EXTRA_DISCLOSURE) : '') + '</div>' +
@@ -227,28 +287,41 @@ function render(r, all) {
 
   voice(r, app.querySelector('.audio'));
   document.getElementById('share').onclick = function () {
-    if (navigator.share) { navigator.share({ title: r.headline, url: url }).catch(function () {}); return; }
-    if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { toast('Link copied'); }, function () { toast('Copy the link from the address bar'); });
-    else toast('Copy the link from the address bar');
+    if (navigator.share) {
+      navigator.share({ title: r.headline, text: r.headline + ' — 423.news', url: canonUrl }).catch(function () {});
+      return;
+    }
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(canonUrl).then(function () { toast('Link copied to clipboard'); }, function () { toast('Copy the link from the address bar'); });
+    } else {
+      toast('Copy the link from the address bar');
+    }
   };
 }
 
 function list(all) {
-  document.title = 'Reports — 423.news';
-  app.innerHTML = '<h1>Latest reports</h1><section class="more">' + all.slice(0, 12).map(function (x) {
+  document.title = 'Latest Reports — 423.news';
+  app.innerHTML = '<h1>Latest reports</h1><section class="more">' + all.slice(0, 15).map(function (x) {
     return '<a href="report.html?id=' + encodeURIComponent(x.id) + '">' + esc(x.headline) + '<small>' + esc(x.dateline || '') + ' · ' + esc(when(x.ts).rel) + '</small></a>';
   }).join('') + '</section>';
 }
 
 var id = new URLSearchParams(location.search).get('id');
-fetch('feed.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('feed ' + r.status); return r.json(); }).then(function (d) {
+fetch('feed.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) {
+  if (!r.ok) throw new Error('feed ' + r.status);
+  return r.json();
+}).then(function (d) {
   var all = (d.reports || []).slice().sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); });
   if (!id) return list(all);
   var r = all.find(function (x) { return String(x.id) === id; });
-  if (!r) { app.innerHTML = '<div class="state"><h1>Report not found</h1><p>It may have been replaced by a newer one.</p><p><a class="btn pri" href="claudia-scanner.html">See the latest reports</a></p></div>'; document.title = 'Report not found — 423.news'; return; }
+  if (!r) {
+    app.innerHTML = '<div class="state"><h1>Report not found</h1><p>It may have been replaced or resolved.</p><p><a class="btn pri" href="claudia-scanner.html">View Live Wire</a></p></div>';
+    document.title = 'Report not found — 423.news';
+    return;
+  }
   render(r, all);
 }).catch(function () {
-  app.innerHTML = '<div class="state"><h1>Couldn’t load this report</h1><p>The feed file isn’t reachable right now.</p><p><a class="btn pri" href="">Try again</a></p></div>';
+  app.innerHTML = '<div class="state"><h1>Could not connect</h1><p>The 423.news wire feed is temporarily unreachable.</p><p><a class="btn pri" href="javascript:location.reload()">Retry</a></p></div>';
 });
 })();
 </script>
