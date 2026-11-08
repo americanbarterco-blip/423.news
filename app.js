@@ -10,19 +10,43 @@
 
   var SECTIONS = {
     news:        { label: 'News',        emoji: '📰', blurb: 'Local reporting from across the region.' },
-    sports:      { label: 'Sports',      emoji: '🏈', blurb: 'High school, college and local sports.' },
-    schools:     { label: 'Schools',     emoji: '🏫', blurb: 'Districts, campuses, students and teachers.' },
-    outdoors:    { label: 'Outdoors',    emoji: '🏞️', blurb: 'Trails, lakes, hunting, fishing and getting outside.' },
+    sports:      { label: 'Local Sports', emoji: '🏈', blurb: 'High school, college, youth and Little League sports from every program across the 423.' },
+        outdoors:    { label: 'Outdoors',    emoji: '🏞️', blurb: 'Trails, lakes, hunting, fishing and getting outside.' },
     classifieds: { label: 'Classifieds', emoji: '🏷️', blurb: 'Buy, sell and trade with your neighbors.' },
     community:   { label: 'citizen423report',   emoji: '👥', blurb: 'Real people. Local stories.' },
     government:  { label: 'Government',  emoji: '🏛️', blurb: 'Councils, commissions, courts and public meetings.' }
   };
+  var SPORTS_TOPICS = [['all', 'All Local Sports'], ['highschool', 'High School'], ['college', 'College'], ['littleleague', 'Little League'], ['youth', 'Youth & Rec']];
   var COMMUNITY_TOPICS = [
     ['all', 'All Posts'], ['photos', 'Photos'], ['events', 'Events'],
-    ['discussions', 'Discussions'], ['lost', 'Lost & Found'], ['announcements', 'Announcements']
+    ['discussions', 'Discussions'], ['lost', 'Lost & Found'], ['announcements', 'Announcements'],
+    ['checkpoint', 'Checkpoints'], ['accident', 'Accidents'], ['roadblock', 'Roadblocks']
   ];
   var CLASSIFIED_TOPICS = [['all', 'All'], ['sell', 'For Sale'], ['buy', 'Wanted'], ['trade', 'Trade']];
-  var TOPIC_LABEL = { events: 'Events', discussions: 'Discussions', lost: 'Lost & Found', announcements: 'Announcements', general: 'General', sell: 'For Sale', buy: 'Wanted', trade: 'Trade', photos: 'Photos' };
+  var TOPIC_LABEL = { events: 'Events', discussions: 'Discussions', lost: 'Lost & Found', announcements: 'Announcements', highschool: 'High School', college: 'College', littleleague: 'Little League', youth: 'Youth & Rec', checkpoint: 'Checkpoint', accident: 'Accident', roadblock: 'Roadblock', general: 'General', sell: 'For Sale', buy: 'Wanted', trade: 'Trade', photos: 'Photos' };
+
+  /* GPS on road reports: the post body carries one marker line, [[gps:lat,lng]], added only when the poster ticks the box. */
+  var GPS_TOPICS = { checkpoint: 1, accident: 1, roadblock: 1 };
+  var GPS_RE = /\n?\[\[gps:(-?\d{1,3}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)\]\]\s*$/;
+  function splitGps(body) {
+    var m = GPS_RE.exec(String(body || ''));
+    if (!m) return { text: String(body || ''), lat: null, lng: null };
+    var lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+    if (!(Math.abs(lat) <= 90 && Math.abs(lng) <= 180)) return { text: String(body || '').replace(GPS_RE, ''), lat: null, lng: null };
+    return { text: String(body).replace(GPS_RE, ''), lat: lat, lng: lng };
+  }
+  function gpsLink(body) {
+    var g = splitGps(body); if (g.lat == null) return '';
+    return '<p style="margin-top:12px"><a class="btn dark sm" target="_blank" rel="noopener noreferrer" href="https://www.openstreetmap.org/?mlat=' + g.lat + '&mlon=' + g.lng + '#map=16/' + g.lat + '/' + g.lng + '">📍 View location on map</a></p>';
+  }
+  function getGps() {
+    return new Promise(function (resolve) {
+      if (!navigator.geolocation) return resolve(null);
+      navigator.geolocation.getCurrentPosition(function (p) {
+        resolve({ lat: +p.coords.latitude.toFixed(4), lng: +p.coords.longitude.toFixed(4) });
+      }, function () { resolve(null); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+    });
+  }
   var POST_COLS = 'id,slug,section,topic,title,body,image_url,video_url,price,author_id,author_name,status,created_at';
 
   if (!window.supabase || !window.supabase.createClient) {
@@ -74,7 +98,7 @@
       '<div class="pad"><span class="badge">' + esc(label(p)) + '</span>' +
       '<h3>' + esc(p.title) + '</h3>' +
       (p.price != null ? '<div class="price">' + esc(money(p.price)) + '</div>' : '') +
-      '<p class="muted">' + esc(excerpt(p.body, 110)) + '</p>' +
+      '<p class="muted">' + esc(excerpt(splitGps(p.body).text, 110)) + '</p>' +
       '<p class="muted">' + esc(p.author_name) + ' · ' + esc(ago(p.created_at)) + '</p></div></a>';
   }
   function tile(p) {
@@ -90,8 +114,8 @@
   function ugc(p) {
     return '<article class="panel ugc"><div class="byline"><b>' + esc(p.author_name) + '</b><span class="muted">' + esc(ago(p.created_at)) + ' · ' + esc(label(p)) + '</span></div>' +
       (safeImg(p.image_url) ? media(p) : '') + vid(p) +
-      '<h3>' + esc(p.title) + '</h3><p class="muted">' + esc(excerpt(p.body, 160)) + '</p>' +
-      '<div class="foot"><a href="' + href(p) + '">💬 Read &amp; comment</a><button type="button" data-share="' + esc(p.slug) + '">↗ Share</button></div></article>';
+      '<h3>' + esc(p.title) + '</h3><p class="muted">' + esc(excerpt(splitGps(p.body).text, 160)) + '</p>' +
+      '<div class="foot"><a href="' + href(p) + '">💬 Read &amp; comment</a><button type="button" data-share="' + esc(p.slug) + '">↗ Share</button><button type="button" data-flagpost="' + esc(p.id) + '">🚩 Flag</button></div></article>';
   }
   function empty(title, text, btn) {
     return '<div class="panel empty"><h3>' + esc(title) + '</h3><p>' + esc(text) + '</p>' + (btn || '') + '</div>';
@@ -134,7 +158,7 @@
 
   views.home = function () {
     return Promise.all([
-      listPosts({ sections: ['news', 'sports', 'schools', 'outdoors', 'government'], limit: 40 }),
+      listPosts({ sections: ['news', 'sports', 'outdoors', 'government'], limit: 40 }),
       listPosts({ section: 'community', limit: 5 }),
       listPosts({ section: 'classifieds', limit: 4 }),
       sb.from('news_reports').select('id,kind,dateline,headline,ts').eq('published', true).order('ts', { ascending: false }).limit(4),
@@ -143,7 +167,7 @@
       var news = r[0], comm = r[1], cls = r[2], wire = (r[3] && r[3].data) || [];
       var out = '';
       var quick = '<div class="quick">' +
-        [['news', '#db2777'], ['sports', '#2563eb'], ['schools', '#16a34a'], ['outdoors', '#ca8a04'], ['classifieds', '#ea580c'], ['community', '#7c3aed']].map(function (x) {
+        [['news', '#db2777'], ['sports', '#2563eb'], ['outdoors', '#ca8a04'], ['classifieds', '#ea580c'], ['community', '#7c3aed']].map(function (x) {
           return '<a href="#/' + x[0] + '"><span style="background:' + x[1] + '" aria-hidden="true">' + SECTIONS[x[0]].emoji + '</span>' + SECTIONS[x[0]].label + '</a>';
         }).join('') + '</div>';
 
@@ -151,7 +175,7 @@
         var lead = news[0], rail = news.slice(1, 4);
         out += '<div class="hero"><a class="lead" href="' + href(lead) + '">' + media(lead) +
           '<div class="lc"><span class="badge">' + esc(label(lead)) + '</span><h1>' + esc(lead.title) + '</h1>' +
-          '<p>' + esc(excerpt(lead.body, 160)) + '</p><p class="muted">' + esc(lead.author_name) + ' · ' + esc(ago(lead.created_at)) + '</p></div></a>' +
+          '<p>' + esc(excerpt(splitGps(lead.body).text, 160)) + '</p><p class="muted">' + esc(lead.author_name) + ' · ' + esc(ago(lead.created_at)) + '</p></div></a>' +
           '<div class="rail">' + rail.map(mini).join('') + '</div></div>';
       } else {
         out += '<div class="panel pad" style="margin-bottom:18px"><span class="badge">Welcome</span><h1>Local news, written by the people who live here</h1>' +
@@ -205,24 +229,25 @@
   function sectionView(sec, topic) {
     var meta = SECTIONS[sec];
     var tabs = '';
-    var topics = sec === 'community' ? COMMUNITY_TOPICS : sec === 'classifieds' ? CLASSIFIED_TOPICS : null;
+    var topics = sec === 'community' ? COMMUNITY_TOPICS : sec === 'classifieds' ? CLASSIFIED_TOPICS : sec === 'sports' ? SPORTS_TOPICS : null;
     topic = topic || 'all';
     if (topics) {
       tabs = '<div class="tabs">' + topics.map(function (t) {
         return '<a class="' + (t[0] === topic ? 'on' : '') + '" href="#/' + sec + (t[0] === 'all' ? '' : '/' + t[0]) + '">' + t[1] + '</a>';
-      }).join('') + '</div>';
+      }).join('') + (sec === 'sports' ? '<a href="#/scores">Scores &amp; Live</a><a href="#/teams">⭐ My Teams</a>' : '') + '</div>';
     }
     var opts = { section: sec, limit: 60 };
     if (sec === 'community' && topic === 'photos') opts.photos = true; else opts.topic = topic;
+    if (sec === 'sports') return sportsView(topic, tabs, opts);
     var vidP = sec === 'news' && topic === 'all' ? newsVideos() : Promise.resolve('');
     return Promise.all([listPosts(opts), vidP]).then(function (rr) {
       var posts = rr[0], vid = rr[1];
       var head = '<div class="chead"><div style="margin-bottom:18px"><span class="badge">' + esc(meta.label) + '</span><h1>' + esc(meta.label) + '</h1><p class="muted">' + esc(meta.blurb) + '</p></div>' +
         '<button class="btn" data-submit="' + sec + '"' + (topic && topic !== 'all' && topic !== 'photos' ? ' data-topic="' + esc(topic) + '"' : '') + '>' +
-        (sec === 'community' ? 'Create Post' : sec === 'classifieds' ? 'Post a Listing' : 'Submit a Story') + '</button></div>';
+        (sec === 'community' ? 'Create Post' : sec === 'classifieds' ? 'Post a Listing' : sec === 'sports' ? 'Post a Score or Story' : 'Submit a Story') + '</button></div>';
       var body;
       if (!posts.length) {
-        body = empty('Nothing here yet', sec === 'news' || sec === 'sports' || sec === 'schools' || sec === 'outdoors' || sec === 'government'
+        body = empty('Nothing here yet', sec === 'news' || sec === 'sports' || sec === 'outdoors' || sec === 'government'
           ? 'Stories are reviewed by an editor before they go live. Be the first to submit one.' : 'Be the first to post.');
       } else if (sec === 'community') {
         body = '<div class="ugcs">' + posts.map(ugc).join('') + '</div>';
@@ -255,9 +280,10 @@
         '<div class="muted">' + esc(p.author_name) + ' · ' + esc(ago(p.created_at)) + '</div>' +
         (p.price != null ? '<div class="price" style="margin-top:8px">' + esc(money(p.price)) + '</div>' : '') +
         (safeImg(p.image_url) ? '<img class="hero-img" src="' + esc(safeImg(p.image_url)) + '" alt="">' : '') + vid(p) +
-        '<div class="body">' + esc(p.body) + '</div>' +
+        '<div class="body">' + esc(splitGps(p.body).text) + '</div>' + gpsLink(p.body) +
         '<div class="row-actions"><button class="btn dark sm" data-share="' + esc(p.slug) + '">↗ Share</button>' +
-        (canEdit ? '<button class="btn danger sm" data-delpost="' + esc(p.id) + '">Delete</button>' : '') + '</div>' +
+        (canEdit ? '<button class="btn danger sm" data-delpost="' + esc(p.id) + '">Delete</button>' : '') +
+        (!(state.user && state.user.id === p.author_id) ? '<button class="btn dark sm" data-flagpost="' + esc(p.id) + '">🚩 Flag</button>' : '') + '</div>' +
         '<h2 class="sm" style="margin-top:30px">Comments</h2><div id="cmts" data-post="' + esc(p.id) + '"><p class="muted">Loading…</p></div>' +
         '<div id="cform"></div></article>';
       state.currentPost = p.id;
@@ -304,10 +330,10 @@
       var teams = (r[0].data || []).map(function (x) { return x.team; });
       var posts = r[1];
       var matched = posts.filter(function (p) {
-        var hay = (p.title + ' ' + p.body + ' ' + (p.topic || '')).toLowerCase();
+        var hay = (p.title + ' ' + splitGps(p.body).text + ' ' + (p.topic || '')).toLowerCase();
         return teams.some(function (t) { return hay.indexOf(t.toLowerCase()) >= 0; });
       });
-      return '<div class="chead"><div><span class="badge">My Teams</span><h1>My Teams</h1><p class="muted">Sports stories that mention the teams you follow.</p></div></div>' +
+      return '<a class="muted" href="#/sports">← Local Sports</a><div class="chead" style="margin-top:8px"><div><span class="badge">Local Sports</span><h1>⭐ My Teams</h1><p class="muted">Sports stories that mention the teams you follow.</p></div></div>' +
         '<form id="teamForm" style="display:flex;gap:8px;align-items:flex-start"><input name="team" maxlength="80" placeholder="Add a team, e.g. Science Hill" required style="margin:0"><button class="btn" type="submit">Follow</button></form>' +
         '<div class="chips">' + (teams.length ? teams.map(function (t) { return '<span class="chip">' + esc(t) + '<button type="button" data-unfollow="' + esc(t) + '" aria-label="Unfollow ' + esc(t) + '">×</button></span>'; }).join('') : '<span class="muted">You are not following any teams yet.</span>') + '</div>' +
         (teams.length ? (matched.length ? '<div class="grid">' + matched.map(card).join('') + '</div>' : empty('No stories yet', 'We will list sports stories here as soon as one mentions your teams.')) : '');
@@ -323,7 +349,7 @@
       return '<h1>Your profile</h1><div class="panel pad" style="max-width:520px"><form id="nameForm"><label for="dn">Display name (shown on your posts)</label>' +
         '<input id="dn" name="name" maxlength="60" required value="' + esc(state.profile ? state.profile.display_name : '') + '"><div class="muted" style="margin-bottom:10px">' + esc(state.user.email || '') + (isStaff() ? ' · ' + esc(state.profile.role) : '') + '</div>' +
         '<div class="row-actions"><button class="btn" type="submit">Save</button><button class="btn dark" type="button" data-signout>Sign out</button></div></form></div>' +
-        pushPanel() + tipsSection + '<div class="sech" style="margin-top:26px"><h2>Your posts</h2></div>' +
+        promoPanel() + pushPanel() + tipsSection + '<div class="sech" style="margin-top:26px"><h2>Your posts</h2></div>' +
         (mine.length ? mine.map(function (p) {
           return '<div class="row"><div><a href="' + href(p) + '"><b>' + esc(p.title) + '</b></a><div class="muted">' + esc(label(p)) + ' · ' + esc(ago(p.created_at)) + '</div></div><span class="st ' + esc(p.status) + '">' + esc(p.status) + '</span></div>';
         }).join('') : empty('No posts yet', 'Anything you submit will show up here with its review status.'));
@@ -332,6 +358,10 @@
 
 
   /* ---------- editors: send a push notification to everyone who turned alerts on ---------- */
+  function promoPanel() {
+    return '<div class="panel pad" style="max-width:520px;margin-top:12px"><b>🎁 423 Perks</b><p class="muted" style="margin:4px 0 8px">Free offers from local businesses. <a href="#/perks/wallet" style="text-decoration:underline">My Perks</a></p>' +
+      '<label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" id="promoChk" style="width:auto;margin-top:3px"' + (state.profile && state.profile.promo_optin ? ' checked' : '') + '><span>Email me free perks and promotions</span></label></div>';
+  }
   function pushPanel() {
     if (!isStaff()) return '';
     return '<div class="sech" style="margin-top:26px"><h2>Send a notification</h2></div>' +
@@ -481,18 +511,37 @@
 
   views.review = function () {
     if (!isStaff()) return Promise.resolve(empty('Editors only', 'You need an editor account to review submissions.'));
-    return sb.from('news_posts').select(POST_COLS).eq('status', 'pending').order('created_at', { ascending: true }).limit(100).then(function (r) {
-      if (r.error) throw r.error;
-      var rows = r.data || [];
-      return '<h1>Review queue</h1><p class="muted">Submissions waiting for approval (' + rows.length + ').</p>' +
-        (rows.length ? rows.map(function (p) {
-          return '<div class="panel q-item"><span class="badge">' + esc(label(p)) + '</span> <span class="muted">by ' + esc(p.author_name) + ' · ' + esc(ago(p.created_at)) + '</span>' +
-            '<h3>' + esc(p.title) + '</h3>' + (safeImg(p.image_url) ? '<img src="' + esc(safeImg(p.image_url)) + '" alt="" style="max-width:240px;border-radius:8px">' : '') + vid(p) +
-            '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(excerpt(p.body, 900)) + '</p>' +
-            '<div class="row-actions"><button class="btn ok sm" data-setstatus="published" data-id="' + esc(p.id) + '">Approve</button>' +
-            '<button class="btn dark sm" data-setstatus="rejected" data-id="' + esc(p.id) + '">Reject</button>' +
-            '<a class="btn dark sm" href="' + href(p) + '">Open</a></div></div>';
-        }).join('') : empty('All caught up', 'No submissions are waiting.'));
+    return Promise.all([
+      sb.from('news_posts').select(POST_COLS).eq('status', 'pending').order('created_at', { ascending: true }).limit(100),
+      sb.from('news_flags').select('post_id,reason,note,created_at').order('created_at', { ascending: false }).limit(500)
+    ]).then(function (rr) {
+      var r = rr[0]; if (r.error) throw r.error;
+      var flags = (rr[1] && rr[1].data) || [], byPost = {};
+      flags.forEach(function (f) { (byPost[f.post_id] = byPost[f.post_id] || []).push(f); });
+      var rows = r.data || [], pendingIds = {};
+      rows.forEach(function (p) { pendingIds[p.id] = 1; });
+      var liveIds = Object.keys(byPost).filter(function (id) { return !pendingIds[id]; }).slice(0, 60);
+      function flagLine(id) {
+        var fl = byPost[id] || []; if (!fl.length) return '';
+        var rs = {}; fl.forEach(function (f) { rs[f.reason] = (rs[f.reason] || 0) + 1; });
+        var notes = fl.filter(function (f) { return f.note; }).slice(0, 3).map(function (f) { return '“' + esc(f.note) + '”'; }).join(' · ');
+        return '<div style="margin:6px 0;color:#f87171;font-weight:700">🚩 ' + fl.length + ' flag' + (fl.length === 1 ? '' : 's') + ': ' + Object.keys(rs).map(function (k) { return esc(k) + ' ×' + rs[k]; }).join(', ') + '</div>' + (notes ? '<div class="muted">' + notes + '</div>' : '');
+      }
+      function item(p, live) {
+        return '<div class="panel q-item"><span class="badge">' + esc(label(p)) + '</span> <span class="muted">by ' + esc(p.author_name) + ' · ' + esc(ago(p.created_at)) + '</span>' + flagLine(p.id) +
+          '<h3>' + esc(p.title) + '</h3>' + (safeImg(p.image_url) ? '<img src="' + esc(safeImg(p.image_url)) + '" alt="" style="max-width:240px;border-radius:8px">' : '') + vid(p) +
+          '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(excerpt(splitGps(p.body).text, 900)) + '</p>' +
+          '<div class="row-actions">' + (byPost[p.id] ? '<button class="btn ok sm" data-keepup="' + esc(p.id) + '">Keep up (clear flags)</button>' : (live ? '' : '<button class="btn ok sm" data-setstatus="published" data-id="' + esc(p.id) + '">Approve</button>')) +
+          '<button class="btn danger sm" data-setstatus="rejected" data-id="' + esc(p.id) + '">Remove</button>' +
+          '<a class="btn dark sm" href="' + href(p) + '">Open</a></div></div>';
+      }
+      var livePosts = liveIds.length ? sb.from('news_posts').select(POST_COLS).in('id', liveIds).eq('status', 'published') : Promise.resolve({ data: [] });
+      return livePosts.then(function (lr) {
+        var live = (lr.data || []).sort(function (a, b) { return (byPost[b.id] || []).length - (byPost[a.id] || []).length; });
+        return '<h1>Review queue</h1><p class="muted">Waiting for approval or hidden by flags (' + rows.length + ').</p>' +
+          (rows.length ? rows.map(function (p) { return item(p, false); }).join('') : empty('All caught up', 'No submissions are waiting.')) +
+          (live.length ? '<h2 style="margin-top:28px">🚩 Flagged but still live (' + live.length + ')</h2><p class="muted">Posts hide on their own at 3 flags.</p>' + live.map(function (p) { return item(p, true); }).join('') : '');
+      });
     });
   };
 
@@ -504,7 +553,7 @@
     return { name: parts[0] || 'home', a: parts[1], b: parts[2] };
   }
   function setActive(name) {
-    var map = { home: '#/home', forecast: '#/forecast', news: '#/news', sports: '#/sports', scores: '#/scores', schools: '#/schools', outdoors: '#/outdoors', classifieds: '#/classifieds', community: '#/community', teams: '#/teams', government: '#/government' };
+    var map = { home: '#/home', forecast: '#/forecast', news: '#/news', sports: '#/sports', scores: '#/scores',  outdoors: '#/outdoors', classifieds: '#/classifieds', community: '#/community', teams: '#/sports', alerts: '#/alerts', yardsales: '#/yardsales', perks: '#/perks', games: '#/perks', government: '#/government' };
     document.querySelectorAll('#nav a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === map[name]); });
   }
   function render() {
@@ -528,6 +577,9 @@
         document.title = SECTIONS[rt.name].label + ' • 423.news';
       } else if (rt.name === 'story') p = views.story(rt.a || '');
       else if (rt.name === 'search') p = views.search(rt.a || '');
+      else if (rt.name === 'alerts') { p = views.alerts(rt.a); }
+      else if (rt.name === 'yardsales') { p = views.yardsales(rt.a); }
+      else if (rt.name === 'perks') { p = views.perks(rt.a); }
       else if (rt.name === 'scores') { p = views.scores(rt.a); document.title = 'Scores & Live • 423.news'; }
       else if (views[rt.name]) p = views[rt.name]();
       else p = views.home();
@@ -555,7 +607,8 @@
     var signup = mode === 'signup';
     openModal('<h2 style="margin-top:0">' + (signup ? 'Create your account' : 'Sign in') + '</h2>' +
       '<form id="authForm" data-mode="' + (signup ? 'signup' : 'signin') + '">' +
-      (signup ? '<label for="an">Display name</label><input id="an" name="name" maxlength="60" required autocomplete="nickname">' : '') +
+      (signup ? '<label for="an">Display name</label><input id="an" name="name" maxlength="60" required autocomplete="nickname">' +
+        '<label style="display:flex;gap:8px;align-items:flex-start;margin:8px 0"><input type="checkbox" name="promo" style="width:auto;margin-top:3px"><span>Email me free perks and promotions from 423 businesses. <span class="muted">(Optional. Unsubscribe anytime.)</span></span></label>' : '') +
       '<label for="ae">Email</label><input id="ae" name="email" type="email" required autocomplete="email">' +
       '<label for="ap">Password</label><input id="ap" name="password" type="password" minlength="8" required autocomplete="' + (signup ? 'new-password' : 'current-password') + '">' +
       (signup ? '<div class="hint">At least 8 characters.</div>' : '') +
@@ -574,6 +627,7 @@
       '<div id="topicWrap"></div>' +
       '<label for="pt">Title</label><input id="pt" name="title" maxlength="200" minlength="3" required>' +
       '<label for="pb">Details</label><textarea id="pb" name="body" rows="7" maxlength="20000" required></textarea>' +
+      '<div id="gpsWrap" hidden><label style="display:flex;gap:8px;align-items:flex-start;margin-top:6px"><input type="checkbox" id="pgps" name="gps" style="width:auto;margin-top:3px"><span>Show my GPS location on this report (shared to about 10 m; you will be asked for permission)</span></label></div>' +
       '<div id="priceWrap" hidden><label for="pp">Price (USD, optional)</label><input id="pp" name="price" type="number" min="0" step="0.01" inputmode="decimal"></div>' +
       '<label for="pi">Photo (optional, up to 5 MB)</label><input id="pi" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/gif">' +
       '<label for="pv">Video (optional, up to 50 MB: tap to record or choose one)</label><input id="pv" name="video" type="file" accept="video/mp4,video/quicktime,video/webm,video/*">' +
@@ -583,10 +637,15 @@
     var sel = $('#ps');
     function sync() {
       var s = sel.value, tw = $('#topicWrap');
-      var list = s === 'community' ? ['general', 'events', 'discussions', 'lost', 'announcements'] : s === 'classifieds' ? ['sell', 'buy', 'trade'] : null;
+      var list = s === 'community' ? ['general', 'events', 'discussions', 'lost', 'announcements', 'checkpoint', 'accident', 'roadblock'] : s === 'classifieds' ? ['sell', 'buy', 'trade'] : s === 'sports' ? ['highschool', 'college', 'littleleague', 'youth'] : null;
       tw.innerHTML = list ? '<label for="ptp">Type</label><select id="ptp" name="topic">' + list.map(function (t) { return '<option value="' + t + '"' + (t === topic ? ' selected' : '') + '>' + TOPIC_LABEL[t] + '</option>'; }).join('') + '</select>' : '';
       $('#priceWrap').hidden = s !== 'classifieds';
+      var tsel = $('#ptp');
+      function gpsSync() { $('#gpsWrap').hidden = !(s === 'community' && tsel && GPS_TOPICS[tsel.value]); if ($('#gpsWrap').hidden) $('#pgps').checked = false; }
+      if (tsel) tsel.addEventListener('change', gpsSync);
+      gpsSync();
       $('#pnote').textContent = (s === 'community' || s === 'classifieds' || isStaff()) ? 'Posts in this section go live right away.' : 'Stories are reviewed by an editor before they are published.';
+      if (s === 'sports') $('#pnote').textContent += ' Youth sports: use first names only. Never post a child’s last name, address or where a child will be.';
       if ($('#pv') && $('#pv').files && $('#pv').files.length) $('#pnote').textContent = 'Posts with a video are reviewed by an editor before they go live.';
     }
     sel.addEventListener('change', sync); sync();
@@ -621,7 +680,7 @@
   /* ---------- auth state ---------- */
   function loadProfile() {
     if (!state.user) { state.profile = null; state.authReady = true; return Promise.resolve(); }
-    return sb.from('news_profiles').select('id,display_name,role').eq('id', state.user.id).maybeSingle().then(function (r) {
+    return sb.from('news_profiles').select('id,display_name,role,promo_optin').eq('id', state.user.id).maybeSingle().then(function (r) {
       state.profile = r.data || null; state.authReady = true;
     }, function () { state.authReady = true; });
   }
@@ -744,7 +803,7 @@
       var email = fd.get('email'), pw = fd.get('password'), btn = f.querySelector('button[type=submit]');
       var err = $('#aerr'); err.textContent = ''; btn.disabled = true;
       var run = mode === 'signup'
-        ? sb.auth.signUp({ email: email, password: pw, options: { data: { name: (fd.get('name') || '').toString().trim() }, emailRedirectTo: location.origin + location.pathname } })
+        ? sb.auth.signUp({ email: email, password: pw, options: { data: { name: (fd.get('name') || '').toString().trim(), promo: fd.get('promo') ? 'true' : 'false' }, emailRedirectTo: location.origin + location.pathname } })
         : sb.auth.signInWithPassword({ email: email, password: pw });
       run.then(function (r) {
         btn.disabled = false;
@@ -802,12 +861,17 @@
       if (vfile && vfile.size && !d.get('vconsent')) { perr.textContent = 'Please confirm you shot the video or have permission to share it.'; return; }
       submit.disabled = true; submit.textContent = (vfile && vfile.size) ? 'Uploading video…' : 'Posting…';
       var file = d.get('image');
-      uploadImage(file && file.size ? file : null).then(function (iu) {
-        return uploadVideo(vfile && vfile.size ? vfile : null).then(function (vu) { return { img: iu, vid: vu }; });
+      var wantGps = !!d.get('gps') && d.get('section') === 'community' && !!GPS_TOPICS[d.get('topic')];
+      if (wantGps) submit.textContent = 'Getting location…';
+      (wantGps ? getGps() : Promise.resolve(null)).then(function (gps) {
+        if (wantGps && !gps) throw new Error('Could not get your location. Allow location access in your browser, or untick the GPS box.');
+        return uploadImage(file && file.size ? file : null).then(function (iu) {
+          return uploadVideo(vfile && vfile.size ? vfile : null).then(function (vu) { return { img: iu, vid: vu, gps: gps }; });
+        });
       }).then(function (up) {
         var imgUrl = up.img, section = d.get('section');
         var price = section === 'classifieds' && d.get('price') !== '' && d.get('price') != null ? Number(d.get('price')) : null;
-        var row = { section: section, topic: d.get('topic') || null, title: (d.get('title') || '').toString().trim(), body: (d.get('body') || '').toString().trim(), image_url: imgUrl, video_url: up.vid, price: price };
+        var row = { section: section, topic: d.get('topic') || null, title: (d.get('title') || '').toString().trim(), body: (d.get('body') || '').toString().trim() + (up.gps ? '\n[[gps:' + up.gps.lat + ',' + up.gps.lng + ']]' : ''), image_url: imgUrl, video_url: up.vid, price: price };
         return sb.from('news_posts').insert(row).select('slug,status,section').single();
       }).then(function (r) {
         if (r.error) throw r.error;
@@ -889,7 +953,7 @@
   var scTimer;
   function onScores() {
     var rt = state.route || {};
-    if (rt.name !== 'scores' || $('#modal').className) return;
+    if ((rt.name !== 'scores' && rt.name !== 'sports') || $('#modal').className) return;
     var ae = document.activeElement; if (ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName)) return;
     clearTimeout(scTimer);
     scTimer = setTimeout(function () { var y = window.scrollY; scrollTop = false; render(); setTimeout(function () { window.scrollTo(0, y); }, 400); }, 1500);
@@ -914,6 +978,511 @@
       .then(function (j) { if (j && j.current && typeof j.current.temperature_2m === 'number') el.textContent = '☀️ ' + Math.round(j.current.temperature_2m) + '°F Tri-Cities'; })
       .catch(function () {});
   }
+
+  /* ---------- Local Sports: ESPN-style front page ---------- */
+  function esStyle() {
+    if (document.getElementById('esStyle')) return;
+    var s = document.createElement('style'); s.id = 'esStyle';
+    s.textContent =
+      '.es-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 12px;padding-left:12px;border-left:6px solid #e8392f}' +
+      '.es-head h1{margin:0;font-size:34px;line-height:1;font-weight:900;text-transform:uppercase;letter-spacing:-.02em;font-style:italic}' +
+      '.es-sub{display:block;color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-top:4px}' +
+      '.es-post{background:#e8392f!important;text-transform:uppercase;letter-spacing:.04em;font-weight:900!important;border-radius:6px!important}' +
+      '.es-tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:2px solid var(--line);margin:0 0 14px;scrollbar-width:none}.es-tabs::-webkit-scrollbar{display:none}' +
+      '.es-tabs a{flex:0 0 auto;padding:11px 14px;font-weight:900;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:4px solid transparent;margin-bottom:-2px;white-space:nowrap}' +
+      '.es-tabs a.on{color:#fff;border-bottom-color:#e8392f}' +
+      '.es-tick{display:flex;gap:0;overflow-x:auto;margin:0 0 18px;background:#0b0f16;border:1px solid var(--line);border-radius:8px;scrollbar-width:none}.es-tick::-webkit-scrollbar{display:none}' +
+      '.es-sc{flex:0 0 auto;width:168px;padding:9px 12px;border-right:1px solid var(--line);color:inherit;display:block}' +
+      '.es-sc:last-child{border-right:0}.es-sc:hover{background:#121826}' +
+      '.es-st{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '.es-st.live{color:#ff5a4d}.es-st.live:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#ff3b30;margin-right:5px;animation:esp 1.2s infinite}' +
+      '@keyframes esp{50%{opacity:.25}}' +
+      '.es-tm{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;line-height:1.7}.es-tm img{width:18px;height:18px;object-fit:contain}.es-tm span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.es-tm b{font-size:16px;font-weight:900}.es-tm.lose{opacity:.55}' +
+      '.es-grid{display:grid;gap:16px;grid-template-columns:1fr;margin:0 0 22px}@media(min-width:820px){.es-grid{grid-template-columns:1.7fr 1fr}}' +
+      '.es-hero{position:relative;display:block;border-radius:10px;overflow:hidden;min-height:260px;background:linear-gradient(135deg,#1a2438,#0b0f16);color:#fff}' +
+      '.es-hero img,.es-hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}' +
+      '.es-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 25%,rgba(0,0,0,.88))}' +
+      '.es-hero .in{position:absolute;left:0;right:0;bottom:0;padding:16px 16px 14px;z-index:2}' +
+      '.es-hero h2{margin:8px 0 4px;font-size:26px;line-height:1.08;font-weight:900}.es-hero p{margin:0;opacity:.85;font-size:13px}' +
+      '.es-tag{display:inline-block;background:#e8392f;color:#fff;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;padding:3px 8px;border-radius:3px}' +
+      '.es-side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 14px}' +
+      '.es-side h3,.es-h{margin:0;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:12px 0 6px}' +
+      '.es-row{display:flex;gap:11px;align-items:center;padding:11px 0;border-top:1px solid var(--line);color:inherit}.es-row:first-of-type{border-top:0}' +
+      '.es-row img{width:78px;height:58px;object-fit:cover;border-radius:6px;flex:0 0 auto}' +
+      '.es-row b{display:block;font-size:15px;line-height:1.2}.es-row small{color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}' +
+      '.es-sec{display:flex;align-items:center;justify-content:space-between;margin:20px 0 10px;padding-left:10px;border-left:5px solid #e8392f}.es-sec h2{margin:0;font-size:20px;font-weight:900;text-transform:uppercase;letter-spacing:-.01em}' +
+      '.es-heads{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 14px;margin:0 0 22px}' +
+      '.es-heads a{display:block;padding:10px 0;border-top:1px solid var(--line);color:inherit;font-weight:700}.es-heads a:first-of-type{border-top:0}.es-heads small{display:block;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;margin-top:2px}';
+    document.head.appendChild(s);
+  }
+  function esSafeLogo(u) { return /^https:\/\//i.test(u || '') ? u : ''; }
+  function esScore(g) {
+    var st = g.status === 'in' ? '<div class="es-st live">' + esc(g.detail || 'Live') + '</div>'
+      : g.status === 'post' ? '<div class="es-st">Final · ' + esc((LEAGUE_NAME[g.league] || String(g.league || '').toUpperCase())) + '</div>'
+      : '<div class="es-st">' + esc(new Date(g.start_time).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })) + '</div>';
+    var hs = g.home_score, as = g.away_score, done = g.status !== 'pre';
+    function row(name, abbr, logo, score, lose) {
+      var lg = esSafeLogo(logo);
+      return '<div class="es-tm' + (lose ? ' lose' : '') + '">' + (lg ? '<img src="' + esc(lg) + '" alt="" loading="lazy">' : '') + '<span>' + esc(abbr || name) + '</span>' + (done && score != null ? '<b>' + esc(score) + '</b>' : '') + '</div>';
+    }
+    var fin = g.status === 'post' && hs != null && as != null;
+    var u = /^https:\/\//i.test(g.url || '') ? ' href="' + esc(g.url) + '" target="_blank" rel="noopener noreferrer"' : ' href="#/scores"';
+    return '<a class="es-sc"' + u + '>' + st + row(g.away_name, g.away_abbr, g.away_logo, as, fin && as < hs) + row(g.home_name, g.home_abbr, g.home_logo, hs, fin && hs < as) + '</a>';
+  }
+  function esRow(p) {
+    var im = safeImg(p.image_url);
+    return '<a class="es-row" href="' + href(p) + '">' + (im ? '<img src="' + esc(im) + '" alt="" loading="lazy">' : '') + '<div><small>' + esc(label(p)) + ' · ' + esc(ago(p.created_at)) + '</small><b>' + esc(p.title) + '</b></div></a>';
+  }
+  function sportsView(topic, tabs, opts) {
+    esStyle();
+    var since = new Date(Date.now() - 30 * 3600e3).toISOString(), until = new Date(Date.now() + 36 * 3600e3).toISOString();
+    var pScores = sb.from('news_scores').select('*').gte('start_time', since).lte('start_time', until).order('start_time', { ascending: false }).limit(60);
+    var pHeads = sb.from('news_headlines').select('id,title,url,source,league').order('published', { ascending: false, nullsFirst: false }).limit(6);
+    return Promise.all([listPosts(opts), pScores, pHeads]).then(function (r) {
+      var posts = r[0], games = (r[1] && r[1].data) || [], heads = (r[2] && r[2].data) || [];
+      var live = games.filter(function (g) { return g.status === 'in'; });
+      var fin = games.filter(function (g) { return g.status === 'post'; });
+      var pre = games.filter(function (g) { return g.status === 'pre'; }).reverse();
+      var tick = live.concat(fin.slice(0, 8), pre.slice(0, 6)).slice(0, 16);
+      var head = '<div class="es-head"><div><h1>Local Sports</h1><span class="es-sub">High school · College · Youth · Little League</span></div><button class="btn es-post" data-submit="sports"' + (topic && topic !== 'all' ? ' data-topic="' + esc(topic) + '"' : '') + '>＋ Post a score or story</button></div>';
+      var tabsHtml = tabs.replace('class="tabs"', 'class="es-tabs"');
+      var ticker = tick.length ? '<div class="es-tick">' + tick.map(esScore).join('') + '</div>' : '';
+      var body;
+      if (!posts.length) {
+        body = empty('Nothing posted yet', 'Coaches, parents and fans: post the first score, photo or highlight.', '<button class="btn" data-submit="sports">Post a score or story</button>');
+      } else {
+        var li = posts.findIndex(function (p) { return safeImg(p.image_url); });
+        var lead = posts[li >= 0 ? li : 0], rest = posts.filter(function (p) { return p !== lead; });
+        var side = rest.slice(0, 5), more = rest.slice(5);
+        var im = safeImg(lead.image_url);
+        var hero = '<a class="es-hero" href="' + href(lead) + '">' + (im ? '<img src="' + esc(im) + '" alt="">' : '') +
+          '<div class="in"><span class="es-tag">' + esc(label(lead)) + '</span><h2>' + esc(lead.title) + '</h2><p>' + esc(lead.author_name) + ' · ' + esc(ago(lead.created_at)) + '</p></div></a>';
+        body = '<div class="es-grid">' + hero + '<div class="es-side"><h3>Top stories</h3>' + (side.length ? side.map(esRow).join('') : '<p class="muted" style="padding:8px 0">More coming soon.</p>') + '</div></div>' +
+          (more.length ? '<div class="es-sec"><h2>Latest</h2></div><div class="grid">' + more.map(card).join('') + '</div>' : '');
+      }
+      var hl = heads.length ? '<div class="es-sec"><h2>Around the sports world</h2><a class="muted" href="#/scores">All scores →</a></div><div class="es-heads">' + heads.map(function (h) {
+        var u = /^https:\/\//i.test(h.url || '') ? h.url : '';
+        return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(h.title) + '<small>' + esc(h.source || LEAGUE_NAME[h.league] || '') + '</small></a>' : '';
+      }).join('') + '</div>' : '';
+      return head + tabsHtml + ticker + body + hl;
+    });
+  }
+
+  /* ---------- flagging ---------- */
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-flagpost],[data-keepup]'); if (!t) return;
+    if (t.hasAttribute('data-keepup')) {
+      var id = t.getAttribute('data-keepup'); t.disabled = true;
+      sb.from('news_posts').update({ status: 'published' }).eq('id', id).then(function (r) {
+        if (r.error) { t.disabled = false; toast(r.error.message); return; }
+        return sb.from('news_flags').delete().eq('post_id', id).then(function (d) { if (d.error) toast(d.error.message); scrollTop = false; render(); });
+      });
+      return;
+    }
+    if (!state.user) { toast('Sign in to flag a post'); openAuth('signin'); return; }
+    openModal('<h2 style="margin-top:0">Flag this post</h2><form id="flagForm"><input type="hidden" name="post_id" value="' + esc(t.getAttribute('data-flagpost')) + '">' +
+      '<label for="fr">What is wrong?</label><select id="fr" name="reason"><option value="inappropriate">Inappropriate or offensive</option><option value="kids">Shows or names a child unsafely</option><option value="spam">Spam or ad</option><option value="false">False or misleading</option><option value="other">Something else</option></select>' +
+      '<label for="fn">Details (optional)</label><textarea id="fn" name="note" rows="3" maxlength="300"></textarea>' +
+      '<div id="ferr" style="color:#f87171;min-height:20px"></div><div class="row-actions"><button class="btn" type="submit" id="fsub">Send flag</button><button class="btn dark" type="button" data-close>Cancel</button></div></form>');
+  });
+  document.addEventListener('submit', function (e) {
+    var f = e.target; if (!f || f.id !== 'flagForm') return;
+    var d = new FormData(f), b = $('#fsub'), er = $('#ferr'); er.textContent = ''; b.disabled = true;
+    sb.from('news_flags').insert({ post_id: d.get('post_id'), user_id: state.user.id, reason: d.get('reason'), note: (d.get('note') || '').toString().trim() || null }).then(function (r) {
+      if (r.error) { b.disabled = false; er.textContent = /duplicate|23505/i.test(r.error.message + (r.error.code || '')) ? 'You already flagged this post.' : r.error.message; return; }
+      closeModal(); toast('Thanks. An editor will take a look.');
+    });
+  });
+
+  /* ---------- Alerts, Yard Sales, Local Deals ---------- */
+  var HUB_AREAS = ['Chattanooga', 'Cleveland', 'Athens', 'Knoxville', 'Tri-Cities', 'Other 423'];
+  var ALERT_KINDS = { school: ['🏫', 'School'], outage: ['⚡', 'Outage'], road: ['🚧', 'Road'], weather: ['⛈️', 'Weather'], safety: ['🛡️', 'Safety'], other: ['📣', 'Notice'] };
+  var ALERT_COLOR = { urgent: '#e8392f', warning: '#f5a524', info: '#3b82f6' };
+  function hubStyle() {
+    if (document.getElementById('hubStyle')) return;
+    var s = document.createElement('style'); s.id = 'hubStyle';
+    s.textContent =
+      '.hb-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 12px;padding-left:12px;border-left:6px solid var(--hc,#e8392f)}' +
+      '.hb-head h1{margin:0;font-size:32px;line-height:1;font-weight:900;text-transform:uppercase;font-style:italic;letter-spacing:-.02em}.hb-head span.s{display:block;color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;margin-top:4px}' +
+      '.hb-chips{display:flex;gap:6px;overflow-x:auto;margin:0 0 14px;scrollbar-width:none;align-items:center}.hb-chips::-webkit-scrollbar{display:none}' +
+      '.hb-chips a,.hb-chips select{flex:0 0 auto;border:1px solid var(--line);background:var(--panel);color:inherit;border-radius:99px;padding:7px 13px;font-weight:700;font-size:13px;width:auto}.hb-chips a.on{background:var(--hc,#e8392f);border-color:var(--hc,#e8392f);color:#fff}' +
+      '.hb-card{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--ac,#3b82f6);border-radius:10px;padding:12px 14px;margin:0 0 10px;overflow-wrap:anywhere}' +
+      '.hb-card h3{margin:4px 0;font-size:18px;line-height:1.2}.hb-meta{color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}' +
+      '.hb-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}.hb-grid .hb-card{margin:0}' +
+      '.hb-img{width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin:8px 0 4px}' +
+      '.hb-code{display:inline-block;border:2px dashed var(--accent);border-radius:6px;padding:3px 9px;font-weight:900;letter-spacing:.06em;margin:6px 0}' +
+      '.hb-x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:13px;text-decoration:underline;padding:0 6px 0 0}' +
+      '.hb-banner{display:block;border-radius:10px;padding:10px 14px;margin:0 0 14px;color:#fff;background:var(--ac,#e8392f)}.hb-banner b{display:block}.hb-banner small{opacity:.9}' +
+      '.hb-safe{font-size:12px;color:var(--muted);margin:4px 0}';
+    document.head.appendChild(s);
+  }
+  function ymd(d) { var x = d instanceof Date ? d : new Date(d); return x.getFullYear() + '-' + ('0' + (x.getMonth() + 1)).slice(-2) + '-' + ('0' + x.getDate()).slice(-2); }
+  function dLabel(s) { var x = new Date(s + 'T12:00:00'); return isNaN(x) ? '' : x.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }); }
+  function mapLink(addr, area) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(addr + ' ' + (area && area !== 'Other 423' ? area + ' TN' : '')); }
+  function hubErr(e) { var m = (e && e.message) || ''; return /does not exist|schema cache/i.test(m) ? new Error('This feature is not switched on yet.') : e; }
+  function weekendRange() {
+    var n = new Date(), day = n.getDay(), a = new Date(n), b = new Date(n);
+    if (day === 5 || day === 6 || day === 0) { b.setDate(n.getDate() + (day === 0 ? 0 : 7 - day)); }
+    else { a.setDate(n.getDate() + (5 - day)); b.setDate(n.getDate() + (7 - day)); }
+    return [ymd(a), ymd(b)];
+  }
+  function chips(base, cur, list) { return '<div class="hb-chips">' + list.map(function (c) { return '<a class="' + (c[0] === cur ? 'on' : '') + '" href="#/' + base + (c[0] === 'all' ? '' : '/' + c[0]) + '">' + c[1] + '</a>'; }).join(''); }
+  function areaSelect(id) { return '<select id="' + id + '" data-hubarea aria-label="Area"><option value="">All areas</option>' + HUB_AREAS.map(function (a) { return '<option>' + a + '</option>'; }).join('') + '</select>'; }
+  function flagBtn(kind, id, uid, authorId) {
+    if (uid && authorId === uid) return '<button type="button" class="hb-x" data-hubdel="' + kind + ':' + esc(id) + '">Delete</button>';
+    return '<button type="button" class="hb-x" data-itemflag="' + kind + ':' + esc(id) + '">🚩 Flag</button>' + (isStaff() ? '<button type="button" class="hb-x" data-hubdel="' + kind + ':' + esc(id) + '">Remove</button>' : '');
+  }
+
+  /* ---- alerts ---- */
+  function alertActive(a) { return !a.expires_at || new Date(a.expires_at) > new Date(); }
+  function alertCard(a, ended) {
+    var k = ALERT_KINDS[a.kind] || ALERT_KINDS.other, col = ALERT_COLOR[a.severity] || ALERT_COLOR.info;
+    var until = a.expires_at ? (ended ? 'Ended ' + ago(a.expires_at) : 'Until ' + new Date(a.expires_at).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })) : 'Until further notice';
+    var lk = /^https:\/\//i.test(a.url || '') ? '<p><a href="' + esc(a.url) + '" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">More information →</a></p>' : '';
+    return '<div class="hb-card" style="--ac:' + col + (ended ? ';opacity:.6' : '') + '"><div class="hb-meta">' + k[0] + ' ' + k[1] + ' · ' + esc(a.area) + ' · ' + esc(ago(a.created_at)) + '</div><h3>' + esc(a.title) + '</h3>' +
+      (a.body ? '<p style="margin:4px 0;white-space:pre-wrap">' + esc(a.body) + '</p>' : '') + lk + '<div class="hb-meta">' + esc(until) + '</div>' +
+      (isStaff() ? '<div style="margin-top:8px">' + (ended ? '' : '<button type="button" class="hb-x" data-alertend="' + esc(a.id) + '">End now</button>') + '<button type="button" class="hb-x" data-hubdel="alert:' + esc(a.id) + '">Delete</button></div>' : '') + '</div>';
+  }
+  views.alerts = function (kind) {
+    hubStyle(); document.title = 'Alerts • 423.news';
+    kind = ALERT_KINDS[kind] ? kind : 'all';
+    return sb.from('news_alerts').select('*').order('created_at', { ascending: false }).limit(100).then(function (r) {
+      if (r.error) throw hubErr(r.error);
+      var all = (r.data || []).filter(function (a) { return kind === 'all' || a.kind === kind; });
+      var sev = { urgent: 0, warning: 1, info: 2 };
+      var act = all.filter(alertActive).sort(function (a, b) { return (sev[a.severity] - sev[b.severity]) || (new Date(b.created_at) - new Date(a.created_at)); });
+      var end = all.filter(function (a) { return !alertActive(a); });
+      var list = [['all', 'All']].concat(Object.keys(ALERT_KINDS).map(function (k) { return [k, ALERT_KINDS[k][0] + ' ' + ALERT_KINDS[k][1]]; }));
+      return '<div class="hb-head" style="--hc:#e8392f"><div><h1>Alerts</h1><span class="s">Closings · outages · roads · weather across the 423</span></div>' + '<span><button class="btn dark" data-alertpush>🔔 Get alerts on my phone</button> ' + (isStaff() ? '<button class="btn" data-alertnew style="background:#e8392f">＋ Post alert</button>' : '') + '</span></div>' +
+        chips('alerts', kind, list) + '</div>' +
+        (act.length ? act.map(function (a) { return alertCard(a, false); }).join('') : '<div class="panel pad" style="margin-bottom:18px"><b>✅ All clear.</b><p class="muted" style="margin:4px 0 0">No active alerts right now.</p></div>') +
+        (end.length ? '<div class="es-h" style="margin-top:18px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.1em;font-size:13px">Recently ended</div>' + end.slice(0, 10).map(function (a) { return alertCard(a, true); }).join('') : '');
+    });
+  };
+  function alertModal() {
+    openModal('<h2 style="margin-top:0">Post an alert</h2><form id="alertForm">' +
+      '<label for="al1">Type</label><select id="al1" name="kind">' + Object.keys(ALERT_KINDS).map(function (k) { return '<option value="' + k + '">' + ALERT_KINDS[k][0] + ' ' + ALERT_KINDS[k][1] + '</option>'; }).join('') + '</select>' +
+      '<label for="al2">How serious</label><select id="al2" name="severity"><option value="info">Info</option><option value="warning">Warning</option><option value="urgent">Urgent</option></select>' +
+      '<label for="al3">Area</label><select id="al3" name="area"><option>All 423</option>' + HUB_AREAS.map(function (a) { return '<option>' + a + '</option>'; }).join('') + '</select>' +
+      '<label for="al4">Headline</label><input id="al4" name="title" maxlength="140" minlength="3" required placeholder="Bradley County Schools closed Monday">' +
+      '<label for="al5">Details (optional)</label><textarea id="al5" name="body" rows="3" maxlength="1000"></textarea>' +
+      '<label for="al6">Source link (optional, https)</label><input id="al6" name="url" type="url" placeholder="https://">' +
+      '<label for="al7">Stays up for</label><select id="al7" name="hours"><option value="3">3 hours</option><option value="6">6 hours</option><option value="12">12 hours</option><option value="24" selected>24 hours</option><option value="72">3 days</option><option value="">Until I end it</option></select>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" name="push" checked style="width:auto"> Send a phone notification to subscribers</label>' +
+      '<div id="alerr" style="color:#f87171;min-height:20px"></div><div class="row-actions"><button class="btn" type="submit" id="alsub">Post alert</button><button class="btn dark" type="button" data-close>Cancel</button></div></form>');
+  }
+
+  /* ---- yard sales ---- */
+  views.yardsales = function (when) {
+    hubStyle(); document.title = 'Yard Sales • 423.news'; when = ['weekend', 'today', 'all'].indexOf(when) >= 0 ? when : 'weekend';
+    var today = ymd(new Date()), wk = weekendRange(), uid = state.user && state.user.id;
+    return sb.from('news_yardsales').select('*').gte('sale_end', today).order('sale_start', { ascending: true }).limit(200).then(function (r) {
+      if (r.error) throw hubErr(r.error);
+      var rows = (r.data || []).filter(function (x) {
+        if (when === 'today') return x.sale_start <= today && x.sale_end >= today;
+        if (when === 'weekend') return x.sale_start <= wk[1] && x.sale_end >= wk[0];
+        return true;
+      });
+      var cards = rows.map(function (x) {
+        var im = safeImg(x.image_url), same = x.sale_start === x.sale_end;
+        return '<div class="hb-card" data-area="' + esc(x.area) + '" style="--ac:#16a34a' + (x.status === 'hidden' ? ';opacity:.5' : '') + '"><div class="hb-meta">🏷️ ' + esc(same ? dLabel(x.sale_start) : dLabel(x.sale_start) + ' – ' + dLabel(x.sale_end)) + (x.hours ? ' · ' + esc(x.hours) : '') + '</div>' +
+          '<h3>' + esc(x.title) + '</h3><div>📍 <a href="' + esc(mapLink(x.address, x.area)) + '" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">' + esc(x.address) + '</a> <span class="muted">· ' + esc(x.area) + '</span></div>' +
+          (im ? '<img class="hb-img" src="' + esc(im) + '" alt="" loading="lazy">' : '') + (x.description ? '<p style="margin:6px 0;white-space:pre-wrap">' + esc(x.description) + '</p>' : '') +
+          '<div class="hb-meta" style="margin-top:6px">Posted by ' + esc(x.author_name) + ' · ' + esc(ago(x.created_at)) + (x.status === 'hidden' ? ' · HIDDEN' : '') + '</div><div style="margin-top:6px">' + flagBtn('yardsale', x.id, uid, x.author_id) + '</div></div>';
+      }).join('');
+      return '<div class="hb-head" style="--hc:#16a34a"><div><h1>Yard Sales</h1><span class="s">Garage, yard and estate sales across the 423</span></div><button class="btn" data-salenew style="background:#16a34a">＋ Post a sale</button></div>' +
+        chips('yardsales', when, [['weekend', 'This weekend'], ['today', 'Today'], ['all', 'All upcoming']]) + areaSelect('salearea') + '</div>' +
+        '<div id="hubList">' + (cards || empty('No sales listed', 'Be the first to post one. It takes a minute and it is free.', '<button class="btn" data-salenew>Post a sale</button>')) + '</div>';
+    });
+  };
+  function saleModal() {
+    var t = ymd(new Date());
+    openModal('<h2 style="margin-top:0">Post a yard sale</h2><form id="saleForm">' +
+      '<label for="ys1">Title</label><input id="ys1" name="title" maxlength="100" minlength="3" required placeholder="Multi-family yard sale, tools and kids stuff">' +
+      '<label for="ys2">Address</label><input id="ys2" name="address" maxlength="160" required placeholder="123 Main St">' +
+      '<label for="ys3">Area</label><select id="ys3" name="area">' + HUB_AREAS.map(function (a) { return '<option>' + a + '</option>'; }).join('') + '</select>' +
+      '<div class="hb-chips" style="margin:0"><div style="flex:1"><label for="ys4">First day</label><input id="ys4" name="start" type="date" min="' + t + '" value="' + t + '" required></div><div style="flex:1"><label for="ys5">Last day</label><input id="ys5" name="end" type="date" min="' + t + '" value="' + t + '" required></div></div>' +
+      '<label for="ys6">Hours</label><input id="ys6" name="hours" maxlength="60" placeholder="8am – 2pm">' +
+      '<label for="ys7">What you are selling (optional)</label><textarea id="ys7" name="description" rows="3" maxlength="800"></textarea>' +
+      '<label for="ys8">Photo (optional)</label><input id="ys8" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/gif">' +
+      '<div class="hb-safe">Sales can run up to 7 days. Only post the sale address, never your phone number or other personal details.</div>' +
+      '<div id="yserr" style="color:#f87171;min-height:20px"></div><div class="row-actions"><button class="btn" type="submit" id="yssub">Post sale</button><button class="btn dark" type="button" data-close>Cancel</button></div></form>');
+  }
+
+  /* ---- 423 Perks: free sponsor offers for members ---- */
+  function pkStyle() {
+    if (document.getElementById('pkStyle')) return;
+    var s = document.createElement('style'); s.id = 'pkStyle';
+    s.textContent =
+      '.pk-hero{border-radius:16px;padding:18px;margin:0 0 16px;color:#fff;background:linear-gradient(135deg,#ff5a0a,#c026d3 70%,#4f46e5)}' +
+      '.pk-hero h1{margin:0;font-size:32px;font-weight:900;font-style:italic;text-transform:uppercase;letter-spacing:-.02em}.pk-hero p{margin:6px 0 0;opacity:.95}' +
+      '.pk-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}' +
+      '.pk-coin{background:rgba(0,0,0,.28);border-radius:99px;padding:6px 12px;font-weight:900}' +
+      '.pk-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));margin:0 0 22px}' +
+      '.pk-card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;overflow:hidden}' +
+      '.pk-card.feat{border:2px solid #ff5a0a}' +
+      '.pk-rib{position:absolute;top:12px;right:-34px;transform:rotate(38deg);background:#16a34a;color:#fff;font-weight:900;font-size:11px;letter-spacing:.08em;padding:4px 40px;text-transform:uppercase}' +
+      '.pk-rib.lock{background:#6d28d9}.pk-card.locked .pk-img{filter:grayscale(.7) brightness(.8)}' +
+      '.pk-adv{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding-right:60px}' +
+      '.pk-card h3{margin:4px 0 6px;font-size:19px;line-height:1.2;padding-right:30px}' +
+      '.pk-img{width:100%;max-height:170px;object-fit:cover;border-radius:10px;margin:6px 0}' +
+      '.pk-btn{display:block;width:100%;text-align:center;margin-top:10px;border:0;border-radius:10px;padding:11px;font-weight:900;font-size:15px;cursor:pointer;background:linear-gradient(90deg,#ff5a0a,#e11d48);color:#fff}' +
+      '.pk-btn.lock{background:#4c1d95}.pk-btn.off{background:var(--s2);color:var(--muted);cursor:default}' +
+      '.pk-tix{border:2px dashed var(--accent);border-radius:14px;padding:14px;margin:0 0 12px;background:var(--panel)}.pk-tix.used{opacity:.5}' +
+      '.pk-code{font-size:30px;font-weight:900;letter-spacing:.08em;text-align:center;margin:8px 0;font-variant-numeric:tabular-nums}' +
+      '.pk-note{font-size:12px;color:var(--muted)}';
+    document.head.appendChild(s);
+  }
+  function coinBal() { return state.user ? sb.rpc('perk_balance').then(function (r) { return r.error ? 0 : (r.data || 0); }, function () { return 0; }) : Promise.resolve(0); }
+  function perkTicket(code, title, adv, terms, used, id) {
+    return '<div class="pk-tix' + (used ? ' used' : '') + '"><div class="hb-meta">🎁 ' + esc(adv || '') + '</div><b>' + esc(title || '') + '</b><div class="pk-code">' + esc(code) + '</div>' +
+      '<div class="pk-note">' + (used ? 'Used' : 'Show this screen to the business to redeem.') + '</div>' + (terms ? '<div class="pk-note" style="margin-top:4px">' + esc(terms) + '</div>' : '') +
+      (id && !used ? '<button type="button" class="hb-x" data-perkuse="' + esc(id) + '" style="margin-top:6px">Mark as used</button>' : '') + '</div>';
+  }
+  views.perks = function (sub) {
+    pkStyle(); hubStyle(); document.title = '423 Perks • 423.news';
+    var uid = state.user && state.user.id;
+    if (sub === 'wallet') {
+      if (!uid) return Promise.resolve(empty('My Perks', 'Sign up free to claim perks and keep them here.', '<button class="btn" data-auth="signup">Sign up free</button>'));
+      return sb.from('news_perk_claims').select('id,code,status,claimed_at,news_perks(advertiser,title,terms,ends_on)').eq('user_id', uid).order('claimed_at', { ascending: false }).limit(100).then(function (r) {
+        if (r.error) throw hubErr(r.error);
+        var rows = r.data || [];
+        return '<a class="muted" href="#/perks">← All perks</a><div class="hb-head" style="--hc:#c026d3;margin-top:10px"><div><h1>My Perks</h1><span class="s">Your claimed freebies</span></div></div>' +
+          (rows.length ? rows.map(function (c) { var p = c.news_perks || {}; return perkTicket(c.code, p.title || 'Perk (expired)', p.advertiser, p.terms, c.status === 'used', c.id); }).join('') : empty('Nothing here yet', 'Claim a free perk and it shows up here.', '<a class="btn" href="#/perks">Browse perks</a>'));
+      });
+    }
+    return Promise.all([
+      sb.from('news_perks').select('*').order('featured', { ascending: false }).order('ends_on', { ascending: true }).limit(100),
+      uid ? sb.from('news_perk_claims').select('perk_id').eq('user_id', uid) : Promise.resolve({ data: [] }),
+      coinBal(),
+      isStaff() ? sb.from('news_perk_requests').select('*').order('created_at', { ascending: false }).limit(30) : Promise.resolve({ data: [] }),
+      uid ? sb.from('news_coins').select('id').eq('user_id', uid).eq('source', 'daily').gte('created_at', ymd(new Date()) + 'T00:00:00') : Promise.resolve({ data: [] })
+    ]).then(function (r) {
+      if (r[0].error) throw hubErr(r[0].error);
+      var perks = r[0].data || [], claimed = {}; (r[1].data || []).forEach(function (c) { claimed[c.perk_id] = 1; });
+      var bal = r[2], reqs = r[3].data || [], doneToday = (r[4].data || []).length > 0;
+      var hero = uid
+        ? '<div class="pk-hero"><h1>🎁 423 Perks</h1><p>Free stuff from 423 businesses, just for being a member.</p><div class="pk-row"><span class="pk-coin">🪙 ' + bal + ' coins</span>' +
+          (doneToday ? '<span class="pk-coin" style="opacity:.7">✓ Checked in today</span>' : '<button class="btn" data-checkin style="background:#fff;color:#111">Daily check-in +5</button>') +
+          '<a class="btn dark" href="#/perks/wallet">My Perks</a><a class="btn dark" href="#/games">🎮 Game Hub</a></div></div>'
+        : '<div class="pk-hero"><h1>🎁 423 Perks</h1><p>Free perks from 423 businesses. Sign up free to unlock them.</p><div class="pk-row"><button class="btn" data-auth="signup" style="background:#fff;color:#111">Sign up free</button><button class="btn dark" data-auth="signin">Sign in</button></div></div>';
+      var staff = isStaff() ? '<div class="panel pad" style="margin:0 0 16px"><b>Editor tools</b><div class="pk-row"><button class="btn sm" data-perknew>＋ New perk</button><button class="btn dark sm" data-promoemails>📧 Copy promo emails</button></div>' +
+        (reqs.length ? '<div style="margin-top:10px"><b>Partner requests (' + reqs.length + ')</b>' + reqs.map(function (q) { return '<div class="hb-meta" style="margin-top:8px;text-transform:none">' + esc(q.business) + ' · ' + esc(q.contact_name || '') + ' · ' + esc(q.email || '') + ' ' + esc(q.phone || '') + '<br>' + esc(q.message || '') + ' <button type="button" class="hb-x" data-reqdel="' + esc(q.id) + '">dismiss</button></div>'; }).join('') + '</div>' : '') + '</div>' : '';
+      var areaSel = '<div class="hb-chips">' + areaSelect('perkarea') + '</div>';
+      var cards = perks.map(function (p) {
+        var im = safeImg(p.image_url), have = claimed[p.id], coins = p.unlock_type === 'coins', left = p.max_claims ? p.max_claims - p.claims_count : null, gone = left !== null && left <= 0;
+        var locked = coins && !have && bal < p.coin_cost;
+        var btn;
+        if (have) btn = '<a class="pk-btn off" href="#/perks/wallet" style="text-decoration:none">✓ In My Perks</a>';
+        else if (gone) btn = '<div class="pk-btn off">All claimed</div>';
+        else if (!uid) btn = '<button type="button" class="pk-btn" data-auth="signup">Sign up to unlock</button>';
+        else if (locked) btn = '<div class="pk-btn lock">🔒 Needs ' + p.coin_cost + ' coins (you have ' + bal + ')</div><a class="pk-note" href="#/games" style="display:block;text-align:center;margin-top:6px;text-decoration:underline">Earn coins in the Game Hub →</a>';
+        else btn = '<button type="button" class="pk-btn' + (coins ? ' lock' : '') + '" data-perkclaim="' + esc(p.id) + '">' + (coins ? '🔓 Unlock for ' + p.coin_cost + ' coins' : '🎁 Claim free') + '</button>';
+        var adm = isStaff() ? '<div style="margin-top:8px"><span class="pk-note">' + p.claims_count + ' claimed · ' + esc(p.status) + '</span> <button type="button" class="hb-x" data-perktoggle="' + esc(p.id) + ':' + (p.status === 'published' ? 'paused' : 'published') + '">' + (p.status === 'published' ? 'Pause' : 'Resume') + '</button><button type="button" class="hb-x" data-perkdel="' + esc(p.id) + '">Delete</button></div>' : '';
+        return '<div class="pk-card' + (p.featured ? ' feat' : '') + (locked ? ' locked' : '') + (p.status === 'paused' ? '" style="opacity:.55' : '') + '" data-area="' + esc(p.area) + '"><div class="pk-rib' + (coins ? ' lock' : '') + '">' + (coins ? 'Unlock' : 'Free') + '</div>' +
+          '<div class="pk-adv">' + (p.featured ? '⭐ ' : '') + esc(p.advertiser) + ' · ' + esc(p.area) + '</div><h3>' + esc(p.title) + '</h3>' + (im ? '<img class="pk-img" src="' + esc(im) + '" alt="" loading="lazy">' : '') +
+          (p.details ? '<p style="margin:4px 0">' + esc(p.details) + '</p>' : '') + (p.address ? '<div class="pk-note">📍 <a href="' + esc(mapLink(p.address, p.area)) + '" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">' + esc(p.address) + '</a></div>' : '') +
+          (/^https:\/\//i.test(p.url || '') ? '<div class="pk-note"><a href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer nofollow" style="text-decoration:underline">Visit ' + esc(p.advertiser) + ' →</a></div>' : '') +
+          '<div class="pk-note" style="margin-top:4px">Ends ' + esc(dLabel(p.ends_on)) + (left !== null && left > 0 ? ' · ' + left + ' left' : '') + '</div>' + btn + adm + '</div>';
+      }).join('');
+      return hero + staff + areaSel + '<div id="hubList" class="pk-grid">' + (cards || '<div>' + empty('No perks right now', 'New perks from local businesses are added all the time. Check back soon.') + '</div>') + '</div>' +
+        '<div class="panel pad" style="text-align:center"><b>Own a business in the 423?</b><p class="muted" style="margin:4px 0 10px">Reach local members with a free perk. Get in front of readers who are ready to shop local.</p><button class="btn" data-partner>Become a Perks partner</button></div>';
+    });
+  };
+  views.games = function () {
+    pkStyle(); hubStyle(); document.title = 'Game Hub • 423.news';
+    return coinBal().then(function (bal) {
+      return '<div class="pk-hero" style="background:linear-gradient(135deg,#4f46e5,#0ea5e9)"><h1>🎮 Game Hub</h1><p>Coming soon: play local games, earn coins, unlock free perks.</p>' +
+        (state.user ? '<div class="pk-row"><span class="pk-coin">🪙 ' + bal + ' coins</span><a class="btn dark" href="#/perks">Spend on perks</a></div>' : '<div class="pk-row"><button class="btn" data-auth="signup" style="background:#fff;color:#111">Sign up to get ready</button></div>') + '</div>' +
+        '<div class="panel pad"><b>How it will work</b><p class="muted">Play games, earn coins. Use coins to unlock premium perks from 423 businesses. You can already earn coins today with the daily check-in on the Perks page.</p><a class="btn" href="#/perks">Go to 423 Perks</a></div>';
+    });
+  };
+  function perkModal() {
+    var t = ymd(new Date()), e = ymd(new Date(Date.now() + 30 * 864e5));
+    openModal('<h2 style="margin-top:0">New perk</h2><form id="perkForm">' +
+      '<label for="pf1">Sponsor / business</label><input id="pf1" name="advertiser" maxlength="80" minlength="2" required>' +
+      '<label for="pf2">Headline</label><input id="pf2" name="title" maxlength="120" minlength="3" required placeholder="Free medium drink with any entree">' +
+      '<label for="pf3">Details</label><textarea id="pf3" name="details" rows="2" maxlength="600"></textarea>' +
+      '<label for="pf4">Terms (optional)</label><input id="pf4" name="terms" maxlength="400" placeholder="One per customer. Show this screen at checkout.">' +
+      '<label for="pf5">Code prefix (letters/numbers)</label><input id="pf5" name="prefix" maxlength="8" pattern="[A-Za-z0-9]{2,8}" value="PERK" required>' +
+      '<label for="pf6">Area</label><select id="pf6" name="area"><option>All 423</option>' + HUB_AREAS.map(function (a) { return '<option>' + a + '</option>'; }).join('') + '</select>' +
+      '<label for="pf7">Address (optional)</label><input id="pf7" name="address" maxlength="160">' +
+      '<label for="pf8">Link (optional, https)</label><input id="pf8" name="url" type="url" placeholder="https://">' +
+      '<div class="hb-chips" style="margin:0"><div style="flex:1"><label for="pf9">Starts</label><input id="pf9" name="starts" type="date" value="' + t + '" required></div><div style="flex:1"><label for="pf10">Ends</label><input id="pf10" name="ends" type="date" value="' + e + '" required></div></div>' +
+      '<label for="pf11">How members get it</label><select id="pf11" name="unlock"><option value="free">Free for any signed-in member</option><option value="coins">Locked until they spend coins</option></select>' +
+      '<label for="pf12">Coin cost (only if locked)</label><input id="pf12" name="cost" type="number" min="0" max="100000" value="0">' +
+      '<label for="pf13">Limit total claims (optional)</label><input id="pf13" name="max" type="number" min="1" placeholder="No limit">' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" name="featured" style="width:auto"> Feature at the top</label>' +
+      '<label for="pf14">Photo or logo (optional)</label><input id="pf14" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/gif">' +
+      '<div id="pferr" style="color:#f87171;min-height:20px"></div><div class="row-actions"><button class="btn" type="submit" id="pfsub">Publish perk</button><button class="btn dark" type="button" data-close>Cancel</button></div></form>');
+  }
+  function partnerModal() {
+    openModal('<h2 style="margin-top:0">Become a Perks partner</h2><form id="partnerForm">' +
+      '<label for="pt1">Business name</label><input id="pt1" name="business" maxlength="80" minlength="2" required>' +
+      '<label for="pt2">Your name</label><input id="pt2" name="contact" maxlength="80">' +
+      '<label for="pt3">Email</label><input id="pt3" name="email" type="email" maxlength="120" required>' +
+      '<label for="pt4">Phone (optional)</label><input id="pt4" name="phone" maxlength="30">' +
+      '<label for="pt5">What would you like to offer?</label><textarea id="pt5" name="message" rows="3" maxlength="600" placeholder="Free dessert with any entree, a free oil change, etc."></textarea>' +
+      '<div id="pterr" style="color:#f87171;min-height:20px"></div><div class="row-actions"><button class="btn" type="submit" id="ptsub">Send</button><button class="btn dark" type="button" data-close>Cancel</button></div></form>');
+  }
+
+  /* ---- home: alert banner + this weekend + deals ---- */
+  var homeBase = views.home;
+  views.home = function () {
+    hubStyle();
+    var today = ymd(new Date()), wk = weekendRange();
+    return Promise.all([
+      homeBase(),
+      sb.from('news_alerts').select('id,kind,severity,title,area,expires_at,created_at').order('created_at', { ascending: false }).limit(20).then(function (r) { return r.data || []; }, function () { return []; }),
+      sb.from('news_yardsales').select('id,title,address,area,sale_start,sale_end,hours').eq('status', 'published').gte('sale_end', today).lte('sale_start', wk[1]).order('sale_start', { ascending: true }).limit(4).then(function (r) { return r.data || []; }, function () { return []; }),
+      sb.from('news_perks').select('id,advertiser,title,area,ends_on,unlock_type,coin_cost').eq('status', 'published').gte('ends_on', today).lte('starts_on', today).order('featured', { ascending: false }).order('created_at', { ascending: false }).limit(4).then(function (r) { return r.data || []; }, function () { return []; })
+    ]).then(function (r) {
+      var sev = { urgent: 0, warning: 1, info: 2 };
+      var act = r[1].filter(alertActive).sort(function (a, b) { return sev[a.severity] - sev[b.severity]; }).slice(0, 3);
+      var banner = act.map(function (a) {
+        var k = ALERT_KINDS[a.kind] || ALERT_KINDS.other;
+        return '<a class="hb-banner" href="#/alerts" style="--ac:' + (ALERT_COLOR[a.severity] || ALERT_COLOR.info) + '"><b>' + k[0] + ' ' + esc(a.title) + '</b><small>' + esc(a.area) + ' · ' + esc(ago(a.created_at)) + ' · Tap for all alerts</small></a>';
+      }).join('');
+      var extra = '';
+      if (r[2].length) extra += '<div class="sech"><h2>🏷️ Yard sales this weekend</h2><a href="#/yardsales">See all →</a></div><div class="hb-grid" style="margin-bottom:26px">' + r[2].map(function (x) {
+        return '<a class="hb-card" href="#/yardsales" style="--ac:#16a34a;display:block"><div class="hb-meta">' + esc(dLabel(x.sale_start)) + (x.hours ? ' · ' + esc(x.hours) : '') + '</div><h3>' + esc(x.title) + '</h3><div class="muted">' + esc(x.address) + ' · ' + esc(x.area) + '</div></a>';
+      }).join('') + '</div>';
+      if (r[3].length) extra += '<div class="sech"><h2>🎁 423 Perks</h2><a href="#/perks">Free for members →</a></div><div class="hb-grid" style="margin-bottom:26px">' + r[3].map(function (x) {
+        return '<a class="hb-card" href="#/perks" style="--ac:#c026d3;display:block"><div class="hb-meta">' + esc(x.advertiser) + ' · ' + esc(x.area) + '</div><h3>' + esc(x.title) + '</h3><div class="muted">' + (x.unlock_type === 'coins' ? '🔒 ' + x.coin_cost + ' coins' : '🎁 Free for members') + '</div></a>';
+      }).join('') + '</div>';
+      return banner + r[0] + extra;
+    });
+  };
+
+  /* ---- shared handlers ---- */
+  var ITEM_TABLE = { alert: 'news_alerts', yardsale: 'news_yardsales' };
+  function pushAlert(title, body, tag) {
+    return sb.auth.getSession().then(function (r) {
+      var tok = r.data && r.data.session && r.data.session.access_token; if (!tok) return null;
+      return fetch(SB_URL + '/functions/v1/push-send', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + tok },
+        body: JSON.stringify({ title: title, body: body, url: 'index.html#/alerts', tag: tag, topics: ['breaking'] }) }).then(function (x) { return x.json(); });
+    }).catch(function () { return null; });
+  }
+  document.addEventListener('change', function (e) {
+    var sel = e.target.closest('[data-hubarea]'); if (sel) {
+      var v = sel.value; document.querySelectorAll('#hubList [data-area]').forEach(function (c) { var a = c.getAttribute('data-area'); c.style.display = !v || a === v || a === 'All 423' ? '' : 'none'; });
+      return;
+    }
+    if (e.target.id === 'promoChk' && state.user) {
+      var on = e.target.checked;
+      sb.from('news_profiles').update({ promo_optin: on }).eq('id', state.user.id).then(function (r) {
+        if (r.error) { toast(r.error.message); e.target.checked = !on; return; }
+        if (state.profile) state.profile.promo_optin = on; toast(on ? 'You will get free perks by email' : 'Email promotions off');
+      });
+    }
+  });
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-alertnew],[data-alertend],[data-alertpush],[data-salenew],[data-hubdel],[data-itemflag],[data-hubrestore],[data-perkclaim],[data-perkuse],[data-checkin],[data-perknew],[data-perktoggle],[data-perkdel],[data-promoemails],[data-partner],[data-reqdel]'); if (!t) return;
+    function again() { scrollTop = false; render(); }
+    if (t.hasAttribute('data-alertpush')) { if (window.Push423 && Push423.open) Push423.open({}); else toast('Notifications are not available in this browser'); return; }
+    if (t.hasAttribute('data-alertnew')) { if (isStaff()) alertModal(); return; }
+    if (t.hasAttribute('data-alertend')) { sb.from('news_alerts').update({ expires_at: new Date().toISOString() }).eq('id', t.getAttribute('data-alertend')).then(function (r) { if (r.error) toast(r.error.message); else again(); }); return; }
+    if (t.hasAttribute('data-hubdel')) {
+      var p = t.getAttribute('data-hubdel').split(':'); if (!confirm('Delete this? This cannot be undone.')) return;
+      sb.from(ITEM_TABLE[p[0]]).delete().eq('id', p[1]).then(function (r) { if (r.error) toast(r.error.message); else again(); }); return;
+    }
+    if (t.hasAttribute('data-hubrestore')) {
+      var q = t.getAttribute('data-hubrestore').split(':');
+      sb.from(ITEM_TABLE[q[0]]).update({ status: 'published' }).eq('id', q[1]).then(function (r) {
+        if (r.error) { toast(r.error.message); return; }
+        sb.from('news_item_flags').delete().eq('item_kind', q[0]).eq('item_id', q[1]).then(again);
+      }); return;
+    }
+    if (t.hasAttribute('data-perktoggle')) { var pt = t.getAttribute('data-perktoggle').split(':'); sb.from('news_perks').update({ status: pt[1] }).eq('id', pt[0]).then(function (r) { if (r.error) toast(r.error.message); else again(); }); return; }
+    if (t.hasAttribute('data-perkdel')) { if (!confirm('Delete this perk and all claims?')) return; sb.from('news_perks').delete().eq('id', t.getAttribute('data-perkdel')).then(function (r) { if (r.error) toast(r.error.message); else again(); }); return; }
+    if (t.hasAttribute('data-reqdel')) { sb.from('news_perk_requests').delete().eq('id', t.getAttribute('data-reqdel')).then(again); return; }
+    if (t.hasAttribute('data-perknew')) { if (isStaff()) perkModal(); return; }
+    if (t.hasAttribute('data-promoemails')) {
+      sb.rpc('perk_promo_emails').then(function (r) {
+        if (r.error) { toast(r.error.message); return; }
+        var rows = r.data || [], txt = rows.map(function (x) { return x.email; }).join(', ');
+        openModal('<h2 style="margin-top:0">Promo emails (' + rows.length + ')</h2><p class="muted">Members who opted in to free perks by email. Include an unsubscribe link in every email you send.</p><textarea id="promoTxt" rows="6" readonly style="width:100%">' + esc(txt) + '</textarea><div class="row-actions"><button class="btn" type="button" id="promoCopy">Copy</button><button class="btn dark" type="button" data-close>Close</button></div>');
+        var cb = document.getElementById('promoCopy'); if (cb) cb.onclick = function () { var ta = document.getElementById('promoTxt'); ta.select(); try { document.execCommand('copy'); toast('Copied'); } catch (x) { toast('Select and copy the text'); } };
+      }); return;
+    }
+    if (t.hasAttribute('data-partner')) { if (!state.user) { toast('Sign in first'); openAuth('signup'); return; } partnerModal(); return; }
+    if (t.hasAttribute('data-perkuse')) { if (!confirm('Mark this perk as used?')) return; sb.rpc('perk_use', { p_claim: t.getAttribute('data-perkuse') }).then(function (r) { if (r.error) toast(r.error.message); else again(); }); return; }
+    if (t.hasAttribute('data-checkin')) { if (!state.user) { openAuth('signup'); return; } t.disabled = true; sb.rpc('perk_daily_checkin').then(function (r) { if (r.error) { t.disabled = false; toast(r.error.message.replace(/^.*: /, '')); return; } toast('+5 coins! You have ' + r.data); again(); }); return; }
+    if (t.hasAttribute('data-perkclaim')) {
+      if (!state.user) { openAuth('signup'); return; }
+      t.disabled = true; var pid = t.getAttribute('data-perkclaim');
+      sb.rpc('perk_claim', { p_perk: pid }).then(function (r) {
+        if (r.error) { t.disabled = false; toast((r.error.message || '').replace(/^.*: /, '')); return; }
+        var card = t.closest('.pk-card'), ttl = card && card.querySelector('h3'), adv = card && card.querySelector('.pk-adv');
+        openModal('<h2 style="margin-top:0">🎉 It’s yours!</h2>' + perkTicket(r.data.code, ttl ? ttl.textContent : 'Perk', adv ? adv.textContent.replace(/^⭐ /, '').split(' · ')[0] : '', '', false, null) + '<div class="row-actions"><a class="btn" href="#/perks/wallet" data-close>Open My Perks</a><button class="btn dark" type="button" data-close>Close</button></div>');
+        again();
+      }); return;
+    }
+    if (!state.user) { toast('Sign in first'); openAuth('signin'); return; }
+    if (t.hasAttribute('data-salenew')) { saleModal(); return; }
+    if (t.hasAttribute('data-itemflag')) {
+      var f = t.getAttribute('data-itemflag').split(':');
+      openModal('<h2 style="margin-top:0">Flag this listing</h2><form id="itemFlagForm"><input type="hidden" name="kind" value="' + esc(f[0]) + '"><input type="hidden" name="id" value="' + esc(f[1]) + '">' +
+        '<label for="if1">What is wrong?</label><select id="if1" name="reason"><option value="scam">Looks like a scam</option><option value="inappropriate">Inappropriate</option><option value="spam">Spam or ad</option><option value="false">False or expired</option><option value="other">Something else</option></select>' +
+        '<label for="if2">Details (optional)</label><textarea id="if2" name="note" rows="3" maxlength="300"></textarea><div id="iferr" style="color:#f87171;min-height:20px"></div>' +
+        '<div class="row-actions"><button class="btn" type="submit" id="ifsub">Send flag</button><button class="btn dark" type="button" data-close>Cancel</button></div></form>');
+    }
+  });
+  document.addEventListener('submit', function (e) {
+    var f = e.target; if (!f || !f.id) return;
+    var d, b, er;
+    function done(label, r, okMsg) { if (r.error) { b.disabled = false; b.textContent = label; er.textContent = hubErr(r.error).message; return false; } closeModal(); toast(okMsg); scrollTop = false; render(); return true; }
+    if (f.id === 'alertForm') {
+      d = new FormData(f); b = $('#alsub'); er = $('#alerr'); er.textContent = ''; b.disabled = true; b.textContent = 'Posting…';
+      var h = d.get('hours'), u = (d.get('url') || '').toString().trim(), ttl = d.get('title').toString().trim(), bd = (d.get('body') || '').toString().trim(), kk = ALERT_KINDS[d.get('kind')] || ALERT_KINDS.other;
+      sb.from('news_alerts').insert({ kind: d.get('kind'), severity: d.get('severity'), area: d.get('area'), title: ttl, body: bd || null, url: u || null, expires_at: h ? new Date(Date.now() + Number(h) * 3600e3).toISOString() : null }).then(function (r) {
+        if (r.error) { done('Post alert', r, ''); return; }
+        if (d.get('push')) {
+          pushAlert(kk[0] + ' ' + (d.get('area') === 'All 423' ? 'Alert' : d.get('area') + ' alert'), ttl + (bd ? '. ' + bd : ''), 'alert-' + Date.now()).then(function (j) { done('Post alert', r, j && j.sent != null ? 'Alert posted and sent to ' + j.sent + ' phone' + (j.sent === 1 ? '' : 's') : 'Alert posted'); });
+        } else done('Post alert', r, 'Alert posted');
+      });
+    } else if (f.id === 'saleForm') {
+      d = new FormData(f); b = $('#yssub'); er = $('#yserr'); er.textContent = ''; b.disabled = true; b.textContent = 'Posting…';
+      var file = d.get('photo');
+      uploadImage(file && file.size ? file : null).then(function (img) {
+        return sb.from('news_yardsales').insert({ title: d.get('title').toString().trim(), address: d.get('address').toString().trim(), area: d.get('area'), sale_start: d.get('start'), sale_end: d.get('end'), hours: (d.get('hours') || '').toString().trim() || null, description: (d.get('description') || '').toString().trim() || null, image_url: img });
+      }).then(function (r) { done('Post sale', r, 'Sale posted'); }, function (x) { b.disabled = false; b.textContent = 'Post sale'; er.textContent = x.message; });
+    } else if (f.id === 'perkForm') {
+      d = new FormData(f); b = $('#pfsub'); er = $('#pferr'); er.textContent = ''; b.disabled = true; b.textContent = 'Publishing…';
+      var pf = d.get('photo'), pu = (d.get('url') || '').toString().trim(), mx = d.get('max');
+      uploadImage(pf && pf.size ? pf : null).then(function (img) {
+        var coins = d.get('unlock') === 'coins';
+        return sb.from('news_perks').insert({ advertiser: d.get('advertiser').toString().trim(), title: d.get('title').toString().trim(), details: (d.get('details') || '').toString().trim() || null, terms: (d.get('terms') || '').toString().trim() || null,
+          code_prefix: d.get('prefix').toString().trim().toUpperCase(), area: d.get('area'), address: (d.get('address') || '').toString().trim() || null, url: pu || null, image_url: img, starts_on: d.get('starts'), ends_on: d.get('ends'),
+          unlock_type: coins ? 'coins' : 'free', coin_cost: coins ? Number(d.get('cost') || 0) : 0, max_claims: mx ? Number(mx) : null, featured: !!d.get('featured') });
+      }).then(function (r) { done('Publish perk', r, 'Perk published'); }, function (x) { b.disabled = false; b.textContent = 'Publish perk'; er.textContent = x.message; });
+    } else if (f.id === 'partnerForm') {
+      d = new FormData(f); b = $('#ptsub'); er = $('#pterr'); er.textContent = ''; b.disabled = true; b.textContent = 'Sending…';
+      sb.from('news_perk_requests').insert({ business: d.get('business').toString().trim(), contact_name: (d.get('contact') || '').toString().trim() || null, email: d.get('email').toString().trim(), phone: (d.get('phone') || '').toString().trim() || null, message: (d.get('message') || '').toString().trim() || null, user_id: state.user.id })
+        .then(function (r) { done('Send', r, 'Thanks! We will be in touch.'); });
+    } else if (f.id === 'itemFlagForm') {
+      d = new FormData(f); b = $('#ifsub'); er = $('#iferr'); er.textContent = ''; b.disabled = true;
+      sb.from('news_item_flags').insert({ item_kind: d.get('kind'), item_id: d.get('id'), user_id: state.user.id, reason: d.get('reason'), note: (d.get('note') || '').toString().trim() || null }).then(function (r) {
+        if (r.error) { b.disabled = false; er.textContent = /duplicate|23505/i.test(r.error.message + (r.error.code || '')) ? 'You already flagged this.' : r.error.message; return; }
+        closeModal(); toast('Thanks. An editor will take a look.');
+      });
+    }
+  });
+
+  /* hidden listings in the editor review queue */
+  var reviewBase = views.review;
+  views.review = function () {
+    if (!isStaff()) return reviewBase();
+    return Promise.all([reviewBase(), sb.from('news_yardsales').select('*').eq('status', 'hidden').limit(50)]).then(function (r) {
+      var rows = [];
+      ((r[1] && r[1].data) || []).forEach(function (x) { rows.push(['yardsale', x.id, 'Yard sale', x.title, x.address + ' · ' + x.area, x.author_name]); });
+      if (!rows.length) return r[0];
+      return r[0] + '<h2 style="margin-top:28px">🚩 Hidden listings (' + rows.length + ')</h2><p class="muted">Hidden after 3 flags. Restore or delete.</p>' + rows.map(function (x) {
+        return '<div class="panel q-item"><span class="badge">' + esc(x[2]) + '</span> <span class="muted">by ' + esc(x[5]) + '</span><h3>' + esc(x[3]) + '</h3><p class="muted">' + esc(x[4]) + '</p>' +
+          '<div class="row-actions"><button class="btn ok sm" data-hubrestore="' + x[0] + ':' + esc(x[1]) + '">Restore (clear flags)</button><button class="btn danger sm" data-hubdel="' + x[0] + ':' + esc(x[1]) + '">Delete</button></div></div>';
+      }).join('');
+    });
+  };
 
   /* ---------- boot ---------- */
   window.addEventListener('hashchange', render);
