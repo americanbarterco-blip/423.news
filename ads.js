@@ -11,7 +11,7 @@
   var SLOTS = ['top', 'mid', 'bottom'];
   var live = { top: [], mid: [], bottom: [] };
   /* Page key used for targeting. Other files use their file name (desk, claudia-scanner...).
-     index.html is the app: its key is the section in the address, e.g. home, news, sports, schools. */
+     index.html is the app: its key is the section in the address, e.g. home, news, sports. */
   function pageKeys() {
     var f = (location.pathname.split('/').pop() || 'index').replace(/\.html?$/i, '') || 'index';
     if (f !== 'index') return [f];
