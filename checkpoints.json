@@ -1,21 +1,6 @@
 {
- "updated": "2026-11-07T23:39:36.208292+00:00",
+ "updated": "2026-11-08T05:58:26.342189+00:00",
  "checkpoints": [
-  {
-   "id": "demo-1",
-   "demo": true,
-   "type": "DUI",
-   "title": "DEMO ONLY - sample sobriety checkpoint",
-   "location": "Sample location, Chattanooga TN",
-   "lat": 35.0456,
-   "lng": -85.3097,
-   "start": "2026-11-06T21:00:00-05:00",
-   "end": "2026-11-07T02:00:00-05:00",
-   "agency": "Sample agency",
-   "source_url": "",
-   "status": "verified",
-   "last_verified": "2026-11-03T15:00:00-05:00"
-  },
   {
    "id": "thp-2026-11-13-f39443",
    "type": "DUI",
@@ -30,7 +15,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207663+00:00"
+   "last_verified": "2026-11-08T05:58:26.341409+00:00"
   },
   {
    "id": "thp-2026-11-20-7ae2e8",
@@ -46,7 +31,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207725+00:00"
+   "last_verified": "2026-11-08T05:58:26.341442+00:00"
   },
   {
    "id": "thp-2026-11-27-394f7a",
@@ -62,7 +47,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207732+00:00"
+   "last_verified": "2026-11-08T05:58:26.341510+00:00"
   },
   {
    "id": "thp-2026-11-27-2aba69",
@@ -78,7 +63,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207738+00:00"
+   "last_verified": "2026-11-08T05:58:26.341524+00:00"
   },
   {
    "id": "thp-2026-11-27-0455e3",
@@ -94,7 +79,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207749+00:00"
+   "last_verified": "2026-11-08T05:58:26.341543+00:00"
   },
   {
    "id": "thp-2026-11-13-e10723",
@@ -110,7 +95,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207756+00:00"
+   "last_verified": "2026-11-08T05:58:26.341553+00:00"
   },
   {
    "id": "thp-2026-11-13-bbf316",
@@ -126,7 +111,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207761+00:00"
+   "last_verified": "2026-11-08T05:58:26.341562+00:00"
   },
   {
    "id": "thp-2026-11-20-8d4cfe",
@@ -142,7 +127,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207766+00:00"
+   "last_verified": "2026-11-08T05:58:26.341571+00:00"
   },
   {
    "id": "thp-2026-11-20-1ff832",
@@ -158,7 +143,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207770+00:00"
+   "last_verified": "2026-11-08T05:58:26.341579+00:00"
   },
   {
    "id": "thp-2026-11-27-defbe9",
@@ -174,7 +159,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207775+00:00"
+   "last_verified": "2026-11-08T05:58:26.341592+00:00"
   },
   {
    "id": "thp-2026-11-27-48fe27",
@@ -190,7 +175,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207779+00:00"
+   "last_verified": "2026-11-08T05:58:26.341601+00:00"
   },
   {
    "id": "thp-2026-11-27-961649",
@@ -206,7 +191,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207786+00:00"
+   "last_verified": "2026-11-08T05:58:26.341610+00:00"
   },
   {
    "id": "thp-2026-11-27-caa3ba",
@@ -222,7 +207,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207792+00:00"
+   "last_verified": "2026-11-08T05:58:26.341619+00:00"
   },
   {
    "id": "thp-2026-11-28-6f97ec",
@@ -238,7 +223,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207797+00:00"
+   "last_verified": "2026-11-08T05:58:26.341630+00:00"
   },
   {
    "id": "thp-2026-11-13-cc2ac6",
@@ -254,7 +239,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207805+00:00"
+   "last_verified": "2026-11-08T05:58:26.341642+00:00"
   },
   {
    "id": "thp-2026-11-20-0e6e38",
@@ -270,7 +255,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207809+00:00"
+   "last_verified": "2026-11-08T05:58:26.341653+00:00"
   },
   {
    "id": "thp-2026-11-20-cf138a",
@@ -286,7 +271,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207813+00:00"
+   "last_verified": "2026-11-08T05:58:26.341663+00:00"
   },
   {
    "id": "thp-2026-11-27-87877e",
@@ -302,7 +287,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207818+00:00"
+   "last_verified": "2026-11-08T05:58:26.341671+00:00"
   },
   {
    "id": "thp-2026-11-27-f56520",
@@ -318,7 +303,7 @@
    "agency": "Tennessee Highway Patrol",
    "source_url": "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/2026/NOVEMBER.pdf",
    "status": "verified",
-   "last_verified": "2026-11-07T23:39:36.207822+00:00"
+   "last_verified": "2026-11-08T05:58:26.341680+00:00"
   }
  ]
 }
