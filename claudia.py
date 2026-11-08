@@ -46,6 +46,8 @@ import shutil
 import subprocess
 import sys
 import time
+
+from locality import check_report
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -343,6 +345,10 @@ def cmd_file(cfg: dict, report_path: Path) -> str:
             sys.exit(f"[claudia] bad confidence {conf!r}; use one of {sorted(VALID_CONF)}")
         if len(str(r.get("headline", ""))) < 12:
             sys.exit("[claudia] every report needs a headline of 12+ characters")
+        ok, why = check_report(r)
+        if not ok:
+            sys.exit(f"[claudia] not filed - {r.get('headline', '')[:60]!r}: " + "; ".join(why)
+                     + ". 423.news posts English-language stories about the 423 area only.")
         rid = r.get("id") or f"cg-{int(time.time())}-{added}"
         if rid in have:
             continue

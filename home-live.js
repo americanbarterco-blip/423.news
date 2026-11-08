@@ -385,6 +385,18 @@
     Promise.all(CFG.hubs.map(fetchHub)).then(function (r) { results = r; paintTraffic(root); });
   }
 
+  /* ---------------- locality + language guard (mirror of locality.py; headline-level safety net) ---------------- */
+  var LOCAL_RE = /\b(chattanooga|hamilton county|red bank|signal mountain|collegedale|east ridge|ooltewah|cleveland|bradley county|athens|mcminn|dayton|rhea county|jasper|ringgold|dalton|catoosa|tri-cities|kingsport|johnson city|bristol|sullivan county|washington county|carter county|elizabethton|unicoi|erwin|greeneville|greene county|hawkins county|rogersville|jonesborough|blountville|morristown|newport|sevierville|gatlinburg|northeast tennessee|east tennessee|southeast tennessee|southwest virginia|423)\b/i;
+  var WORLD_RE = /\b(putin|ukrain\w*|kremlin|russia\w*|gaza|israel\w*|hamas|nato|zelensk\w*|beijing|taiwan|white house|congress\w*|supreme court|wall street|nasdaq|hollywood)\b/i;
+  var ES_WORDS = /\b(el|la|los|las|del|que|una|por|para|con|sus|como|pero|seg\u00fan|ayer|gobierno|guerra)\b/gi;
+  function localOk(r) {
+    var h = String((r && r.headline) || '');
+    if (/[\u00e1\u00e9\u00ed\u00f3\u00fa\u00f1\u00bf\u00a1]/i.test(h) && (h.match(ES_WORDS) || []).length >= 1) return false;
+    if ((h.match(ES_WORDS) || []).length >= 3) return false;
+    if (WORLD_RE.test(h) && !LOCAL_RE.test(h)) return false;   /* a dateline tag alone does not make a story local */
+    return true;
+  }
+
   /* ---------------- Claudia Green small feed ---------------- */
   function paintClaudia(root) {
     var el = root.querySelector('.hl-claudia'); if (!el) return;
@@ -402,7 +414,7 @@
       (feed.reports || []).forEach(function (r) {      /* the scanner file only counts while it is fresh, and never twice */
         var t = Date.parse(r.ts); if (isNaN(t) || t < cutoff || seen[norm(r.headline)]) return; seen[norm(r.headline)] = 1; rows.push(r);
       });
-      rows = rows.filter(function (r) { return !isNaN(Date.parse(r.ts)) && Date.parse(r.ts) >= cutoff; })
+      rows = rows.filter(function (r) { return !isNaN(Date.parse(r.ts)) && Date.parse(r.ts) >= cutoff && localOk(r); })
         .sort(function (a, b) { return Date.parse(b.ts) - Date.parse(a.ts); }).slice(0, CFG.claudiaCount);
       var gen = Date.parse(feed.generated_at || ''), fresh = !isNaN(gen) && gen >= cutoff;
       var line = fresh && feed.claudia && feed.claudia.line ? '<div class="hl-note" style="padding:8px 0">' + esc(feed.claudia.line) + '</div>' : '';

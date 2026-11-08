@@ -27,6 +27,9 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from locality import check_report
+
 ROOT = Path(__file__).resolve().parent.parent
 # works in the full layout (data/feed.json) and in the flat repo (feed.json beside this script)
 FEED = next((c for c in (Path(__file__).resolve().parent / "feed.json", ROOT / "data" / "feed.json") if c.exists()),
@@ -128,7 +131,7 @@ def sync_reports(reports: list) -> int:
             "uncertain": r.get("uncertain") or [],
             "heard_on": r.get("heard_on"),
             "paraphrase": r.get("paraphrase"),
-            "published": r.get("published", True),
+            "published": bool(r.get("published", True)) and check_report(r)[0],
         })
     if not rows:
         return 0
