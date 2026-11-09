@@ -110,6 +110,7 @@ ul.pts.unk li::before { background:transparent; border:2px solid var(--warn); }
 <main class="wrap" id="app"><div class="state">Loading report&hellip;</div></main>
 <div id="toast" role="status"></div>
 
+<script src="claudia-locality.js"></script>
 <script>
 var SETTINGS = { EXTRA_DISCLOSURE: '', EMERGENCY: 'In an emergency, call 911.' };
 
@@ -119,6 +120,22 @@ var app = document.getElementById('app');
 var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
 var toast = function (m) { var t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(function () { t.style.display = 'none'; }, 2600); };
 var safeUrl = function (u) { try { var x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ''; } catch (e) { return ''; } };
+var SB_URL = 'https://kdiwehqtezlhecxsoysj.supabase.co';
+var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE';
+function fetchReports(query) {
+  return fetch(SB_URL + '/rest/v1/news_reports?' + query, {
+    headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY },
+    cache: 'no-store'
+  }).then(function (r) {
+    if (!r.ok) throw new Error('reports ' + r.status);
+    return r.json();
+  });
+}
+function localReports(rows) {
+  return (rows || []).filter(function (r) {
+    return window.ClaudiaLocality && window.ClaudiaLocality.isLocal(r);
+  });
+}
 
 function when(ts) {
   var d = new Date(ts); if (isNaN(d)) return { abs: '', rel: '' };
@@ -307,22 +324,28 @@ function list(all) {
 }
 
 var id = new URLSearchParams(location.search).get('id');
-fetch('feed.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) {
-  if (!r.ok) throw new Error('feed ' + r.status);
-  return r.json();
-}).then(function (d) {
-  var all = (d.reports || []).slice().sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); });
-  if (!id) return list(all);
-  var r = all.find(function (x) { return String(x.id) === id; });
-  if (!r) {
-    app.innerHTML = '<div class="state"><h1>Report not found</h1><p>It may have been replaced or resolved.</p><p><a class="btn pri" href="claudia-scanner.html">View Live Wire</a></p></div>';
-    document.title = 'Report not found — 423.news';
-    return;
-  }
-  render(r, all);
-}).catch(function () {
-  app.innerHTML = '<div class="state"><h1>Could not connect</h1><p>The 423.news wire feed is temporarily unreachable.</p><p><a class="btn pri" href="javascript:location.reload()">Retry</a></p></div>';
-});
+var latest = fetchReports('select=*&published=eq.true&order=ts.desc&limit=100').then(localReports);
+if (id) {
+  Promise.all([
+    fetchReports('select=*&id=eq.' + encodeURIComponent(id) + '&published=eq.true&limit=1'),
+    latest
+  ]).then(function (parts) {
+    var r = localReports(parts[0])[0];
+    var all = parts[1];
+    if (!r) {
+      app.innerHTML = '<div class="state"><h1>Report not found</h1><p>This report is no longer published in the local 423 wire.</p><p><a class="btn pri" href="claudia-scanner.html">View Live Wire</a></p></div>';
+      document.title = 'Report not found — 423.news';
+      return;
+    }
+    render(r, all);
+  }).catch(function () {
+    app.innerHTML = '<div class="state"><h1>Could not connect</h1><p>The live 423.news reports database is temporarily unreachable. No older static copy was substituted.</p><p><button class="btn pri" type="button" onclick="location.reload()">Retry</button></p></div>';
+  });
+} else {
+  latest.then(list).catch(function () {
+    app.innerHTML = '<div class="state"><h1>Could not connect</h1><p>The live 423.news reports database is temporarily unreachable. No older static copy was substituted.</p><p><button class="btn pri" type="button" onclick="location.reload()">Retry</button></p></div>';
+  });
+}
 })();
 </script>
 <script src="ads.js"></script>
