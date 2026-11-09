@@ -141,6 +141,33 @@
     return q.then(function (r) { if (r.error) throw r.error; return r.data || []; });
   }
 
+  /* ---------- Claudia wire integration ---------- */
+  function claudiaSection(r) {
+    var t = [r.headline, r.summary, (r.tags || []).join(' '), r.dateline].join(' ');
+    var rules = [
+      ['sports', /\b(sports?|football|basketball|baseball|softball|soccer|wrestling|volleyball|athlete|coach|team|tournament|playoff|little league)\b/i],
+      ['outdoors', /\b(outdoors?|fishing|hunting|boating|camping|trail|lake|wildlife|parks?|wildfire)\b/i],
+      ['government', /\b(government|city council|county commission|commissioners?|mayor|election|vote|court|lawsuit|ordinance|budget|public meeting|school board)\b/i],
+      ['news', /\b(police|sheriff|fire|ems|ambulance|crash|accident|traffic|road|weather|storm|flood|missing|arrest|crime|closure|emergency|power outage|water outage)\b/i],
+      ['classifieds', /\b(for sale|wanted|yard sale|garage sale|flea market|classifieds?|selling|trade|swap|marketplace|rent(?:al|als)?|equipment for sale|vehicle for sale)\b/i],
+      ['community', /\b(community|festival|parade|fundraiser|volunteer|nonprofit|celebration|church|charity|event|announcement|lost and found)\b/i]
+    ];
+    for (var i = 0; i < rules.length; i++) if (rules[i][1].test(t)) return rules[i][0];
+    return 'community';
+  }
+  function claudiaCards(rows) {
+    if (!rows.length) return '';
+    return '<div class="sech"><h2>Claudia Green · Local Wire</h2><a href="claudia-scanner.html">Open live wire →</a></div>' +
+      '<div class="grid claudia-wire-grid">' + rows.map(function (r) {
+        var summary = excerpt(r.summary || 'Follow the developing local report.', 180);
+        var kind = String(r.kind || 'REPORT').replace(/[<>]/g, '');
+        return '<article class="panel pad"><span class="badge">Claudia · ' + esc(kind) + '</span>' +
+          '<h3><a href="report.html?id=' + encodeURIComponent(r.id) + '">' + esc(r.headline) + '</a></h3>' +
+          '<p class="muted">' + esc(summary) + '</p><div class="foot"><span class="muted">' + esc(r.dateline || '423 area') + ' · ' + esc(ago(r.ts)) + '</span>' +
+          '<a href="report.html?id=' + encodeURIComponent(r.id) + '">Read report →</a></div></article>';
+      }).join('') + '</div>';
+  }
+
   /* ---------- views ---------- */
   var views = {};
 
@@ -240,8 +267,17 @@
     if (sec === 'community' && topic === 'photos') opts.photos = true; else opts.topic = topic;
     if (sec === 'sports') return sportsView(topic, tabs, opts);
     var vidP = sec === 'news' && topic === 'all' ? newsVideos() : Promise.resolve('');
-    return Promise.all([listPosts(opts), vidP]).then(function (rr) {
-      var posts = rr[0], vid = rr[1];
+    var wireP = sec === 'news' || sec === 'sports' || sec === 'outdoors' || sec === 'government' || sec === 'community' || sec === 'classifieds'
+      ? sb.from('news_reports').select('id,kind,dateline,headline,summary,ts,tags,published').eq('published', true).order('ts', { ascending: false }).limit(200)
+          .then(function (r) {
+            if (r.error) return [];
+            return (r.data || []).filter(function (x) {
+              return window.ClaudiaLocality && window.ClaudiaLocality.isLocal(x) && claudiaSection(x) === sec;
+            }).slice(0, 12);
+          })
+      : Promise.resolve([]);
+    return Promise.all([listPosts(opts), vidP, wireP]).then(function (rr) {
+      var posts = rr[0], vid = rr[1], wire = rr[2] || [];
       var head = '<div class="chead"><div style="margin-bottom:18px"><span class="badge">' + esc(meta.label) + '</span><h1>' + esc(meta.label) + '</h1><p class="muted">' + esc(meta.blurb) + '</p></div>' +
         '<button class="btn" data-submit="' + sec + '"' + (topic && topic !== 'all' && topic !== 'photos' ? ' data-topic="' + esc(topic) + '"' : '') + '>' +
         (sec === 'community' ? 'Create Post' : sec === 'classifieds' ? 'Post a Listing' : sec === 'sports' ? 'Post a Score or Story' : 'Submit a Story') + '</button></div>';
@@ -254,7 +290,8 @@
       } else {
         body = '<div class="grid">' + posts.map(card).join('') + '</div>';
       }
-      return head + vid + tabs + body;
+      var claudia = claudiaCards(wire);
+      return head + vid + tabs + claudia + body;
     });
   }
 
@@ -1038,8 +1075,15 @@
     var since = new Date(Date.now() - 30 * 3600e3).toISOString(), until = new Date(Date.now() + 36 * 3600e3).toISOString();
     var pScores = sb.from('news_scores').select('*').gte('start_time', since).lte('start_time', until).order('start_time', { ascending: false }).limit(60);
     var pHeads = sb.from('news_headlines').select('id,title,url,source,league').order('published', { ascending: false, nullsFirst: false }).limit(6);
-    return Promise.all([listPosts(opts), pScores, pHeads]).then(function (r) {
-      var posts = r[0], games = (r[1] && r[1].data) || [], heads = (r[2] && r[2].data) || [];
+    var pWire = sb.from('news_reports').select('id,kind,dateline,headline,summary,ts,tags,published').eq('published', true).order('ts', { ascending: false }).limit(200)
+      .then(function (r) {
+        if (r.error) return [];
+        return (r.data || []).filter(function (x) {
+          return window.ClaudiaLocality && window.ClaudiaLocality.isLocal(x) && claudiaSection(x) === 'sports';
+        }).slice(0, 12);
+      });
+    return Promise.all([listPosts(opts), pScores, pHeads, pWire]).then(function (r) {
+      var posts = r[0], games = (r[1] && r[1].data) || [], heads = (r[2] && r[2].data) || [], wire = r[3] || [];
       var live = games.filter(function (g) { return g.status === 'in'; });
       var fin = games.filter(function (g) { return g.status === 'post'; });
       var pre = games.filter(function (g) { return g.status === 'pre'; }).reverse();
@@ -1064,7 +1108,7 @@
         var u = /^https:\/\//i.test(h.url || '') ? h.url : '';
         return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(h.title) + '<small>' + esc(h.source || LEAGUE_NAME[h.league] || '') + '</small></a>' : '';
       }).join('') + '</div>' : '';
-      return head + tabsHtml + ticker + body + hl;
+      return head + tabsHtml + ticker + claudiaCards(wire) + body + hl;
     });
   }
 
