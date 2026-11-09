@@ -149,6 +149,7 @@
       ['outdoors', /\b(outdoors?|fishing|hunting|boating|camping|trail|lake|wildlife|parks?|wildfire)\b/i],
       ['government', /\b(government|city council|county commission|commissioners?|mayor|election|vote|court|lawsuit|ordinance|budget|public meeting|school board)\b/i],
       ['news', /\b(police|sheriff|fire|ems|ambulance|crash|accident|traffic|road|weather|storm|flood|missing|arrest|crime|closure|emergency|power outage|water outage)\b/i],
+      ['classifieds', /\b(for sale|wanted|yard sale|garage sale|flea market|classifieds?|selling|trade|swap|marketplace|rent(?:al|als)?|equipment for sale|vehicle for sale)\b/i],
       ['community', /\b(community|festival|parade|fundraiser|volunteer|nonprofit|celebration|church|charity|event|announcement|lost and found)\b/i]
     ];
     for (var i = 0; i < rules.length; i++) if (rules[i][1].test(t)) return rules[i][0];
@@ -266,7 +267,7 @@
     if (sec === 'community' && topic === 'photos') opts.photos = true; else opts.topic = topic;
     if (sec === 'sports') return sportsView(topic, tabs, opts);
     var vidP = sec === 'news' && topic === 'all' ? newsVideos() : Promise.resolve('');
-    var wireP = sec === 'news' || sec === 'sports' || sec === 'outdoors' || sec === 'government' || sec === 'community'
+    var wireP = sec === 'news' || sec === 'sports' || sec === 'outdoors' || sec === 'government' || sec === 'community' || sec === 'classifieds'
       ? sb.from('news_reports').select('id,kind,dateline,headline,summary,ts,tags,published').eq('published', true).order('ts', { ascending: false }).limit(200)
           .then(function (r) {
             if (r.error) return [];
