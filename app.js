@@ -145,11 +145,11 @@
   function claudiaSection(r) {
     var t = [r.headline, r.summary, (r.tags || []).join(' '), r.dateline].join(' ');
     var rules = [
-      ['sports', /\\b(sports?|football|basketball|baseball|softball|soccer|wrestling|volleyball|athlete|coach|team|tournament|playoff|little league)\\b/i],
-      ['outdoors', /\\b(outdoors?|fishing|hunting|boating|camping|trail|lake|wildlife|parks?|wildfire)\\b/i],
-      ['government', /\\b(government|city council|county commission|commissioners?|mayor|election|vote|court|lawsuit|ordinance|budget|public meeting|school board)\\b/i],
-      ['news', /\\b(police|sheriff|fire|ems|ambulance|crash|accident|traffic|road|weather|storm|flood|missing|arrest|crime|closure|emergency|power outage|water outage)\\b/i],
-      ['community', /\\b(community|festival|parade|fundraiser|volunteer|nonprofit|celebration|church|charity|event|announcement|lost and found)\\b/i]
+      ['sports', /\b(sports?|football|basketball|baseball|softball|soccer|wrestling|volleyball|athlete|coach|team|tournament|playoff|little league)\b/i],
+      ['outdoors', /\b(outdoors?|fishing|hunting|boating|camping|trail|lake|wildlife|parks?|wildfire)\b/i],
+      ['government', /\b(government|city council|county commission|commissioners?|mayor|election|vote|court|lawsuit|ordinance|budget|public meeting|school board)\b/i],
+      ['news', /\b(police|sheriff|fire|ems|ambulance|crash|accident|traffic|road|weather|storm|flood|missing|arrest|crime|closure|emergency|power outage|water outage)\b/i],
+      ['community', /\b(community|festival|parade|fundraiser|volunteer|nonprofit|celebration|church|charity|event|announcement|lost and found)\b/i]
     ];
     for (var i = 0; i < rules.length; i++) if (rules[i][1].test(t)) return rules[i][0];
     return 'community';
