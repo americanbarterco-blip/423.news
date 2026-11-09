@@ -1105,6 +1105,7 @@ body.cg-page #nav a.on, body.cg-page #nav a:hover { border-bottom-color: var(--c
     </div>
   </div>
 </footer>
+<script src="claudia-locality.js"></script>
 <script>
 /* ============================================================
    423.news — Claudia Green | site configuration
@@ -3098,14 +3099,20 @@ function toIncident(r) {
 }
 async function loadReports(limit) {
   const sb = CFG.supabase || {};
+  const take = Math.min(Math.max(Number(limit) || 50, 1), 200);
+  const filterLocal = rows => (rows || []).filter(row =>
+    window.ClaudiaLocality && window.ClaudiaLocality.isLocal(row)
+  ).slice(0, take);
   if (sb.url && sb.anonKey) {
-    const r = await fetch(sb.url.replace(/\/$/, '') + '/rest/v1/news_reports?select=*&published=eq.true&order=ts.desc&limit=' + limit, { headers: { apikey: sb.anonKey, Authorization: 'Bearer ' + sb.anonKey }, cache: 'no-store' });
+    const fetchLimit = Math.min(take * 4, 800);
+    const r = await fetch(sb.url.replace(/\/$/, '') + '/rest/v1/news_reports?select=*&published=eq.true&order=ts.desc&limit=' + fetchLimit, { headers: { apikey: sb.anonKey, Authorization: 'Bearer ' + sb.anonKey }, cache: 'no-store' });
     if (!r.ok) throw new Error('The reports database answered ' + r.status + '.');
-    return r.json();
+    return filterLocal(await r.json());
   }
   const r = await fetch('feed.json', { cache: 'no-store' });
   if (!r.ok) throw new Error('Could not read feed.json (' + r.status + ').');
-  const d = await r.json(); return (d.reports || []).slice(0, limit);
+  const d = await r.json();
+  return filterLocal(d.reports || []);
 }
 async function api(path) {
   if (path.startsWith('/wire')) { const n = Number((path.match(/limit=(\d+)/) || [])[1]) || 50; return { items: (await loadReports(n)).map(toIncident) }; }
