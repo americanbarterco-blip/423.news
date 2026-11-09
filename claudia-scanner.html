@@ -1264,8 +1264,9 @@ window.CLAUDIA_CONFIG = {
         note: online ? undefined : ((feeds || [])[0] && feeds[0].note) || undefined,
         feeds: (feeds || []).map(function (f) {
           return {
-            name: f.name, status: f.status, listeners: f.listeners,
-            live_data: f.live_data, priority: f.priority, tags: f.tags || [], url: f.url || ''
+            name: f.name, status: f.live_data ? (f.status || 'online') : 'standby', listeners: f.listeners,
+            live_data: !!f.live_data, priority: f.priority, tags: f.tags || [], url: f.url || '',
+            note: f.live_data ? (f.note || '') : (f.note || 'Configured feed; no live audio or data connection is active.')
           };
         }),
         log: (log || []).map(function (l) {
