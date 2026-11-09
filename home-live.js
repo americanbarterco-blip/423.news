@@ -385,16 +385,9 @@
     Promise.all(CFG.hubs.map(fetchHub)).then(function (r) { results = r; paintTraffic(root); });
   }
 
-  /* ---------------- locality + language guard (mirror of locality.py; headline-level safety net) ---------------- */
-  var LOCAL_RE = /\b(chattanooga|hamilton county|red bank|signal mountain|collegedale|east ridge|ooltewah|cleveland|bradley county|athens|mcminn|dayton|rhea county|jasper|ringgold|dalton|catoosa|tri-cities|kingsport|johnson city|bristol|sullivan county|washington county|carter county|elizabethton|unicoi|erwin|greeneville|greene county|hawkins county|rogersville|jonesborough|blountville|morristown|newport|sevierville|gatlinburg|northeast tennessee|east tennessee|southeast tennessee|southwest virginia|423)\b/i;
-  var WORLD_RE = /\b(putin|ukrain\w*|kremlin|russia\w*|gaza|israel\w*|hamas|nato|zelensk\w*|beijing|taiwan|white house|congress\w*|supreme court|wall street|nasdaq|hollywood)\b/i;
-  var ES_WORDS = /\b(el|la|los|las|del|que|una|por|para|con|sus|como|pero|seg\u00fan|ayer|gobierno|guerra)\b/gi;
+  /* ---------------- shared Claudia locality guard ---------------- */
   function localOk(r) {
-    var h = String((r && r.headline) || '');
-    if (/[\u00e1\u00e9\u00ed\u00f3\u00fa\u00f1\u00bf\u00a1]/i.test(h) && (h.match(ES_WORDS) || []).length >= 1) return false;
-    if ((h.match(ES_WORDS) || []).length >= 3) return false;
-    if (WORLD_RE.test(h) && !LOCAL_RE.test(h)) return false;   /* a dateline tag alone does not make a story local */
-    return true;
+    return !!(window.ClaudiaLocality && window.ClaudiaLocality.isLocal(r));
   }
 
   /* ---------------- Claudia Green small feed ---------------- */
