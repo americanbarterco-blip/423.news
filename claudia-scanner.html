@@ -1547,6 +1547,7 @@ window.CLAUDIA_CONFIG = {
     if (!list.length) { host.innerHTML = '<div class="empty">Nothing filed in this category yet.</div>'; return; }
     host.innerHTML = list.map(function (r) {
       var heard = r.kind === 'HEARD';
+      var section = N().sectionForReport ? N().sectionForReport(r) : { key: 'news', label: 'News' };
       return '<article class="report' + (heard ? ' heard' : '') + '">' +
         '<div class="gutter">' +
           '<span class="time">' + rel(r.minutesAgo) + '</span>' +
@@ -1568,6 +1569,7 @@ window.CLAUDIA_CONFIG = {
               r.uncertain.map(esc).join(' &middot; ') + '</div>'
             : '') +
           '<div class="tags">' +
+            '<a class="tag" href="#/' + esc(section.key) + '" aria-label="View ' + esc(section.label) + ' section">' + esc(section.label) + ' section</a>' +
             '<span class="tag hot">' + esc(r.dateline || 'DESK') + '</span>' +
             (r.tags || []).map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') +
           '</div>' +
@@ -3134,6 +3136,7 @@ window.N423 = {
   canWire: () => false, getUser: () => null, app: () => document.getElementById('app'),
   ZONES: ['423 area'], CATS: ['Police', 'Fire', 'EMS', 'Traffic', 'Weather', 'Community'],
   readOnly: true, noZones: true, deskUrl: 'index.html#/review', mapView: { center: [35.75, -84.0], zoom: 7 },
+  sectionForReport: function (r) { var key = category(r); return { key: key, label: categoryLabel(key) }; },
   personaNote: CFG.personaNote !== undefined ? CFG.personaNote : 'Claudia Green is 423.news’s AI correspondent. Recorded video, not a live broadcast.'
 };
 const go = () => { const m = location.hash.match(/^#\/claudia\/(.+)$/); const id = m ? decodeURIComponent(m[1]) : ''; if (window.Claudia.active()) window.Claudia.hash(id); else window.Claudia.mount(id); };
