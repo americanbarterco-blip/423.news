@@ -10,6 +10,15 @@
   var LOCAL_ROUTE_RE = /\/(local-news|news\/local|news\/knox-county-news|knox-county-news|local)(\/|$)/i;
   var LOCAL_PUBLISHER_RE = /(^|\.)((local3news)|(wjhl)|(wate)|(wbir)|(timesfreepress)|(chattanoogan)|(clevelandbanner)|(mainstreetnews)|(nooga))\.com$/i;
 
+  function getHostAndPath(rawUrl) {
+    var match = String(rawUrl || '').match(/^https?:\/\/([^/?#]+)([^?#]*)/i);
+    if (!match) return null;
+    return {
+      hostname: match[1].toLowerCase().replace(/:\\d+$/, ''),
+      pathname: match[2] || '/'
+    };
+  }
+
   function isLocal(report) {
     if (!report || typeof report !== 'object') return false;
     var headline = String(report.headline || '');
@@ -31,11 +40,8 @@
        the source's URL identify a local publisher/local-news section. */
     var localDateline = LOCAL_DATELINE_RE.test(dateline);
     var localPublisherSection = sources.some(function (s) {
-      var u = String((s && s.url) || '');
-      try {
-        var parsed = new URL(u);
-        return LOCAL_PUBLISHER_RE.test(parsed.hostname) && LOCAL_ROUTE_RE.test(parsed.pathname);
-      } catch (e) { return false; }
+      var parsed = getHostAndPath(s && s.url);
+      return !!parsed && LOCAL_PUBLISHER_RE.test(parsed.hostname) && LOCAL_ROUTE_RE.test(parsed.pathname);
     });
     return localDateline && localPublisherSection;
   }
