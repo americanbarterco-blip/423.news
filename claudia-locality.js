@@ -14,7 +14,7 @@
     var match = String(rawUrl || '').match(/^https?:\/\/([^/?#]+)([^?#]*)/i);
     if (!match) return null;
     return {
-      hostname: match[1].toLowerCase().replace(/:\\d+$/, ''),
+      hostname: match[1].toLowerCase().replace(/:\d+$/, ''),
       pathname: match[2] || '/'
     };
   }
