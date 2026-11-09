@@ -1074,8 +1074,15 @@
     var since = new Date(Date.now() - 30 * 3600e3).toISOString(), until = new Date(Date.now() + 36 * 3600e3).toISOString();
     var pScores = sb.from('news_scores').select('*').gte('start_time', since).lte('start_time', until).order('start_time', { ascending: false }).limit(60);
     var pHeads = sb.from('news_headlines').select('id,title,url,source,league').order('published', { ascending: false, nullsFirst: false }).limit(6);
-    return Promise.all([listPosts(opts), pScores, pHeads]).then(function (r) {
-      var posts = r[0], games = (r[1] && r[1].data) || [], heads = (r[2] && r[2].data) || [];
+    var pWire = sb.from('news_reports').select('id,kind,dateline,headline,summary,ts,tags,published').eq('published', true).order('ts', { ascending: false }).limit(200)
+      .then(function (r) {
+        if (r.error) return [];
+        return (r.data || []).filter(function (x) {
+          return window.ClaudiaLocality && window.ClaudiaLocality.isLocal(x) && claudiaSection(x) === 'sports';
+        }).slice(0, 12);
+      });
+    return Promise.all([listPosts(opts), pScores, pHeads, pWire]).then(function (r) {
+      var posts = r[0], games = (r[1] && r[1].data) || [], heads = (r[2] && r[2].data) || [], wire = r[3] || [];
       var live = games.filter(function (g) { return g.status === 'in'; });
       var fin = games.filter(function (g) { return g.status === 'post'; });
       var pre = games.filter(function (g) { return g.status === 'pre'; }).reverse();
@@ -1100,7 +1107,7 @@
         var u = /^https:\/\//i.test(h.url || '') ? h.url : '';
         return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(h.title) + '<small>' + esc(h.source || LEAGUE_NAME[h.league] || '') + '</small></a>' : '';
       }).join('') + '</div>' : '';
-      return head + tabsHtml + ticker + body + hl;
+      return head + tabsHtml + ticker + claudiaCards(wire) + body + hl;
     });
   }
 
