@@ -40,8 +40,8 @@
     adUrls: [],
 
     /* Small Claudia Green feed on the home page (same-site page shown in a frame) */
-    claudiaUrl: 'claudia-scanner.html',
-    feedUrl: 'feed.json',   /* the same file the scanner page reads */
+    claudiaUrl: 'live-wire.html',
+    feedUrl: 'feed.json',   /* the same file the Live Wire page reads */
     claudiaCount: 5,
     claudiaFreshHours: 24,   /* reports older than this disappear on their own */
     claudiaImage: 'claudia-studio.jpg',   /* still picture shown in her homepage card */
@@ -404,7 +404,7 @@
       if (x[0] === null && x[1] === null) { el.innerHTML = '<div class="hl-note">Claudia Green’s reports could not be loaded. <a href="' + esc(CFG.claudiaUrl) + '" style="text-decoration:underline">Open her page</a>.</div>'; return; }
       var rows = (x[0] || []).slice(), feed = x[1] || {}, seen = {};
       rows.forEach(function (r) { seen[norm(r.headline)] = 1; });
-      (feed.reports || []).forEach(function (r) {      /* the scanner file only counts while it is fresh, and never twice */
+      (feed.reports || []).forEach(function (r) {      /* the desk file only counts while it is fresh, and never twice */
         var t = Date.parse(r.ts); if (isNaN(t) || t < cutoff || seen[norm(r.headline)]) return; seen[norm(r.headline)] = 1; rows.push(r);
       });
       rows = rows.filter(function (r) { return !isNaN(Date.parse(r.ts)) && Date.parse(r.ts) >= cutoff && localOk(r); })
@@ -491,7 +491,7 @@
       '<div class="hl-video" id="hlVideo"></div></div>' +
       '<div class="hl-side">' +
       '<div class="hl"><div class="hl-h"><h2>Claudia Green</h2><span class="hl-acts"><span class="muted hl-cstamp"></span><a href="' + esc(CFG.claudiaUrl) + '" style="font-size:12px;text-decoration:underline">All reports →</a></span></div>' +
-      (CFG.claudiaImage ? '<div style="padding:12px 14px 0"><div class="hl-video" style="aspect-ratio:16/9;border-radius:12px"><img src="' + esc(CFG.claudiaImage) + '" alt="Claudia Green at the 423.news anchor desk (illustration)" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%"><span class="cg-cam" style="position:absolute;inset:0;border:0;background:none;aspect-ratio:auto;max-width:none;pointer-events:none"><span class="cg-tag" style="position:absolute;left:8px;top:8px;background:rgba(0,0,0,.65);color:#fff;font:700 11px system-ui;padding:5px 8px;border-radius:99px;text-transform:uppercase"data-idle="Studio">Studio</span></span><button type="button" class="cg-snd" style="position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.65);color:#fff;border:0;border-radius:99px;padding:7px 11px;font:600 12px system-ui;cursor:pointer">Enable voice</button></div><div class="hl-note" style="padding:6px 0 0">Claudia Green, 423.news’s AI correspondent. Illustration. <a href="#/tip" style="text-decoration:underline">Send Claudia a scanner clip</a></div></div>' : '') +
+      (CFG.claudiaImage ? '<div style="padding:12px 14px 0"><div class="hl-video" style="aspect-ratio:16/9;border-radius:12px"><img src="' + esc(CFG.claudiaImage) + '" alt="Claudia Green at the 423.news anchor desk (illustration)" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%"><span class="cg-cam" style="position:absolute;inset:0;border:0;background:none;aspect-ratio:auto;max-width:none;pointer-events:none"><span class="cg-tag" style="position:absolute;left:8px;top:8px;background:rgba(0,0,0,.65);color:#fff;font:700 11px system-ui;padding:5px 8px;border-radius:99px;text-transform:uppercase"data-idle="Studio">Studio</span></span><button type="button" class="cg-snd" style="position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.65);color:#fff;border:0;border-radius:99px;padding:7px 11px;font:600 12px system-ui;cursor:pointer">Enable voice</button></div><div class="hl-note" style="padding:6px 0 0">Claudia Green, 423.news’s AI correspondent. Illustration. <a href="#/tip" style="text-decoration:underline">Send Claudia a tip</a></div></div>' : '') +
       '<div class="hl-claudia"><div class="hl-note">Loading…</div></div></div>' +
       '<div class="hl"><div class="hl-h"><h2>Traffic · 423 area</h2><span class="hl-acts"><span class="muted hl-stamp"></span><button type="button" class="hl-view" data-view="list" aria-pressed="true">List</button><button type="button" class="hl-view" data-view="map" aria-pressed="false">Map</button><button type="button" class="hl-refresh">Refresh</button></span></div>' +
       '<div class="hl-chips"></div><div class="hl-list" aria-live="polite"></div>' +

@@ -57,7 +57,7 @@ function drawPw(){
 
 /* ---------- Ads manager: upload, place, size, timing, edit ---------- */
 var adEdit=null;
-var AD_PAGES=[['home','Home'],['news','News'],['claudia-scanner','Claudia Green (scanner)'],['forecast','Forecast'],['events','423 Events'],['hotspots','Hot Spots'],['checkpoints','Checkpoints'],['sports','Local Sports'],['scores','Scores & Live'],['outdoors','Outdoors'],['classifieds','Classifieds'],['community','citizen423report'],['government','Government'],['review','Review'],['desk','Claudia live desk'],['conditions','Conditions'],['category','Category pages'],['report','Report a problem']];
+var AD_PAGES=[['home','Home'],['news','News'],['claudia-scanner','Claudia Green'],['forecast','Forecast'],['events','423 Events'],['hotspots','Hot Spots'],['checkpoints','Checkpoints'],['sports','Local Sports'],['scores','Scores & Live'],['outdoors','Outdoors'],['classifieds','Classifieds'],['community','citizen423report'],['government','Government'],['review','Review'],['desk','Claudia live desk'],['conditions','Conditions'],['category','Category pages'],['report','Report a problem']];
 function pagesVal(){var all=$('adall').checked;if(all)return'all';var v=AD_PAGES.filter(function(p){return $('adp-'+p[0]).checked}).map(function(p){return p[0]});return v.length?v.join(','):'all'}
 function pagesUi(){var all=$('adall').checked;AD_PAGES.forEach(function(p){$('adp-'+p[0]).disabled=all})}
 function $(i){return document.getElementById(i)}

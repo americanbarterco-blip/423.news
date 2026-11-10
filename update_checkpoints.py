@@ -65,11 +65,15 @@ def parse(text):
             if " ".join(words[:2]).lower() in TWO_WORD: county, loc = " ".join(words[:2]), " ".join(words[2:])
             else: county, loc = words[0], " ".join(words[1:])
         if not county or county.lower() not in COUNTIES: continue
-        if kind_raw.startswith("sobriety"): typ, sub = "DUI", "Sobriety checkpoint"
-        elif "belt" in kind_raw: typ, sub = "Roadblock", "Seat belt checkpoint"
+        if kind_raw.startswith("sobriety"):
+            SEEN[0] += 1; continue   # sobriety checkpoints are intentionally not published
+        SEEN[0] += 1
+        if "belt" in kind_raw: typ, sub = "Roadblock", "Seat belt checkpoint"
         else: typ, sub = "Roadblock", "Driver license checkpoint"
         rows.append(dict(date=dt.date(y, mo, d), county=fix_county(county.title()), location=loc.strip(), type=typ, sub=sub))
     return rows
+
+SEEN = [0]  # rows matched in the THP PDFs, including the sobriety rows we skip
 
 def load_cache():
     try: return json.load(open(CACHE))
@@ -120,9 +124,9 @@ def main():
     # Keep other-source entries (non-THP) that are still current.
     try: old = json.load(open(OUT)).get("checkpoints", [])
     except Exception: old = []
-    keep = [c for c in old if not c.get("id", "").startswith("thp-") and c.get("end", "") >= today.isoformat()]
+    keep = [c for c in old if not c.get("id", "").startswith("thp-") and c.get("type") != "DUI" and c.get("end", "") >= today.isoformat()]
     out = {"updated": dt.datetime.now(dt.timezone.utc).isoformat(), "checkpoints": keep + items}
-    if not rows and not keep and len(old) > 0 and "--force" not in sys.argv:
+    if not rows and not keep and SEEN[0] == 0 and len(old) > 0 and "--force" not in sys.argv:
         print("No rows parsed; leaving existing file untouched"); return
     json.dump(out, open(OUT, "w"), indent=1)
     print("wrote", len(out["checkpoints"]), "checkpoints")

@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Claudia Green — 423.news</title>
-<meta name="description" content="Claudia Green, independent correspondent for 423.news: live reporting, scanner-sourced public-safety accounts, and verified local coverage.">
+<meta name="description" content="Claudia Green, independent correspondent for 423.news: live reporting, public-safety accounts, and verified local coverage.">
 <link rel="canonical" href="./category.html">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Claudia Green — 423.news">
-<meta property="og:description" content="Her reporting: what she heard on the scanners, what she verified, and what it means for you.">
+<meta property="og:description" content="Her reporting: what she learned, what she verified, and what it means for you.">
 <style>
 /* ============================================================
    423.news — Claudia Green
@@ -815,7 +815,7 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
     <nav class="nav">
       <a href="index.html#/home">Home</a><a href="index.html#/alerts">🚨 Alerts</a>
       <a href="index.html#/news">News</a>
-      <a href="claudia-scanner.html">Claudia Green</a>
+      <a href="live-wire.html">Claudia Green</a>
       <a href="index.html#/forecast">Forecast</a>
       <a href="events.html">423 Events</a>
       <a href="hotspots.html">Hot Spots</a>
@@ -843,10 +843,7 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
       <div class="cat-kicker">Category</div>
       <h1>Claudia Green</h1>
       <p>
-        Independent correspondent contracted by 423.news. She listens to public dispatch audio and
-        works the open record, then files two kinds of story: what she could verify, and what she
-        heard — always in her own words, always with what it means for you. Nothing from a scanner is
-        printed as fact until something published corroborates it.
+        Independent correspondent contracted by 423.news. She works the open record and public sources, then files two kinds of story: what she could verify, and what is still developing — always in her own words, always with what it means for you. Nothing is printed as fact until something published corroborates it.
       </p>
     </div>
     <div class="cat-badge">
@@ -860,9 +857,9 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
       </div>
       <div class="ln"></div>
       <div class="rl">Live desk open</div>
-      <a href="claudia-scanner.html">Step into her studio →</a>
+      <a href="live-wire.html">Step into her studio →</a>
       <a href="index.html">Live wire →</a>
-      <a href="index.html#/tip">Send Claudia a scanner clip →</a>
+      <a href="index.html#/tip">Send Claudia a tip →</a>
     </div>
   </section>
 
@@ -878,7 +875,7 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
 
   <div class="legal-strip cat-foot">
     <b>How to read this category.</b> Items labelled <b>Verified</b> are corroborated by a published
-    record. Items labelled <b>Heard</b> are her own account of public dispatch audio — not a transcript,
+    record. Items labelled <b>Tip</b> are her own account of something reported to her — not a transcript,
     not a quote, no names or street numbers — and stay unconfirmed until something published confirms
     them. The point of the unverified items is public safety: where to avoid and what to expect.
   </div>
@@ -899,7 +896,7 @@ mark { background: rgba(245,165,36,.26); color: var(--paper); border-radius: 2px
   "@context": "https://schema.org",
   "@type": "CollectionPage",
   "name": "Claudia Green — 423.news",
-  "description": "Reporting by Claudia Green, independent correspondent: verified local coverage and scanner-sourced public-safety accounts.",
+  "description": "Reporting by Claudia Green, independent correspondent: verified local coverage and public-safety accounts.",
   "isPartOf": { "@type": "WebSite", "name": "423.news" },
   "about": { "@type": "Person", "name": "Claudia Green", "jobTitle": "Independent correspondent" }
 }
@@ -930,7 +927,7 @@ window.CLAUDIA_CONFIG = {
   },
 
   /* ---- live crime radar ----
-     Default source is the desk's own feed: graded scanner traffic and filed
+     Default source is the desk's own feed: unconfirmed tips and filed
      reports. Anything without coordinates is listed under the scope, never
      plotted at an invented position.
 
@@ -1058,7 +1055,7 @@ window.CLAUDIA_CONFIG = {
       },
       reports: reports,
       scanner: {
-        provider: 'Broadcastify',
+        provider: '',
         connected: online,
         note: online ? undefined : ((feeds || [])[0] && feeds[0].note) || undefined,
         feeds: (feeds || []).map(function (f) {
@@ -1171,19 +1168,19 @@ window.CLAUDIA_CONFIG = {
         id: 'seed-1', minutesAgo: 12, kind: 'BREAKING',
         dateline: 'MULTI-COUNTY',
         headline: 'Structure fire on the east corridor draws three departments',
-        summary: 'Dispatch traffic indicates a working fire in a commercial block, with a second alarm requested eight minutes in. No casualty figures confirmed. Claudia is holding the item on scanner corroboration only until a public information officer responds.',
+        summary: 'Dispatch traffic indicates a working fire in a commercial block, with a second alarm requested eight minutes in. No casualty figures confirmed. Claudia is holding the item as unconfirmed until a public information officer responds.',
         confidence: 'unconfirmed',
-        tags: ['scanner', 'fire', 'developing'],
-        scanner: ['East corridor — Fire Ops 1']
+        tags: ['fire', 'developing'],
+        scanner: []
       },
       {
-        id: 'seed-2', minutesAgo: 48, kind: 'SCANNER',
+        id: 'seed-2', minutesAgo: 48, kind: 'DESK',
         dateline: 'CITY DESK',
         headline: 'Long overnight pursuit ends without injury, records show',
-        summary: 'Radio traffic across two channels described a low-speed pursuit that terminated near a retail park. Local records confirm a single arrest. The sheriff\'s office has not issued a release; this item is filed as scanner-sourced and marked for follow-up.',
+        summary: 'A low-speed pursuit was reported that terminated near a retail park. Local records confirm a single arrest. The sheriff\'s office has not issued a release; this item is filed as unconfirmed and marked for follow-up.',
         confidence: 'developing',
-        tags: ['scanner', 'police'],
-        scanner: ['County Sheriff — Dispatch B']
+        tags: ['police'],
+        scanner: []
       },
       {
         id: 'seed-3', minutesAgo: 96, kind: 'VERIFIED',
@@ -1201,7 +1198,7 @@ window.CLAUDIA_CONFIG = {
         summary: 'Two gauges upstream crossed action stage overnight. Crews are staging pumps at the low crossing. No evacuations ordered. Claudia is watching the 6 a.m. briefing before filing a full report.',
         confidence: 'developing',
         tags: ['weather', 'field'],
-        scanner: ['County EM — Operations']
+        scanner: []
       },
       {
         id: 'seed-5', minutesAgo: 240, kind: 'VERIFIED',
@@ -1317,7 +1314,7 @@ window.CLAUDIA_CONFIG = {
     host.innerHTML =
       '<div class="hero-head">' +
         '<span class="pill ' + (top.kind === 'HEARD' ? 'monitoring' : 'live') + '"><span class="dot"></span>' +
-          (top.kind === 'HEARD' ? 'Heard on scanner' : 'Live') + '</span>' +
+          (top.kind === 'HEARD' ? 'Unconfirmed tip' : 'Live') + '</span>' +
         '<span class="hero-kicker">423.news &middot; <b>' + esc(top.dateline || 'LIVE DESK') + '</b></span>' +
         '<span class="hero-kicker" style="margin-left:auto" data-clock-abs></span>' +
       '</div>' +
@@ -1353,9 +1350,7 @@ window.CLAUDIA_CONFIG = {
           '<span class="kind" style="color:var(--muted-2)">' + esc(r.confidence) + '</span>' +
         '</div>' +
         '<div>' +
-          (heard ? '<div class="heard-line"><span class="sig">&#9679;</span>Heard on ' +
-            esc(r.heard_on || (r.scanner || [])[0] || 'the scanner') +
-            ' &middot; her own account, not a transcript</div>' : '') +
+          (heard ? '<div class="heard-line"><span class="sig">&#9679;</span>Unconfirmed tip &middot; her own account, not a transcript</div>' : '') +
           '<h3>' + esc(r.headline) + '</h3>' +
           '<p>' + esc(r.summary) + '</p>' +
           (r.safety && r.safety.length
@@ -1446,13 +1441,9 @@ window.CLAUDIA_CONFIG = {
     if (!host) return;
     var onAir = !!feed.claudia.on_air;
     var open = feed.reports.filter(function (r) { return r.confidence !== 'confirmed'; }).length;
-    var active = feed.scanner.feeds.filter(function (f) { return f.status === 'hot' || f.status === 'active'; }).length;
-    var listeners = feed.scanner.feeds.reduce(function (s, f) { return s + (f.listeners || 0); }, 0);
     var m = [
       ['Feed status', onAir ? 'ON AIR' : 'MONITORING', onAir ? 'transmitting' : 'ready to report', true],
-      ['Open items', String(open), 'awaiting verification', false],
-      ['Scanner feeds', active + '/' + feed.scanner.feeds.length, 'receiving', false],
-      ['Listeners on scanners', String(listeners), 'across all feeds', false]
+      ['Open items', String(open), 'awaiting verification', false]
     ];
     host.innerHTML = m.map(function (x) {
       return '<div class="meter"><div class="k">' + x[0] + '</div>' +
@@ -1997,7 +1988,7 @@ window.CLAUDIA_CONFIG = {
    ------------------------------------------------------------
    Two sources, both honest:
      1. City open data (Socrata) — real coordinates, when configured
-     2. Claudia's own desk feed — reports and graded scanner traffic
+     2. Claudia's own desk feed — reports and unconfirmed tips
         that have no coordinates are listed under the scope, never
         plotted at a made-up position.
    ============================================================ */
@@ -2111,14 +2102,6 @@ window.CLAUDIA_CONFIG = {
           confidence: r.confidence || 'developing', when: r.ts, source: (r.scanner || [])[0] || 'desk'
         });
       }
-    });
-
-    ((feed.scanner || {}).log || []).forEach(function (l) {
-      if (!/^[AB]$/i.test(String(l.grade || ''))) return;
-      unplotted.push({
-        title: l.text, kind: 'SCANNER ' + l.grade, confidence: 'unconfirmed',
-        when: l.ts, source: l.feed || 'scanner'
-      });
     });
 
     return { points: points, unplotted: unplotted.slice(0, 10) };
@@ -2335,23 +2318,6 @@ window.CLAUDIA_CONFIG = {
         ts: r.ts
       });
     });
-    (((feed || {}).scanner || {}).log || []).forEach(function (l, i) {
-      items.push({
-        type: 'scanner',
-        kind: 'SCANNER ' + (l.grade || ''),
-        title: l.text,
-        body: l.feed || '',
-        id: 'scan-' + i,
-        ts: l.ts
-      });
-    });
-    (((feed || {}).scanner || {}).feeds || []).forEach(function (f) {
-      items.push({
-        type: 'feed', kind: 'FEED', title: f.name,
-        body: (f.status || '') + ' ' + (f.listeners != null ? f.listeners + ' listeners' : ''),
-        id: 'feed-' + f.name
-      });
-    });
     return items;
   }
 
@@ -2425,7 +2391,7 @@ window.CLAUDIA_CONFIG = {
       if (el) {
         el.innerHTML = body +
           '<div class="cmd-actions">' +
-          '<a class="btn ghost" href="claudia-scanner.html?area=' + encodeURIComponent(q) + '">Open full conditions page</a>' +
+          '<a class="btn ghost" href="live-wire.html?area=' + encodeURIComponent(q) + '">Open full conditions page</a>' +
           '</div>';
       }
     }).catch(function (e) {
@@ -2621,7 +2587,7 @@ window.CLAUDIA_CONFIG = {
 /* ============================================================
    423.news — Claudia Green | "on air" audio via LiveKit
    ------------------------------------------------------------
-   Her voice, not the scanner's. Broadcastify audio is never
+   Her voice only. No third-party audio is ever
    restreamed or rebroadcast — LiveKit carries Claudia reading her
    own account, in her own words, which is the whole point.
 
@@ -2897,7 +2863,7 @@ window.CLAUDIA_CONFIG = {
     if (h < 24) return h + 'h ago';
     return Math.round(h / 24) + 'd ago';
   };
-  var KIND_LABEL = { HEARD: 'Heard', BREAKING: 'Breaking', SCANNER: 'Scanner', FIELD: 'Field', VERIFIED: 'Verified', DESK: 'Desk' };
+  var KIND_LABEL = { HEARD: 'Tip', BREAKING: 'Breaking', SCANNER: 'Tip', FIELD: 'Field', VERIFIED: 'Verified', DESK: 'Desk' };
 
   /* ---------------- css (injected once, fully scoped) ---------------- */
   var CSS = [
@@ -3042,7 +3008,7 @@ window.CLAUDIA_CONFIG = {
           ? '<div class="cg-unc"><b>Still unconfirmed:</b> ' + r.uncertain.map(esc).join(' · ') + '</div>'
           : '') +
         '<div class="cg-src">' +
-          (r.heard_on ? 'Heard on ' + esc(r.heard_on) + ' — her own account, not a transcript. ' : '') +
+          (r.heard_on ? 'Reported via ' + esc(r.heard_on) + ' — her own account. ' : '') +
           'Filed ' + esc(new Date(r.ts).toLocaleString()) + '.' +
         '</div>' +
       '</div>';

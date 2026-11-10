@@ -260,7 +260,7 @@
 
   views.forecast = function () {
     document.title = '5-Day Forecast & Weather Videos • 423.news';
-    return Promise.resolve('<div class="fx-page"><div class="sech"><h1 style="margin:0">5-Day Forecast</h1><a href="claudia-scanner.html">Area conditions →</a></div>' +
+    return Promise.resolve('<div class="fx-page"><div class="sech"><h1 style="margin:0">5-Day Forecast</h1><a href="live-wire.html">Area conditions →</a></div>' +
       '<div data-fx="board" data-chips="1"></div>' +
       '<div class="sech" style="margin-top:26px"><h2>423.news Forecast Videos</h2></div><div data-fx="videos" data-limit="12"></div>' +
       '<div data-fx="editor"></div></div>');
@@ -368,12 +368,12 @@
       '<form id="pushForm" class="panel pad" style="margin-bottom:12px"><p class="muted" style="margin-top:0">Goes to every phone that turned on 423.news alerts. Claudia\'s new reports already notify automatically.</p>' +
       '<label for="pft">Title</label><input id="pft" name="title" maxlength="80" required placeholder="e.g. Road closed on I-26">' +
       '<label for="pfb">Message</label><textarea id="pfb" name="body" rows="3" maxlength="200" required placeholder="One or two short sentences"></textarea>' +
-      '<label for="pfu">Link inside the site (optional)</label><input id="pfu" name="url" maxlength="300" placeholder="e.g. claudia-scanner.html">' +
+      '<label for="pfu">Link inside the site (optional)</label><input id="pfu" name="url" maxlength="300" placeholder="e.g. live-wire.html">' +
       '<div id="pfmsg" class="muted" style="min-height:20px"></div>' +
       '<div class="row-actions"><button class="btn" type="submit" id="pfsubmit">Send notification</button></div></form>';
   }
 
-  /* ---------- scanner clips & tips for Claudia (private: staff and the sender only) ---------- */
+  /* ---------- tips & clips for Claudia (private: staff and the sender only) ---------- */
   var CLIP_MIME = { mp3: 'audio/mpeg', m4a: 'audio/mp4', mp4: 'audio/mp4', aac: 'audio/aac', wav: 'audio/wav', ogg: 'audio/ogg', oga: 'audio/ogg', webm: 'audio/webm' };
   function uploadClip(file) {
     if (!file || !file.size) return Promise.resolve(null);
@@ -388,19 +388,19 @@
   }
   function openTip(direct) {
     state.tipDirect = !!(direct && isStaff());
-    if (!state.user) { toast('Sign in to send Claudia a clip'); openAuth('signin'); return; }
-    openModal('<h2 style="margin-top:0">' + (state.tipDirect ? 'Share a clip straight to Claudia' : 'Send Claudia a scanner clip') + '</h2>' +
+    if (!state.user) { toast('Sign in to send Claudia a tip'); openAuth('signin'); return; }
+    openModal('<h2 style="margin-top:0">' + (state.tipDirect ? 'Share a tip straight to Claudia' : 'Send Claudia a tip') + '</h2>' +
       (state.tipDirect ? '<p class="muted" style="margin-top:0">This goes into Claudia\'s desk queue right away, ahead of reader tips. She transcribes it, writes her own account and runs the paraphrase check. Nothing is published as-is.</p>' : '') +
-      '<p class="muted" style="margin-top:0">Share something you heard on public scanner audio. It goes privately to Claudia and the editors. ' +
+      '<p class="muted" style="margin-top:0">Share something you saw or heard. It goes privately to Claudia and the editors. ' +
       'It is never posted or played on the site. If it checks out, Claudia writes her own short account in her own words, marked unconfirmed.</p>' +
       '<form id="tipForm">' +
       '<label for="ta">Where (area or block, no street numbers)</label><input id="ta" name="area" maxlength="120" required placeholder="e.g. east side near the mall, Kingsport">' +
-      '<label for="tw">When you heard it</label><input id="tw" name="heard_at" maxlength="80" placeholder="e.g. today around 6:15 PM">' +
-      '<label for="tn">What you heard</label><textarea id="tn" name="note" rows="5" maxlength="2000" minlength="5" required placeholder="Units, what was happening, what changed. No names, ages or plates."></textarea>' +
-      '<label for="tu">Link to the feed or archive (optional)</label><input id="tu" name="source_url" type="url" maxlength="300" placeholder="https://www.broadcastify.com/…">' +
+      '<label for="tw">When it happened</label><input id="tw" name="heard_at" maxlength="80" placeholder="e.g. today around 6:15 PM">' +
+      '<label for="tn">What you saw or heard</label><textarea id="tn" name="note" rows="5" maxlength="2000" minlength="5" required placeholder="Units, what was happening, what changed. No names, ages or plates."></textarea>' +
+      '<label for="tu">Link (optional)</label><input id="tu" name="source_url" type="url" maxlength="300" placeholder="https://…">' +
       '<label for="tc">Audio clip (optional, MP3/M4A/WAV, up to 15 MB)</label><input id="tc" name="clip" type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.webm">' +
-      '<label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px"><input type="checkbox" name="ok" required style="width:auto;margin-top:3px"><span class="muted">This is public dispatch audio I am allowed to share. It is not a private call or recording.</span></label>' +
-      '<div class="hint">Claudia never publishes names, street numbers, plates or ages, and does not copy radio traffic word for word.</div>' +
+      '<label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px"><input type="checkbox" name="ok" required style="width:auto;margin-top:3px"><span class="muted">I am allowed to share this. It is not a private call or recording.</span></label>' +
+      '<div class="hint">Claudia never publishes names, street numbers, plates or ages, and does not copy anything word for word.</div>' +
       '<div id="terr" style="color:#f87171;min-height:20px"></div>' +
       '<div class="row-actions"><button class="btn" type="submit" id="tsubmit">' + (state.tipDirect ? 'Send straight to Claudia' : 'Send to Claudia') + '</button><button class="btn dark" type="button" data-close>Cancel</button></div></form>');
   }
@@ -410,16 +410,15 @@
     if (!staff) q = q.eq('author_id', state.user.id);
     return q.then(function (r) {
       var rows = r.error ? [] : (r.data || []);
-      var out = '<div class="sech" style="margin-top:26px"><h2>' + (staff ? 'Scanner clips for Claudia' : 'Your scanner clips') + '</h2></div>' +
-        '<div class="panel pad" style="margin-bottom:12px"><p class="muted" style="margin-top:0">Heard something on the scanner? Send Claudia a clip or a note. It stays private. She reports only her own account, never your audio.</p>' +
-        '<div class="row-actions"><button class="btn" type="button" data-tip>Send Claudia a clip</button>' +
+      var out = '<div class="sech" style="margin-top:26px"><h2>' + (staff ? 'Tips for Claudia' : 'Your tips') + '</h2></div>' +
+        '<div class="panel pad" style="margin-bottom:12px"><p class="muted" style="margin-top:0">Know something? Send Claudia a tip, clip or note. It stays private. She reports only her own account, never your audio.</p>' +
+        '<div class="row-actions"><button class="btn" type="button" data-tip>Send Claudia a tip</button>' +
         (staff ? '<button class="btn ok" type="button" data-tip="direct">Share straight to Claudia</button>' : '') + '</div></div>';
       if (!rows.length) return out + (staff ? '<p class="muted">No clips from readers yet.</p>' : '');
       return out + rows.map(function (t) {
         var src = /^https:\/\//i.test(t.source_url || '') ? ' · <a href="' + esc(t.source_url) + '" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">feed link</a>' : '';
         var acts = staff ? '<div class="row-actions" style="margin-top:8px">' +
           (t.clip_path ? '<button class="btn dark sm" type="button" data-tipclip="' + esc(t.clip_path) + '">Listen</button>' : '') +
-          (/^https:\/\/([a-z0-9-]+\.)*broadcastify\.com\//i.test(t.source_url || '') ? '<button class="btn ok sm" type="button" data-tippost="' + esc(t.id) + '" data-name="' + esc(t.area) + '" data-url="' + esc(t.source_url) + '">Post feed on Claudia\'s page</button>' : '') +
           (!t.to_claudia && t.status === 'new' ? '<button class="btn ok sm" type="button" data-tipsend="' + esc(t.id) + '">Send to Claudia</button>' : '') +
           (t.status !== 'used' ? '<button class="btn ok sm" type="button" data-tipstatus="used" data-id="' + esc(t.id) + '">Mark used</button>' : '') +
           (t.status !== 'dismissed' ? '<button class="btn dark sm" type="button" data-tipstatus="dismissed" data-id="' + esc(t.id) + '">Dismiss</button>' : '') + '</div>' : '';
@@ -558,7 +557,7 @@
   }
   function render() {
     var rt = parse(); state.route = rt;
-    if (rt.name === 'tip') { /* #/tip opens the scanner-clip form on top of the profile page */
+    if (rt.name === 'tip') { /* #/tip opens the tip form on top of the profile page */
       try { history.replaceState(null, '', '#/profile'); } catch (e) {}
       rt = parse(); state.route = rt;
       setTimeout(openTip, 0);
