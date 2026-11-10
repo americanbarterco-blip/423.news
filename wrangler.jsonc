@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "423-news",
+  "compatibility_date": "2026-11-09",
+  "assets": {
+    "directory": "."
+  },
+  "previews": {}
+}
