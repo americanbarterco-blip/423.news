@@ -21,4 +21,4 @@ When a visitor taps **Español** (translate.js), Claudia reads reports in Spanis
 Per report, the voice uses, in order:
 1. `audio_es` — a rendered Spanish mp3 (same idea as `audio`, e.g. `voice/<id>-es.mp3`)
 2. `headline_es` + `summary_es` — Spanish text you wrote or generated in the feed (read with the device voice)
-3. automatic machine translation of the English headline/summary (needs internet; falls back to English if it fails)
+3. automatic machine translation of the English headline/summary (needs internet; if it fails, Claudia announces in Spanish that the translation is unavailable rather than silently reading the English report).
