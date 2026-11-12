@@ -32,15 +32,22 @@ function json(data, status = 200) {
 async function authorize(request, env) {
   const auth = request.headers.get("authorization") || "";
   const match = auth.match(/^Bearer\s+(.+)$/i);
-  if (!match || !env.SUPABASE_ADMIN_FUNCTION_URL) return false;
-  // Reuse the existing admin function's own session verifier. The "tables"
-  // action returns only after valid(token); no service-role key is stored here.
-  const response = await fetch(env.SUPABASE_ADMIN_FUNCTION_URL, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ action: "tables", token: match[1] })
-  });
-  return response.ok;
+  if (!match) return { ok: false, status: 401, error: "missing_admin_session" };
+  if (!env.SUPABASE_ADMIN_FUNCTION_URL)
+    return { ok: false, status: 503, error: "admin_verifier_not_configured" };
+  try {
+    // Reuse the existing admin function's own session verifier. The "tables"
+    // action returns only after valid(token); no service-role key is stored here.
+    const response = await fetch(env.SUPABASE_ADMIN_FUNCTION_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "tables", token: match[1] })
+    });
+    if (!response.ok) return { ok: false, status: 401, error: "admin_session_rejected" };
+    return { ok: true };
+  } catch {
+    return { ok: false, status: 502, error: "admin_verifier_unreachable" };
+  }
 }
 async function bcfyFetch(path, token, options = {}) {
   const response = await fetch(API + path, { ...options, headers: {
@@ -65,15 +72,17 @@ async function userToken(env) {
 }
 
 export async function onRequestGet({ request, env }) {
-  if (!await authorize(request, env)) return json({ error: "Unauthorized newsroom session" }, 401);
-  const required = ["BCFY_API_SECRET", "BCFY_KEY_ID", "BCFY_APP_ID", "BCFY_USERNAME", "BCFY_PASSWORD"];
-  const missing = required.filter(key => !env[key]);
-  if (missing.length) return json({ error: "Server setup incomplete", missing }, 503);
+  const authorization = await authorize(request, env);
+  if (!authorization.ok) return json({ error: authorization.error }, authorization.status);
   const url = new URL(request.url);
   const action = url.searchParams.get("action") || "health";
+  const required = ["BCFY_API_SECRET", "BCFY_KEY_ID", "BCFY_APP_ID", "BCFY_USERNAME", "BCFY_PASSWORD"];
+  const missing = required.filter(key => !env[key]);
   if (action === "health") return json({ ok: true, service: "423.news private Broadcastify bridge",
     mode: "on-demand", audio: "not exposed", authentication: "existing newsroom admin session",
+    broadcastifyConfiguration: missing.length ? "not_configured" : "ready",
     note: "No background polling is enabled." });
+  if (missing.length) return json({ error: "broadcastify_not_configured", missing }, 503);
   try {
     const token = await userToken(env);
     if (action === "groups") {
