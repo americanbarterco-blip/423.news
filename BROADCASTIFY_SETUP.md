@@ -6,13 +6,15 @@ there is no scheduled polling.
 
 ## Files and deployment
 
-- Cloudflare Pages Function: `functions/api/broadcastify.js`
+- Worker entrypoint: `worker.js`
+- Private API handler: `functions/api/broadcastify.js`
 - Route: `GET /api/broadcastify?action=health`
+- Static files are served through the `ASSETS` binding; `/api/*` is routed through the Worker.
 - Keep all work on `feature/broadcastify-live-calls` until tested.
 
-The Pages project must use the repository root as its build output directory, with
-`functions/` alongside `index.html`. Confirm that the Cloudflare project is configured
-as Pages (not a static-only upload) and that Pages Functions are enabled for this repo.
+This repository is deployed as a Cloudflare Worker with static assets, not a Pages project.
+`wrangler.jsonc` sets `main: worker.js`, binds static assets as `ASSETS`, and routes `/api/*`
+through the Worker before falling back to the site's static files.
 
 ## Cloudflare preview variables and secrets
 
