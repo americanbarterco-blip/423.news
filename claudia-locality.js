@@ -3,8 +3,8 @@
 (function (w) {
   'use strict';
 
-  var LOCAL_RE = /\b(chattanooga|hamilton county|red bank|signal mountain|collegedale|east ridge|ooltewah|cleveland|bradley county|athens|mcminn county|dayton|rhea county|jasper|town of marion|marion, virginia|smyth county|ringgold|dalton|catoosa county|polk county|copper basin|mc caysville|mccaysville|tri-cities|tri cities|kingsport|johnson city|bristol|sullivan county|washington county|carter county|elizabethton|unicoi county|erwin|greeneville|greene county|hawkins county|rogersville|jonesborough|blountville|morristown|hamblen county|newport|cocke county|sevierville|gatlinburg|knoxville|knox county|anderson county|blount county|loudon county|monroe county|meigs county|sequatchie county|marion county|bledsoe county|roane county|claiborne county|grainger county|jefferson county|east tennessee|northeast tennessee|southeast tennessee|north georgia|northwest georgia|southwest virginia|423)\b/i;
-  var LOCAL_DATELINE_RE = /\b(chattanooga|cleveland|athens|knoxville|morristown|johnson city|kingsport|bristol|tri[ -]cities|northeast tennessee|east tennessee|north georgia|southwest virginia|423 area)\b/i;
+  var LOCAL_RE = /\b(chattanooga|hamilton county|condado de hamilton|red bank|signal mountain|collegedale|east ridge|ooltewah|cleveland|bradley county|condado de bradley|athens|mcminn county|condado de mcminn|dayton|rhea county|condado de rhea|jasper|ringgold|dalton|catoosa county|polk county|copper basin|tri-cities|tri cities|kingsport|johnson city|bristol|sullivan county|condado de sullivan|washington county|carter county|elizabethton|unicoi county|erwin|greeneville|greene county|hawkins county|rogersville|jonesborough|blountville|morristown|hamblen county|newport|cocke county|sevierville|gatlinburg|knoxville|knox county|anderson county|blount county|loudon county|monroe county|meigs county|sequatchie county|marion county|bledsoe county|roane county|claiborne county|grainger county|jefferson county|east tennessee|este de tennessee|northeast tennessee|noreste de tennessee|southeast tennessee|sudeste de tennessee|north georgia|norte de georgia|northwest georgia|noroeste de georgia|southwest virginia|suroeste de virginia|área 423|area 423|423)\b/i;
+  var LOCAL_DATELINE_RE = /\b(chattanooga|cleveland|athens|knoxville|morristown|johnson city|kingsport|bristol|tri[ -]cities|northeast tennessee|noreste de tennessee|east tennessee|este de tennessee|north georgia|norte de georgia|southwest virginia|423 area|área 423|area 423|condado de (hamilton|bradley|mcminn|rhea|sullivan))\b/i;
   var WORLD_RE = /\b(argentina|egypt|iran|iraq|israel|gaza|hamas|nato|putin|ukraine|russia|kremlin|china|beijing|taiwan|riyadh|venezuela|microsoft|nvidia|wall street|nasdaq|hollywood|white house|congress|supreme court|president trump|melania trump|lsu|transatlantic|artificial reef)\b/i;
   var NONLOCAL_ROUTE_RE = /\/(regional-national|en-espanol)(\/|$)/i;
   var LOCAL_ROUTE_RE = /\/(local-news|news\/local|news\/knox-county-news|knox-county-news|local)(\/|$)/i;
@@ -26,7 +26,7 @@
     var dateline = String(report.dateline || '');
     var tags = Array.isArray(report.tags) ? report.tags.join(' ') : String(report.tags || '');
     var sources = Array.isArray(report.sources) ? report.sources : [];
-    var storyText = headline + ' ' + summary + ' ' + tags;
+    var storyText = headline + ' ' + summary + ' ' + tags + ' ' + dateline;
     var explicitLocal = LOCAL_RE.test(storyText);
     var urls = sources.map(function (s) { return String((s && s.url) || ''); });
     var regionalSyndication = urls.some(function (u) { return NONLOCAL_ROUTE_RE.test(u); });
