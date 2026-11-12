@@ -19,6 +19,9 @@
   </url>
   <url>
     <loc>https://423.news/news.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/news.html"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/noticias.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/news.html"/>
     <changefreq>hourly</changefreq>
     <priority>0.95</priority>
   </url>
