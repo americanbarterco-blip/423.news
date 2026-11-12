@@ -100,16 +100,15 @@ export async function onRequestGet({ request, env }) {
   if (!env.BCFY_EDITOR_KEY || supplied.length !== env.BCFY_EDITOR_KEY.length) {
     return json({ error: "Unauthorized" }, 401);
   }
-  let authorized = false;
-  try {
-    authorized = crypto.subtle.timingSafeEqual
-      ? crypto.subtle.timingSafeEqual(
-          new TextEncoder().encode(supplied),
-          new TextEncoder().encode(env.BCFY_EDITOR_KEY)
-        )
-      : supplied === env.BCFY_EDITOR_KEY;
-  } catch { authorized = false; }
-  if (!authorized) return json({ error: "Unauthorized" }, 401);
+  // Constant-time comparison using standard JavaScript; Web Crypto has no
+  // timingSafeEqual method in Cloudflare Workers.
+  const expected = env.BCFY_EDITOR_KEY || "";
+  let diff = supplied.length ^ expected.length;
+  const length = Math.max(supplied.length, expected.length);
+  for (let i = 0; i < length; i++) {
+    diff |= (supplied.charCodeAt(i) || 0) ^ (expected.charCodeAt(i) || 0);
+  }
+  if (!expected || diff !== 0) return json({ error: "Unauthorized" }, 401);
 
   const required = ["BCFY_API_SECRET", "BCFY_KEY_ID", "BCFY_APP_ID", "BCFY_USERNAME", "BCFY_PASSWORD"];
   const missing = required.filter((key) => !env[key]);
