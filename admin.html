@@ -43,11 +43,20 @@ function drawLogin(){
   document.getElementById('go').onclick=go;document.getElementById('pw').onkeydown=function(e){if(e.key==='Enter')go()}}
 function init(){call('tables').then(function(r){if(r.s!==200)return;tables=(r.j.tables||[]).slice();var ai=tables.indexOf('news_ads');if(ai>0){tables.splice(ai,1);tables.unshift('news_ads')}cur=tables[0]||'pw';draw()})}
 function draw(){
-  var tabs=tables.concat(['pw']).map(function(t){return'<button class="'+(t===cur?'on':'')+'" data-t="'+esc(t)+'">'+(t==='pw'?'Password':t==='news_ads'?'Ads':esc(t))+'</button>'}).join('');
+  var tabs=tables.concat(['scanner','pw']).map(function(t){return'<button class="'+(t===cur?'on':'')+'" data-t="'+esc(t)+'">'+(t==='pw'?'Password':t==='scanner'?'Scanner Wire':t==='news_ads'?'Ads':esc(t))+'</button>'}).join('');
   app.innerHTML='<div class="top"><h1>423.news Admin</h1><button class="g" id="lo">Log out</button></div><div class="tabs">'+tabs+'</div><div id="msg"></div><div id="body"></div>';
   document.getElementById('lo').onclick=function(){call('noop');out()};
   document.querySelector('.tabs').onclick=function(e){var b=e.target.closest('[data-t]');if(b){cur=b.getAttribute('data-t');draw()}};
-  if(cur==='pw')drawPw();else if(cur==='news_ads')drawAds();else if(!tables.length)document.getElementById('body').innerHTML='<div class="card">No tables set yet. Add ADMIN_TABLES in the function secrets.</div>';else load()}
+  if(cur==='pw')drawPw();else if(cur==='scanner')drawScanner();else if(cur==='news_ads')drawAds();else if(!tables.length)document.getElementById('body').innerHTML='<div class="card">No tables set yet. Add ADMIN_TABLES in the function secrets.</div>';else load()}
+function drawScanner(){
+  var b=$('body');
+  b.innerHTML='<div class="card"><b>Claudia Green — Private Scanner Wire</b><p><small>Bradley County pilot. This is an internal research lead feed, not a public scanner or verified news feed. Nothing here publishes automatically.</small></p><div id="scmsg"></div><button id="shealth">Check connection</button><hr><label><small>Broadcastify Calls county ID (CTID)</small></label><input id="sctid" inputmode="numeric" placeholder="Enter verified county ID — do not guess"><button id="sgroups">Find talkgroups</button><hr><label><small>Talkgroup IDs (up to five, comma-separated)</small></label><input id="sgids" inputmode="numeric" placeholder="Enter selected group IDs"><button id="slive">Fetch calls once</button><pre id="scout" style="white-space:pre-wrap;overflow-wrap:anywhere;background:#050b12;padding:10px;border-radius:8px;max-height:420px;overflow:auto">No request yet.</pre></div>';
+  function show(x){$('scout').textContent=JSON.stringify(x,null,2)}
+  function req(action,extra){$('scmsg').textContent='Checking…';return fetch('/api/broadcastify?'+new URLSearchParams(Object.assign({action:action},extra||{})),{headers:{Authorization:'Bearer '+tok}}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.message||j.error||('HTTP '+r.status));return j})})}
+  $('shealth').onclick=function(){req('health').then(function(x){$('scmsg').textContent='Bridge connected; newsroom session accepted.';show(x)}).catch(function(e){$('scmsg').textContent=e.message})};
+  $('sgroups').onclick=function(){var id=$('sctid').value.trim();if(!/^\\d+$/.test(id))return $('scmsg').textContent='Enter the confirmed numeric Bradley County CTID first.';req('groups',{ctid:id}).then(function(x){$('scmsg').textContent='Talkgroup lookup completed. Review the returned group IDs.';show(x)}).catch(function(e){$('scmsg').textContent=e.message})};
+  $('slive').onclick=function(){var ids=$('sgids').value.trim();if(!ids)return $('scmsg').textContent='Enter one or more confirmed talkgroup IDs.';req('live',{groups:ids,init:'1'}).then(function(x){$('scmsg').textContent='One-time call lookup complete. These are unverified leads.';show(x)}).catch(function(e){$('scmsg').textContent=e.message})};
+}
 function drawPw(){
   document.getElementById('body').innerHTML='<div class="card"><b>Change admin password</b><input id="c0" type="password" placeholder="Current password"><input id="c1" type="password" placeholder="New password (10+ characters)"><input id="c2" type="password" placeholder="New password again"><button id="sv">Change</button></div>';
   document.getElementById('sv').onclick=function(){var c0=c0v('c0'),c1=c0v('c1'),c2=c0v('c2');
