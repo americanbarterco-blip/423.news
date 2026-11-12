@@ -14,3 +14,11 @@ GitHub Actions step (after the step that files reports):
 
 Change the voice: edit KOKORO_VOICE (af_heart, af_bella, af_nicole, af_sarah, af_sky) or KOKORO_SPEED at the top of voice_render.py (samples: rhasspy.github.io/piper-samples).
 Only published text is voiced. Unconfirmed scanner items are always introduced as unconfirmed.
+
+## Spanish voice (added)
+When a visitor taps **Español** (translate.js), Claudia reads reports in Spanish with the device's Spanish voice
+(es-US / es-MX preferred; `ClaudiaVoice.setVoiceEs('Paulina')` to pick one).
+Per report, the voice uses, in order:
+1. `audio_es` — a rendered Spanish mp3 (same idea as `audio`, e.g. `voice/<id>-es.mp3`)
+2. `headline_es` + `summary_es` — Spanish text you wrote or generated in the feed (read with the device voice)
+3. automatic machine translation of the English headline/summary (needs internet; falls back to English if it fails)
