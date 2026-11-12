@@ -9,7 +9,7 @@ const API = "https://api.bcfy.io";
 function b64url(bytes) {
   let binary = "";
   for (const b of bytes) binary += String.fromCharCode(b);
-  return btoa(binary).replace(/=/g, "").replace(/\\+/g, "-").replace(/\\//g, "_");
+  return btoa(binary).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 }
 function encodeJson(value) { return b64url(new TextEncoder().encode(JSON.stringify(value))); }
 
@@ -31,7 +31,7 @@ function json(data, status = 200) {
 }
 async function authorize(request, env) {
   const auth = request.headers.get("authorization") || "";
-  const match = auth.match(/^Bearer\\s+(.+)$/i);
+  const match = auth.match(/^Bearer\s+(.+)$/i);
   if (!match || !env.SUPABASE_ADMIN_FUNCTION_URL) return false;
   // Reuse the existing admin function's own session verifier. The "tables"
   // action returns only after valid(token); no service-role key is stored here.
@@ -78,21 +78,21 @@ export async function onRequestGet({ request, env }) {
     const token = await userToken(env);
     if (action === "groups") {
       const ctid = url.searchParams.get("ctid");
-      if (!ctid || !/^\\d+$/.test(ctid)) return json({ error: "Supply a numeric Broadcastify county ID as ctid." }, 400);
+      if (!ctid || !/^\d+$/.test(ctid)) return json({ error: "Supply a numeric Broadcastify county ID as ctid." }, 400);
       const body = { secs_ago: 86400 };
       const tagId = url.searchParams.get("tagId");
-      if (tagId && /^\\d+$/.test(tagId)) body.tagId = Number(tagId);
+      if (tagId && /^\d+$/.test(tagId)) body.tagId = Number(tagId);
       const data = await bcfyFetch("/calls/v1/groups_ctid/" + encodeURIComponent(ctid), token,
         { method: "POST", body: JSON.stringify(body) });
       return json({ ok: true, action, countyId: ctid, data });
     }
     if (action === "live") {
       const groups = (url.searchParams.get("groups") || "").split(",").map(x => x.trim()).filter(Boolean);
-      if (!groups.length || groups.length > 5 || groups.some(x => !/^\\d+$/.test(x)))
+      if (!groups.length || groups.length > 5 || groups.some(x => !/^\d+$/.test(x)))
         return json({ error: "Supply 1–5 numeric group IDs in groups, separated by commas." }, 400);
       const params = new URLSearchParams({ groups: groups.join(",") });
       const pos = url.searchParams.get("pos");
-      if (pos && /^\\d+$/.test(pos)) params.set("pos", pos);
+      if (pos && /^\d+$/.test(pos)) params.set("pos", pos);
       else if (url.searchParams.get("init") === "1") params.set("init", "1");
       const data = await bcfyFetch("/calls/v1/live/?" + params.toString(), token);
       return json({ ok: true, action, groups, data });
