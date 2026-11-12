@@ -71,8 +71,20 @@
     setMeta('meta[property="og:url"]', 'content', canonical);
     setMeta('meta[name="twitter:title"]', 'content', r.title);
     setMeta('meta[name="twitter:description"]', 'content', description);
-    var alternates = document.getElementById('esAlternates');
-    if (alternates) alternates.innerHTML = english ? '<link rel="alternate" hreflang="es" href="' + esc(canonical) + '"><link rel="alternate" hreflang="en" href="' + esc(english) + '">' : '<link rel="alternate" hreflang="es" href="' + esc(canonical) + '">';
+    document.querySelectorAll('link[data-es-article-alternate]').forEach(function (node) { node.remove(); });
+    var esAlternate = document.createElement('link');
+    esAlternate.rel = 'alternate'; esAlternate.hreflang = 'es'; esAlternate.href = canonical;
+    esAlternate.setAttribute('data-es-article-alternate', 'true');
+    document.head.appendChild(esAlternate);
+    if (english) {
+      var enAlternate = document.createElement('link');
+      enAlternate.rel = 'alternate'; enAlternate.hreflang = 'en'; enAlternate.href = english;
+      enAlternate.setAttribute('data-es-article-alternate', 'true');
+      document.head.appendChild(enAlternate);
+    }
+    var ogImage = safeUrl(r.image_url) || ROOT + '/icon-512.png';
+    setMeta('meta[property="og:image"]', 'content', ogImage);
+    setMeta('meta[name="twitter:image"]', 'content', ogImage);
     var schema = {
       '@context': 'https://schema.org',
       '@type': 'NewsArticle',
