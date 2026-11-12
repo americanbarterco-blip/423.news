@@ -9,7 +9,7 @@
   'use strict';
   var C = Object.assign({ voiceName: '', rate: 1, pitch: 1.05, feedUrl: 'feed.json', pollSeconds: 30, briefing: 12 }, window.CLAUDIA_VOICE || {});
   var synth = window.speechSynthesis;
-  var enabled = false, seen = null, queue = [], busy = false, token = 0;
+  var enabled = false, seen = null, queue = [], busy = false, token = 0, activeAudio = null;
 
   function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -77,9 +77,18 @@
   function vids() { return [].slice.call(document.querySelectorAll('video[src*="claudia-onair"]')); }
   function playVideo() { vids().forEach(function (v) { v.muted = true; v.loop = true; var p = v.play(); if (p && p.catch) p.catch(function () {}); }); }
   function setTag(on) {
-    document.querySelectorAll('.cg-cam .cg-tag').forEach(function (t) { t.textContent = on ? 'Reporting' : (t.getAttribute('data-idle') || 'On camera'); });
+    document.querySelectorAll('.cg-cam .cg-tag').forEach(function (t) {
+      t.textContent = on ? (lang() === 'es' ? 'Al aire' : 'Reporting') : (t.getAttribute('data-idle') || (lang() === 'es' ? 'En cámara' : 'On camera'));
+    });
   }
-  function setBtn() { document.querySelectorAll('.cg-snd').forEach(function (b) { b.textContent = enabled ? 'Stop voice' : 'Enable voice'; }); }
+  function setBtn() {
+    document.querySelectorAll('.cg-snd').forEach(function (b) { b.textContent = enabled ? (lang() === 'es' ? 'Detener voz' : 'Stop voice') : (lang() === 'es' ? 'Activar voz' : 'Enable voice'); });
+  }
+  function cancelAudio() {
+    if (!activeAudio) return;
+    try { activeAudio.pause(); activeAudio.currentTime = 0; } catch (e) {}
+    activeAudio = null;
+  }
 
   /* speak one block of text in short chunks (long utterances get cut off by Chrome) */
   function speakText(text, my, done, l) {
@@ -98,7 +107,14 @@
   }
   function playAudio(url, my, done, fallbackText, l) {
     var a = new Audio(url), ended = false;
-    function fin(failed) { if (ended) return; ended = true; if (my !== token) return; if (failed) speakText(fallbackText, my, done, l); else done(); }
+    activeAudio = a;
+    function fin(failed) {
+      if (ended) return;
+      ended = true;
+      if (activeAudio === a) activeAudio = null;
+      if (my !== token) return;
+      if (failed) speakText(fallbackText, my, done, l); else done();
+    }
     a.onended = function () { fin(false); }; a.onerror = function () { fin(true); };
     var p = a.play(); if (p && p.catch) p.catch(function () { fin(true); });
   }
@@ -111,6 +127,8 @@
     resolve(item).then(function (x) {
       if (my !== token) return;
       if (x.audio) playAudio(x.audio, my, done, x.text, x.lang); else speakText(x.text, my, done, x.lang);
+    }).catch(function () {
+      if (my === token) done();
     });
   }
 
@@ -118,10 +136,16 @@
   function resolve(item) {
     if (lang() !== 'es') return Promise.resolve({ audio: item.audio, text: item.text, lang: 'en' });
     if (item.es) return Promise.resolve({ audio: '', text: item.es, lang: 'es' });
-    if (item.audioEs) return Promise.resolve({ audio: item.audioEs, text: item.textEs || item.text, lang: 'es' });
-    if (item.textEs) return Promise.resolve({ audio: '', text: item.textEs, lang: 'es' });
-    return toSpanish(item.text).then(function (t) { return { audio: '', text: t, lang: 'es' }; })
-      .catch(function () { return { audio: item.audio, text: item.text, lang: 'en' }; });
+
+    /* Always prepare Spanish fallback text before attempting rendered Spanish audio.
+       This prevents an audio playback error from accidentally reading English aloud. */
+    var spanishText = item.textEs ? Promise.resolve(item.textEs) : toSpanish(item.text);
+    return spanishText.then(function (t) {
+      return { audio: item.audioEs || '', text: t, lang: 'es' };
+    }).catch(function () {
+      var notice = 'No puedo leer este reporte en español en este momento. La traducción no está disponible.';
+      return { audio: item.audioEs || '', text: notice, lang: 'es', translationUnavailable: true };
+    });
   }
 
   function items(d) {
@@ -146,7 +170,7 @@
   }
 
   function start() {
-    enabled = true; token++; busy = false; queue = []; setBtn(); playVideo();
+    enabled = true; token++; busy = false; queue = []; cancelAudio(); setBtn(); playVideo();
     try { synth.cancel(); } catch (e) {}
     /* spoken straight from the tap so the browser allows sound; then the briefing follows */
     queue.push({ audio: '', text: 'Claudia Green, 423 dot news. Here are the latest reports, newest first.', es: 'Claudia Green, cuatro dos tres punto news. Estos son los reportes m\u00e1s recientes, del m\u00e1s nuevo al m\u00e1s antiguo.' });
@@ -162,7 +186,7 @@
     });
   }
   function stop() {
-    enabled = false; token++; busy = false; queue = [];
+    enabled = false; token++; busy = false; queue = []; cancelAudio();
     try { synth.cancel(); } catch (e) {}
     setTag(false); setBtn(); playVideo();
   }
@@ -170,7 +194,7 @@
   function wire() {
     playVideo();
     document.querySelectorAll('.cg-snd').forEach(function (b) {
-      b.removeAttribute('onclick'); b.textContent = 'Enable voice';
+      b.removeAttribute('onclick'); b.textContent = lang() === 'es' ? 'Activar voz' : 'Enable voice';
       b.onclick = function () {
         if (!synth) { b.textContent = 'Voice not supported'; return; }
         enabled ? stop() : start();
