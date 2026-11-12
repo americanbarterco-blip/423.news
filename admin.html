@@ -43,7 +43,7 @@ function drawLogin(){
   document.getElementById('go').onclick=go;document.getElementById('pw').onkeydown=function(e){if(e.key==='Enter')go()}}
 function init(){call('tables').then(function(r){if(r.s!==200)return;tables=(r.j.tables||[]).slice();var ai=tables.indexOf('news_ads');if(ai>0){tables.splice(ai,1);tables.unshift('news_ads')}cur=tables[0]||'pw';draw()})}
 function draw(){
-  var tabs=tables.concat(['scanner','pw']).map(function(t){return'<button class="'+(t===cur?'on':'')+'" data-t="'+esc(t)+'">'+(t==='pw'?'Password':t==='scanner'?'Scanner Wire':t==='news_ads'?'Ads':esc(t))+'</button>'}).join('');
+  var tabs=['scanner'].concat(tables,['pw']).map(function(t){return'<button class="'+(t===cur?'on':'')+'" data-t="'+esc(t)+'">'+(t==='pw'?'Password':t==='scanner'?'Scanner Wire':t==='news_ads'?'Ads':esc(t))+'</button>'}).join('');
   app.innerHTML='<div class="top"><h1>423.news Admin</h1><button class="g" id="lo">Log out</button></div><div class="tabs">'+tabs+'</div><div id="msg"></div><div id="body"></div>';
   document.getElementById('lo').onclick=function(){call('noop');out()};
   document.querySelector('.tabs').onclick=function(e){var b=e.target.closest('[data-t]');if(b){cur=b.getAttribute('data-t');draw()}};
