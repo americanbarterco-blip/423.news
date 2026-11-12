@@ -1,7 +1,7 @@
 # Broadcastify private pilot — 423.news
 
 This integration is for a private editor-only newsroom workflow. It is not a public scanner,
-audio player, or audio relay. The endpoint returns metadata/call records only and is on-demand;
+audio player, or audio relay. The endpoint returns call metadata only and is on-demand;
 there is no scheduled polling.
 
 ## Files and deployment
@@ -11,37 +11,44 @@ there is no scheduled polling.
 - Keep all work on `feature/broadcastify-live-calls` until tested.
 
 The Pages project must use the repository root as its build output directory, with
-`functions/` alongside `index.html`. The checked-in `wrangler.jsonc` already serves
-the repository root as static assets. Confirm that the Cloudflare project is configured
+`functions/` alongside `index.html`. Confirm that the Cloudflare project is configured
 as Pages (not a static-only upload) and that Pages Functions are enabled for this repo.
 
-## Cloudflare secrets
+## Cloudflare preview variables and secrets
 
-In **Workers & Pages → 423-news → Settings → Variables and Secrets**, add these as
-encrypted **Secrets**, not plaintext variables:
+Set these only in the **Preview** environment first:
 
-| Secret name | Value |
-|---|---|
-| `BCFY_API_SECRET` | Signing secret shown once when the active Broadcastify API key was created |
-| `BCFY_KEY_ID` | `abb72b6` |
-| `BCFY_APP_ID` | `6af4f3c210049` |
-| `BCFY_USERNAME` | Broadcastify account username |
-| `BCFY_PASSWORD` | Broadcastify account password |
-| `BCFY_EDITOR_KEY` | A new, long random private key used only by the newsroom |
+| Name | Type | Value |
+|---|---|---|
+| `SUPABASE_ADMIN_FUNCTION_URL` | Variable | `https://kdiwehqtezlhecxsoysj.supabase.co/functions/v1/admin` |
+| `BCFY_API_SECRET` | Encrypted Secret | Signing secret shown once when the active Broadcastify API key was created |
+| `BCFY_KEY_ID` | Variable | `abb72b6` |
+| `BCFY_APP_ID` | Variable | `6af4f3c210049` |
+| `BCFY_USERNAME` | Encrypted Secret | Broadcastify account username |
+| `BCFY_PASSWORD` | Encrypted Secret | Broadcastify account password |
 
-Do not put any of these in browser JavaScript, GitHub files, public Supabase settings, or chat.
-Do not use the disabled key `5bac511`.
+The bridge validates the existing newsroom admin session by calling the existing Supabase
+admin Edge Function's authenticated `tables` action. It does not need a second editor
+password, a static editor key, or the Supabase service-role key in Cloudflare.
+
+The browser must send the existing admin session token in an
+`Authorization: Bearer <session-token>` header when calling `/api/broadcastify`.
+Never hard-code that token. The token is held in the admin page's session storage and
+expires after 12 hours.
+
+Do not put Broadcastify credentials in browser JavaScript, GitHub files, public Supabase
+settings, or chat. Do not use the disabled API key `5bac511`.
 
 ## Test sequence
 
 1. Deploy this branch to a Cloudflare preview URL only.
-2. Add the six secrets to the **Preview** environment first. Do not add them to Production yet.
-3. Send a request to `/api/broadcastify?action=health` with header
-   `x-423-editor-key: <BCFY_EDITOR_KEY>`. It should return `ok: true`.
+2. Add the variables/secrets above to the **Preview** environment, not Production.
+3. From an authenticated admin session, request
+   `/api/broadcastify?action=health` with the admin session bearer token. It should return
+   `ok: true`.
 4. Obtain the correct Broadcastify Calls county ID (`ctid`) for Bradley County from the
    Broadcastify Calls county listing. Do not guess the ID.
-5. Request `/api/broadcastify?action=groups&ctid=<CTID>` with the same header. This lists
-   recent talkgroup metadata for the county.
+5. Request `/api/broadcastify?action=groups&ctid=<CTID>` with the same bearer token.
 6. Select only the relevant test group IDs, then request
    `/api/broadcastify?action=live&groups=<GROUP_ID>`. Keep this as a manual, one-shot test.
 
@@ -51,8 +58,8 @@ Do not use the disabled key `5bac511`.
 - This first implementation deliberately does not auto-poll or run a background loop.
 - Calls are billed by records returned, not by request count. Keep the pilot narrow.
 - This first version obtains a Broadcastify user token on each on-demand request. Do not
-  put it on an automatic 5-second polling loop; a later polling implementation should use
-  a carefully managed server-side token cache (for example, a Cloudflare KV binding).
+  put it on an automatic polling loop; a later polling implementation should use a
+  carefully managed server-side token cache.
 - Never expose raw Broadcastify audio, stream URLs, API credentials, or this private endpoint
   to public visitors. Human editorial review is required before any scanner-derived report
   is published.
