@@ -55,8 +55,8 @@ function drawScanner(){
   function req(action,extra){
     document.getElementById('scmsg').textContent='Checking…';
     return fetch('https://kdiwehqtezlhecxsoysj.supabase.co/functions/v1/bcfy-proxy',{
-      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
-      body:JSON.stringify(Object.assign({action:action},extra||{}))
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(Object.assign({action:action,token:tok},extra||{}))
     }).then(function(r){return r.json().then(function(j){if(!r.ok){var detail=j.message||j.error||('HTTP '+r.status);if(j.receivedOrigin)detail+=' (received origin: '+j.receivedOrigin+')';throw new Error(detail)}return j})});
   }
   document.getElementById('shealth').onclick=function(){req('health').then(function(x){document.getElementById('scmsg').textContent='Admin session accepted. '+(x.broadcastifyConfiguration==='ready'?'Broadcastify credentials configured.':'Broadcastify credentials incomplete.');show(x)}).catch(function(e){document.getElementById('scmsg').textContent=e.message})};
