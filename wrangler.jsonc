@@ -15,5 +15,9 @@
       "/api/*"
     ]
   },
-  "previews": {}
+  "previews": {
+    "vars": {
+      "SUPABASE_ADMIN_FUNCTION_URL": "https://kdiwehqtezlhecxsoysj.supabase.co/functions/v1/admin"
+    }
+  }
 }
