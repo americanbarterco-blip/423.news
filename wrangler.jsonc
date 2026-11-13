@@ -5,6 +5,9 @@
   "compatibility_date": "2026-11-12",
   "workers_dev": true,
   "preview_urls": true,
+  "vars": {
+    "SUPABASE_ADMIN_FUNCTION_URL": "https://kdiwehqtezlhecxsoysj.supabase.co/functions/v1/admin"
+  },
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
