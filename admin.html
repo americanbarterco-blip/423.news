@@ -54,7 +54,7 @@ function drawScanner(){
   function show(x){$('scout').textContent=JSON.stringify(x,null,2)}
   function req(action,extra){$('scmsg').textContent='Checking…';return fetch('/api/broadcastify?'+new URLSearchParams(Object.assign({action:action},extra||{})),{headers:{Authorization:'Bearer '+tok}}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.message||j.error||('HTTP '+r.status));return j})})}
   $('shealth').onclick=function(){req('health').then(function(x){$('scmsg').textContent='Bridge connected; newsroom session accepted.';show(x)}).catch(function(e){$('scmsg').textContent=e.message})};
-  $('sgroups').onclick=function(){var id=$('sctid').value.trim();if(!/^\\d+$/.test(id))return $('scmsg').textContent='Enter the confirmed numeric Bradley County CTID first.';req('groups',{ctid:id}).then(function(x){$('scmsg').textContent='Talkgroup lookup completed. Review the returned group IDs.';show(x)}).catch(function(e){$('scmsg').textContent=e.message})};
+  $('sgroups').onclick=function(){var id=$('sctid').value.trim();if(!/^\d+$/.test(id))return $('scmsg').textContent='Enter the confirmed numeric Bradley County CTID first.';req('groups',{ctid:id}).then(function(x){$('scmsg').textContent='Talkgroup lookup completed. Review the returned group IDs.';show(x)}).catch(function(e){$('scmsg').textContent=e.message})};
   $('slive').onclick=function(){var ids=$('sgids').value.trim();if(!ids)return $('scmsg').textContent='Enter one or more confirmed talkgroup IDs.';req('live',{groups:ids,init:'1'}).then(function(x){$('scmsg').textContent='One-time call lookup complete. These are unverified leads.';show(x)}).catch(function(e){$('scmsg').textContent=e.message})};
 }
 function drawPw(){
