@@ -1,0 +1,14 @@
+# Keep the repository-root website assets, but never upload build dependencies or server-side source as public assets.
+node_modules/
+.git/
+.github/
+.wrangler/
+functions/
+worker.js
+wrangler.jsonc
+package.json
+package-lock.json
+*.md
+*.py
+*.sql
+*.ts
