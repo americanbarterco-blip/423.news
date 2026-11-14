@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Report — 423.news</title>
 <meta name="description" content="Verified public safety reports from Claudia Green on 423.news across East Tennessee and North Georgia.">
-<link rel="canonical" href="https://423.news/report.html">
+<link id="canonicalUrl" rel="canonical" href="https://423.news/report.html">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 
 <!-- Geo & Local Relevance -->
@@ -260,6 +260,7 @@ function sectionLabel(key) {
 function render(r, all) {
   var t = when(r.ts), lat = parseFloat(r.lat), lng = parseFloat(r.lng), hasGeo = isFinite(lat) && isFinite(lng);
   var canonUrl = 'https://423.news/report.html?id=' + encodeURIComponent(r.id);
+  document.getElementById('canonicalUrl').setAttribute('href', canonUrl);
   document.title = r.headline + ' — 423.news';
 
   // Update dynamic meta for crawlers & link previews
