@@ -61,7 +61,13 @@
     btn.lang=spanish?'en':'es';
     btn.setAttribute('aria-label',spanish?'Cambiar a inglés':'Switch to Spanish');
     btn.textContent=spanish?'🌐 English':'🌐 Español';
-    btn.addEventListener('click',function(){try{localStorage.setItem(KEY,spanish?'en':'es')}catch(e){}});
+    btn.addEventListener('click',function(){
+      if (spanish && location.pathname === '/es/reporte.html') {
+        var original = document.querySelector('.es-english-link a[lang="en"]');
+        if (original) btn.href = original.href;
+      }
+      try { localStorage.setItem(KEY,spanish?'en':'es'); } catch(e) {}
+    });
     document.body.appendChild(btn);
   }
   if(document.body)boot();else document.addEventListener('DOMContentLoaded',boot,{once:true});
