@@ -1,5 +1,4 @@
-/* Persist the Spanish language preference on native Spanish pages.
-   Clear legacy Google Website Translator cookies left by the retired widget. */
+/* Persist language metadata on native Spanish pages and clear retired Google Translate cookies. */
 (function () {
   'use strict';
   try { localStorage.setItem('423lang', 'es'); } catch (e) {}

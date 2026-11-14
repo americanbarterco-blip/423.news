@@ -27,6 +27,9 @@
   </url>
   <url>
     <loc>https://423.news/live-wire.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/live-wire.html"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/claudia.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/live-wire.html"/>
     <changefreq>always</changefreq>
     <priority>0.95</priority>
   </url>
