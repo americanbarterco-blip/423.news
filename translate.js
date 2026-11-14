@@ -8,6 +8,9 @@
   if (window.top !== window.self) return;
 
   var KEY = '423lang';
+  if (new URLSearchParams(location.search).get('lang') === 'en') {
+    try { localStorage.setItem(KEY, 'en'); } catch (e) {}
+  }
   var spanish = location.pathname === '/es' || location.pathname.indexOf('/es/') === 0;
   var toSpanish = {
     '/': '/es/',
