@@ -38,6 +38,12 @@
     });
   }
 
+  /* Explicit English link clears the saved Spanish preference before page boot. */
+  if (new URLSearchParams(location.search).get('lang') === 'en') {
+    store(KEY, 'en');
+    setCookie(null);
+  }
+
   /* ---------- styles (button + hide Google's UI) ---------- */
   var css = [
     '#t423{position:fixed;right:18px;bottom:18px;z-index:70;display:inline-flex;align-items:center;gap:7px;',
