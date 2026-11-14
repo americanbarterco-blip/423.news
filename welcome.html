@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#080d15">
+<title>Welcome to 423.news | Choose Your Language</title>
+<meta name="description" content="Choose English or Spanish for local news, sports, alerts and community information from the 423 area.">
+<link rel="canonical" href="https://423.news/">
+<style>
+:root{color-scheme:dark;--bg:#080d15;--panel:#111b29;--line:#26384b;--muted:#a8b7c8;--orange:#ff641f;--cream:#f5f0e7}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -15%,#233b54 0,transparent 58%),var(--bg);color:var(--cream);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;display:grid;place-items:center;padding:24px}
+main{width:min(920px,100%);text-align:center}.brand{font-size:clamp(36px,7vw,62px);font-weight:900;letter-spacing:-.06em;margin:0}.brand span{color:var(--orange)}.eyebrow{color:#ffad75;font-size:12px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;margin:14px 0}
+h1{font-size:clamp(25px,4vw,38px);line-height:1.15;margin:12px 0}.intro{color:var(--muted);font-size:16px;line-height:1.65;max-width:650px;margin:0 auto 30px}
+.choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;text-align:left}.choice{display:flex;flex-direction:column;gap:12px;min-height:220px;padding:24px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(160deg,#162438,var(--panel));color:inherit;text-decoration:none;transition:border-color .18s,transform .18s}.choice:hover{border-color:var(--orange);transform:translateY(-2px)}.flag{font-size:27px}.choice h2{font-size:25px;margin:0}.choice p{color:var(--muted);line-height:1.55;margin:0 0 auto}.enter{display:inline-flex;align-self:flex-start;padding:11px 16px;border-radius:9px;background:var(--orange);color:white;font-weight:800}.choice.es .enter{background:#1d6f69}
+footer{margin-top:25px;color:#75869a;font-size:12px;line-height:1.6}@media(max-width:620px){.choices{grid-template-columns:1fr}.choice{min-height:185px;padding:20px}body{padding:20px}}
+</style></head><body><main>
+<p class="brand">423<span>.</span>news</p><p class="eyebrow">Local news • Local voices • One community</p>
+<h1>Welcome. Choose your language.</h1>
+<p class="intro">Get local news, public-safety updates, sports, events and community information for Chattanooga, Cleveland and the surrounding 423 area. Select the version you want to use.</p>
+<section class="choices" aria-label="Choose your language">
+<a class="choice" id="choose-en" href="/index.html?lang=en#/home" lang="en"><span class="flag" aria-hidden="true">🇺🇸</span><h2>English</h2><p>Read local coverage and use the original 423.news experience.</p><span class="enter">Enter 423.news →</span></a>
+<a class="choice es" id="choose-es" href="/es/" lang="es"><span class="flag" aria-hidden="true">🇲🇽</span><h2>Español</h2><p>Noticias locales, alertas, deportes y comunidad en español.</p><span class="enter">Entrar a 423.news →</span></a>
+</section><footer>423.news · Chattanooga • Cleveland • Bradley County • Área 423<br>You can change languages again at any time.</footer>
+</main><script>(function(){function save(v){try{localStorage.setItem('423lang',v)}catch(e){}}document.getElementById('choose-en').addEventListener('click',function(){save('en')});document.getElementById('choose-es').addEventListener('click',function(){save('es')})})();</script></body></html>
