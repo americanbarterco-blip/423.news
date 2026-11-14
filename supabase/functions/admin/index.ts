@@ -152,8 +152,9 @@ Deno.serve(async (req) => {
       ...(headlines || []).map((row: any) => ({ source_table: 'news_headlines', source_id: String(row.id), section: 'sports', source_title: row.title, source_content: contentFor('news_headlines', row), source_updated_at: updatedFor('news_headlines', row), row }))
     ].map((item: any) => {
       const translation: any = byKey.get(item.source_table + ':' + item.source_id) || null;
-      const stale = !!(translation && translation.source_updated_at && item.source_updated_at &&
-        new Date(item.source_updated_at).getTime() > new Date(translation.source_updated_at).getTime());
+      const contentChanged = !!(translation && Object.keys(item.source_content).some((k: string) => String(item.source_content[k] || '') !== String(translation.original_content?.[k] || '')));
+      const stale = !!(translation && (contentChanged || (translation.source_updated_at && item.source_updated_at &&
+        new Date(item.source_updated_at).getTime() > new Date(translation.source_updated_at).getTime())));
       return { ...item, translation, stale };
     });
     const counts = { total: items.length, untranslated: 0, draft: 0, pending_review: 0, approved: 0, rejected: 0, stale: 0 };
@@ -199,12 +200,14 @@ Deno.serve(async (req) => {
     const required = table === 'news_posts' ? ['title','body'] : table === 'events' ? ['title','description'] : ['title'];
     if (!existing || required.some((k: string) => !String(existing.translated_content?.[k] || '').trim())) return j({ error: 'translation_missing' }, 404);
     // No approval is allowed for stale text.
-    const checkSelect = table === 'news_posts' ? 'id,updated_at,created_at' : table === 'events' ? 'id,created_at,starts_at' : 'id,published,created_at';
+    const checkSelect = table === 'news_posts' ? 'id,title,body,updated_at,created_at' : table === 'events' ? 'id,title,description,created_at,starts_at' : 'id,title,published,created_at';
     const checkR = await rest(table + '?select=' + checkSelect + '&id=eq.' + encodeURIComponent(sourceId) + '&limit=1');
     if (!checkR.ok) return j({ error: 'source_read' }, 500);
     const current = (await checkR.json())[0];
     if (!current) return j({ error: 'source_missing' }, 404);
-    const currentUpdated = updatedFor(table, current);
+    const currentUpdated = updatedFor(table, current), currentContent = contentFor(table, current);
+    const requiredContent = table === 'news_posts' ? ['title','body'] : table === 'events' ? ['title','description'] : ['title'];
+    if (requiredContent.some((k: string) => String(currentContent[k] || '') !== String(existing.original_content?.[k] || ''))) return j({ error: 'source_changed' }, 409);
     if (existing.source_updated_at && currentUpdated && new Date(currentUpdated).getTime() > new Date(existing.source_updated_at).getTime()) return j({ error: 'source_changed' }, 409);
     const stamp = new Date().toISOString();
     const approveR = await rest('news_translations?source_table=eq.' + table + '&source_id=eq.' + encodeURIComponent(sourceId) + '&locale=eq.es', {
