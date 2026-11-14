@@ -109,23 +109,6 @@ Deno.serve(async (req) => {
     const r = await fetch(`${URL_}/auth/v1/admin/users/${uid}`, { method: 'DELETE', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } });
     return j({ ok: r.ok }, r.ok ? 200 : 400);
   }
-  const t = String(b.table || '');
-  if (!tables.includes(t)) return j({ error: 'table' }, 400);
-  if (a === 'list') { const r = await rest(`${t}?select=*&limit=200`); return j({ rows: await r.json() }, r.status); }
-  if (a === 'insert') {
-    const row = { ...(b.row || {}) }; delete row.id;
-    const r = await rest(t, { method: 'POST', body: JSON.stringify(row), prefer: 'return=minimal' });
-    return j({ ok: r.ok }, r.ok ? 200 : 400);
-  }
-  const id = encodeURIComponent(String(b.id ?? ''));
-  if (!id) return j({ error: 'id' }, 400);
-  if (a === 'update') {
-    const patch = { ...(b.patch || {}) }; delete patch.id;
-    const r = await rest(`${t}?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
-    return j({ ok: r.ok }, r.ok ? 200 : 400);
-  }
-  if (a === 'delete') { const r = await rest(`${t}?id=eq.${id}`, { method: 'DELETE', prefer: 'return=minimal' }); return j({ ok: r.ok }, r.ok ? 200 : 400); }
-
   // Spanish editorial workflow. Source material is read-only; only approved translations
   // are exposed to public visitors by the migration's RLS policy.
   const translationSources = ['news_posts', 'events', 'news_headlines'];
@@ -215,5 +198,23 @@ Deno.serve(async (req) => {
     });
     return approveR.ok ? j({ ok: true }) : j({ error: 'translation_approve' }, 400);
   }
+
+  const t = String(b.table || '');
+  if (!tables.includes(t)) return j({ error: 'table' }, 400);
+  if (a === 'list') { const r = await rest(`${t}?select=*&limit=200`); return j({ rows: await r.json() }, r.status); }
+  if (a === 'insert') {
+    const row = { ...(b.row || {}) }; delete row.id;
+    const r = await rest(t, { method: 'POST', body: JSON.stringify(row), prefer: 'return=minimal' });
+    return j({ ok: r.ok }, r.ok ? 200 : 400);
+  }
+  const id = encodeURIComponent(String(b.id ?? ''));
+  if (!id) return j({ error: 'id' }, 400);
+  if (a === 'update') {
+    const patch = { ...(b.patch || {}) }; delete patch.id;
+    const r = await rest(`${t}?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
+    return j({ ok: r.ok }, r.ok ? 200 : 400);
+  }
+  if (a === 'delete') { const r = await rest(`${t}?id=eq.${id}`, { method: 'DELETE', prefer: 'return=minimal' }); return j({ ok: r.ok }, r.ok ? 200 : 400); }
+
   return j({ error: 'action' }, 400);
 });
