@@ -55,7 +55,10 @@
   function boot() {
     if (document.getElementById('t423')) return;
     var btn=document.createElement('a');
-    btn.id='t423';btn.href=target;btn.lang=spanish?'en':'es';
+    btn.id='t423';
+    var articleEnglish = location.pathname === '/es/reporte.html' ? document.querySelector('.es-english-link a[lang="en"]') : null;
+    btn.href = articleEnglish ? articleEnglish.href : target;
+    btn.lang=spanish?'en':'es';
     btn.setAttribute('aria-label',spanish?'Cambiar a inglés':'Switch to Spanish');
     btn.textContent=spanish?'🌐 English':'🌐 Español';
     btn.addEventListener('click',function(){try{localStorage.setItem(KEY,spanish?'en':'es')}catch(e){}});
