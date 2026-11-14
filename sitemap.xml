@@ -78,4 +78,52 @@
     <changefreq>daily</changefreq>
     <priority>0.90</priority>
   </url>
+  <url>
+    <loc>https://423.news/es/trafico.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/trafico.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/traffic.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/traffic.html"/>
+    <changefreq>daily</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://423.news/es/deportes.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/deportes.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/sports.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/sports.html"/>
+    <changefreq>daily</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://423.news/es/comunidad.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/comunidad.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/community.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/community.html"/>
+    <changefreq>daily</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://423.news/es/eventos.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/eventos.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/events.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/events.html"/>
+    <changefreq>daily</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://423.news/es/reportes.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/reportes.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/news.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/news.html"/>
+    <changefreq>daily</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://423.news/es/live-wire.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/live-wire.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/live-wire.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/live-wire.html"/>
+    <changefreq>daily</changefreq>
+    <priority>0.80</priority>
+  </url>
 </urlset>
