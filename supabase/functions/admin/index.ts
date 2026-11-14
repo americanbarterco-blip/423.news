@@ -194,11 +194,11 @@ Deno.serve(async (req) => {
   if (a === 'translationApprove') {
     const table = String(b.source_table || ''), sourceId = String(b.source_id || '');
     if (!translationSources.includes(table) || !sourceId || sourceId.length > 180) return j({ error: 'source' }, 400);
-    const existingR = await rest('news_translations?select=id,translated_content,source_updated_at&source_table=eq.' + table + '&source_id=eq.' + encodeURIComponent(sourceId) + '&locale=eq.es&limit=1');
+    const existingR = await rest('news_translations?select=id,translated_content,original_content,source_updated_at,status&source_table=eq.' + table + '&source_id=eq.' + encodeURIComponent(sourceId) + '&locale=eq.es&limit=1');
     if (!existingR.ok) return j({ error: 'translation_read' }, 500);
     const existing = (await existingR.json())[0];
     const required = table === 'news_posts' ? ['title','body'] : table === 'events' ? ['title','description'] : ['title'];
-    if (!existing || required.some((k: string) => !String(existing.translated_content?.[k] || '').trim())) return j({ error: 'translation_missing' }, 404);
+    if (!existing || existing.status !== 'pending_review' || required.some((k: string) => !String(existing.translated_content?.[k] || '').trim())) return j({ error: 'translation_missing' }, 404);
     // No approval is allowed for stale text.
     const checkSelect = table === 'news_posts' ? 'id,title,body,updated_at,created_at' : table === 'events' ? 'id,title,description,created_at,starts_at' : 'id,title,published,created_at';
     const checkR = await rest(table + '?select=' + checkSelect + '&id=eq.' + encodeURIComponent(sourceId) + '&limit=1');
