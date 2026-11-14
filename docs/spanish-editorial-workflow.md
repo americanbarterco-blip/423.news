@@ -15,7 +15,6 @@ This branch adds a human-reviewed Spanish translation workflow for 423.news.
 2. **Pending review** — an editor saved a Spanish draft.
 3. **Approved** — an editor explicitly approved it; only this state is readable by public Spanish pages.
 4. **Stale** — source content changed after the translation was saved. The editor must translate the current source and save again before approval.
-5. **Rejected / draft** — retained for internal workflow and not visible publicly.
 
 Saving never publishes. Approval is a separate action and the server rechecks that the English source still matches the saved source snapshot.
 
