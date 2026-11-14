@@ -34,7 +34,22 @@
     '/es/live-wire.html': '/live-wire.html?lang=en'
   };
 
-  var target = (spanish ? toEnglish[location.pathname] : toSpanish[location.pathname]) || '/welcome.html';
+  var hash = location.hash || '';
+  var spanishHash = {
+    '#/home': '/es/',
+    '#/news': '/es/noticias.html',
+    '#/alerts': '/es/noticias.html',
+    '#/sports': '/es/deportes.html',
+    '#/scores': '/es/deportes.html',
+    '#/community': '/es/comunidad.html',
+    '#/events': '/es/eventos.html',
+    '#/forecast': '/es/trafico.html'
+  };
+  var target = spanish
+    ? (toEnglish[location.pathname] || '/welcome.html')
+    : (location.pathname === '/' || location.pathname === '/index.html'
+        ? (spanishHash[hash] || '/es/')
+        : (toSpanish[location.pathname] || '/welcome.html'));
   function save(value) {
     try { localStorage.setItem(KEY, value); } catch (e) {}
   }
