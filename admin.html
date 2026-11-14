@@ -45,7 +45,7 @@ function drawLogin(){
 function init(){call('tables').then(function(r){if(r.s!==200)return;tables=(r.j.tables||[]).slice();var ai=tables.indexOf('news_ads');if(ai>0){tables.splice(ai,1);tables.unshift('news_ads')}cur='scanner';draw()})}
 function draw(){
   var tabs=['scanner'].concat(tables,['pw']).map(function(t){return'<button class="'+(t===cur?'on':'')+'" data-t="'+esc(t)+'">'+(t==='pw'?'Password':t==='scanner'?'Scanner Wire':t==='news_ads'?'Ads':esc(t))+'</button>'}).join('');
-  app.innerHTML='<div class="top"><h1>423.news Admin</h1><button class="g" id="lo">Log out</button></div><div class="tabs">'+tabs+'</div><div id="msg"></div><div id="body"></div>';
+  app.innerHTML='<div class="top"><h1>423.news Admin</h1><div><a href="/translation-admin.html" style="color:#ff9a45;font-weight:700;margin-right:12px">Spanish translations</a><button class="g" id="lo">Log out</button></div></div><div class="tabs">'+tabs+'</div><div id="msg"></div><div id="body"></div>';
   document.getElementById('lo').onclick=function(){call('noop');out()};
   document.querySelector('.tabs').onclick=function(e){var b=e.target.closest('[data-t]');if(b){cur=b.getAttribute('data-t');draw()}};
   if(cur==='scanner')drawScanner();else if(cur==='pw')drawPw();else if(cur==='news_ads')drawAds();else if(!tables.length)document.getElementById('body').innerHTML='<div class="card">No tables set yet. Add ADMIN_TABLES in the function secrets.</div>';else load()}
