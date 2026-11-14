@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
   if (a === 'translationQueue') {
     const now = new Date().toISOString();
     const [postsR, eventsR, headlinesR, translationsR] = await Promise.all([
-      rest('news_posts?select=id,section,slug,title,body,status,updated_at,created_at&status=eq.published&section=in.(news,community,sports)&order=updated_at.desc&limit=200'),
+      rest('news_posts?select=id,section,slug,title,body,status,updated_at,created_at&status=eq.published&section=in.(news,community,sports,schools,outdoors,government)&order=updated_at.desc&limit=200'),
       rest('events?select=id,title,description,starts_at,location,city,created_at&starts_at=gte.' + encodeURIComponent(now) + '&order=starts_at.asc&limit=100'),
       rest('news_headlines?select=id,league,title,url,source,published,created_at&published=not.is.null&order=published.desc&limit=100'),
       rest('news_translations?select=*&locale=eq.es&limit=1000')
