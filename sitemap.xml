@@ -119,6 +119,14 @@
     <priority>0.80</priority>
   </url>
   <url>
+    <loc>https://423.news/es/claudia.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/claudia.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/live-wire.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/live-wire.html"/>
+    <changefreq>hourly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
     <loc>https://423.news/es/live-wire.html</loc>
     <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/live-wire.html"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://423.news/live-wire.html"/>
