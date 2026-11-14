@@ -180,7 +180,7 @@ Deno.serve(async (req) => {
       source_table: table, source_id: sourceId, locale: 'es',
       original_content: original, translated_content: translated,
       source_updated_at: updatedFor(table, source), status: 'pending_review',
-      review_notes: null, reviewed_at: null, approved_at: null, updated_at: new Date().toISOString()
+      review_notes: String(b.review_notes || '').slice(0, 2000) || null, reviewed_at: null, approved_at: null, updated_at: new Date().toISOString()
     };
     const saveR = await rest('news_translations?on_conflict=source_table,source_id,locale', {
       method: 'POST', body: JSON.stringify(payload), prefer: 'resolution=merge-duplicates,return=representation'
@@ -194,9 +194,9 @@ Deno.serve(async (req) => {
     const existingR = await rest('news_translations?select=id,translated_content,source_updated_at&source_table=eq.' + table + '&source_id=eq.' + encodeURIComponent(sourceId) + '&locale=eq.es&limit=1');
     if (!existingR.ok) return j({ error: 'translation_read' }, 500);
     const existing = (await existingR.json())[0];
-    if (!existing || !existing.translated_content || !Object.values(existing.translated_content).some((v: any) => String(v || '').trim())) return j({ error: 'translation_missing' }, 404);
-    const sourceR = await rest(table + '?select=id,updated_at,created_at,starts_at,published& id=eq.' + encodeURIComponent(sourceId));
-    // The source was validated again below using a clean query; no approval is allowed for stale text.
+    const required = table === 'news_posts' ? ['title','body'] : table === 'events' ? ['title','description'] : ['title'];
+    if (!existing || required.some((k: string) => !String(existing.translated_content?.[k] || '').trim())) return j({ error: 'translation_missing' }, 404);
+    // No approval is allowed for stale text.
     const checkR = await rest(table + '?select=id,updated_at,created_at,starts_at,published&id=eq.' + encodeURIComponent(sourceId) + '&limit=1');
     if (!checkR.ok) return j({ error: 'source_read' }, 500);
     const current = (await checkR.json())[0];
