@@ -176,6 +176,8 @@ Deno.serve(async (req) => {
     const sourceRows = await sourceR.json();
     if (!sourceRows.length) return j({ error: 'source_missing' }, 404);
     const source = sourceRows[0], original = contentFor(table, source);
+    const submittedOriginal = b.source_snapshot && typeof b.source_snapshot === 'object' ? b.source_snapshot : {};
+    if (required.some((k: string) => String(submittedOriginal[k] || '') !== String(original[k] || ''))) return j({ error: 'source_changed' }, 409);
     const payload = {
       source_table: table, source_id: sourceId, locale: 'es',
       original_content: original, translated_content: translated,
@@ -197,7 +199,8 @@ Deno.serve(async (req) => {
     const required = table === 'news_posts' ? ['title','body'] : table === 'events' ? ['title','description'] : ['title'];
     if (!existing || required.some((k: string) => !String(existing.translated_content?.[k] || '').trim())) return j({ error: 'translation_missing' }, 404);
     // No approval is allowed for stale text.
-    const checkR = await rest(table + '?select=id,updated_at,created_at,starts_at,published&id=eq.' + encodeURIComponent(sourceId) + '&limit=1');
+    const checkSelect = table === 'news_posts' ? 'id,updated_at,created_at' : table === 'events' ? 'id,created_at,starts_at' : 'id,published,created_at';
+    const checkR = await rest(table + '?select=' + checkSelect + '&id=eq.' + encodeURIComponent(sourceId) + '&limit=1');
     if (!checkR.ok) return j({ error: 'source_read' }, 500);
     const current = (await checkR.json())[0];
     if (!current) return j({ error: 'source_missing' }, 404);
