@@ -8,7 +8,7 @@ create table if not exists public.news_translations (
   original_content jsonb not null default '{}'::jsonb,
   translated_content jsonb not null default '{}'::jsonb,
   source_updated_at timestamptz,
-  status text not null default 'draft'
+  status text not null default 'pending_review'
     check (status in ('pending_review','approved')),
   review_notes text,
   reviewed_at timestamptz,
