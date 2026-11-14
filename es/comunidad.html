@@ -25,7 +25,7 @@ fetch(U+'/rest/v1/news_posts?select=*&section=eq.community&status=eq.published&o
 return fetch(U+'/rest/v1/news_translations?select=source_id,translated_content&source_table=eq.news_posts&locale=eq.es&status=eq.approved',{headers:H}).then(function(r){return r.ok?r.json():[]}).then(function(translations){
 var byId={};translations.forEach(function(t){byId[String(t.source_id)]=t.translated_content||{}});
 if(!rows.length){el.innerHTML='<p class="muted">Todavía no hay publicaciones comunitarias.</p>';return}
-el.innerHTML=rows.map(function(p){var tr=byId[String(p.id)],es=!!(tr&&tr.title&&tr.body),title=es?tr.title:(p.title||'Actualización comunitaria'),body=es?tr.body:(p.body||''),date=p.created_at?new Date(p.created_at).toLocaleDateString('es-US'):'';return '<article class="es-post-card"><small>'+(es?'Traducción española revisada':'Original en inglés')+' · '+esc(date)+'</small><h3>'+esc(title)+'</h3><p>'+esc(String(body).slice(0,500))+'</p><small>'+esc(p.author_name||'Miembro de la comunidad')+'</small></article>'}).join('')
+el.innerHTML=rows.map(function(p){var tr=byId[String(p.id)],es=!!(tr&&tr.title&&tr.body),title=es?tr.title:(p.title||'Actualización comunitaria'),body=es?tr.body:(p.body||''),date=p.created_at?new Date(p.created_at).toLocaleDateString('es-US'):'';return '<article class="es-post-card"><small>'+(es?'Traducción española revisada':'Original sin traducción española aprobada')+' · '+esc(date)+'</small><h3>'+esc(title)+'</h3><p>'+esc(String(body).slice(0,500))+'</p><small>'+esc(p.author_name||'Miembro de la comunidad')+'</small></article>'}).join('')
 })
 }).catch(function(){el.innerHTML='<p class="muted">No se pudieron cargar las publicaciones en este momento.</p>'})
 })();
