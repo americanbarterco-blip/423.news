@@ -51,9 +51,9 @@ function draw(){
   if(cur==='scanner')drawScanner();else if(cur==='claudiaStories')drawClaudiaStories();else if(cur==='pw')drawPw();else if(cur==='news_ads')drawAds();else if(!tables.length)document.getElementById('body').innerHTML='<div class="card">No tables set yet. Add ADMIN_TABLES in the function secrets.</div>';else load()}
 function drawClaudiaStories(){
   var b=document.getElementById('body');
-  b.innerHTML='<div class="card"><b>Claudia Green — Permanent Stories</b><p><small>Turn a reviewed Live Wire report into a lasting 423.news article. Scanner leads are not published automatically. Confirmed and developing reports can be filed after editorial review; unconfirmed leads stay private until verified.</small></p><p><small>Published articles receive a permanent story URL, appear in the news feed, and are picked up by the scheduled sitemap refresh.</small></p></div><div id="cgStoryRows" class="card">Loading Claudia\\'s latest reports…</div>';
+  b.innerHTML='<div class="card"><b>Claudia Green — Permanent Stories</b><p><small>Turn a reviewed Live Wire report into a lasting 423.news article. Scanner leads are not published automatically. Confirmed and developing reports can be filed after editorial review; unconfirmed leads stay private until verified.</small></p><p><small>Published articles receive a permanent story URL, appear in the news feed, and are picked up by the scheduled sitemap refresh.</small></p></div><div id="cgStoryRows" class="card">Loading Claudia\'s latest reports…</div>';
   call('claudiaStoryQueue').then(function(r){
-    if(r.s!==200){document.getElementById('cgStoryRows').textContent='Could not load Claudia\\'s reports. Check the admin function deployment.';return}
+    if(r.s!==200){document.getElementById('cgStoryRows').textContent='Could not load Claudia\'s reports. Check the admin function deployment.';return}
     var reports=r.j.reports||[];
     var target=document.getElementById('cgStoryRows');
     if(!reports.length){target.textContent='No published Live Wire reports are available.';return}
@@ -89,7 +89,7 @@ function drawClaudiaStories(){
         if(!confirm('Publish this as a permanent 423.news article under Claudia Green?'))return;
         e.target.disabled=true;e.target.textContent='Publishing…';
         call('publishClaudiaStory',{report_id:report.id,title:title,body:body,section:section}).then(function(x){
-          if(x.s===200&&x.j.ok){say(x.j.alreadyPublished?'This report already has a permanent article.':'Claudia\\'s permanent story is published.');drawClaudiaStories()}
+          if(x.s===200&&x.j.ok){say(x.j.alreadyPublished?'This report already has a permanent article.':'Claudia\'s permanent story is published.');drawClaudiaStories()}
           else{say('Could not publish this story ('+(x.j.error||x.s)+').');e.target.disabled=false;e.target.textContent='Publish permanent story'}
         });
       }
