@@ -89,7 +89,7 @@
     return u ? '<img ' + (cls ? 'class="' + cls + '" ' : '') + 'src="' + esc(u) + '" alt="" loading="lazy">'
              : '<div class="ph ' + (cls || '') + '" aria-hidden="true">' + secEmoji(p.section) + '</div>';
   }
-  function href(p) { return '#/story/' + encodeURIComponent(p.slug); }
+  function href(p) { return ['news','sports','outdoors','government'].indexOf(p.section) >= 0 ? '/story.html?slug=' + encodeURIComponent(p.slug) : '#/story/' + encodeURIComponent(p.slug); }
   function label(p) { return (p.topic && TOPIC_LABEL[p.topic]) || (SECTIONS[p.section] || {}).label || 'News'; }
 
   /* ---------- cards ---------- */
