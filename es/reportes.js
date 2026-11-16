@@ -47,6 +47,11 @@
   }
   function setMeta(selector, attr, value) {
     var el = document.querySelector(selector);
+    if (!el && selector === 'link[rel="canonical"]') {
+      el = document.createElement('link');
+      el.rel = 'canonical';
+      document.head.appendChild(el);
+    }
     if (el && value) el.setAttribute(attr, value);
   }
   function renderArticle(rows) {
@@ -66,6 +71,7 @@
     document.title = r.title + ' | Noticias 423';
     setMeta('meta[name="description"]', 'content', description);
     setMeta('link[rel="canonical"]', 'href', canonical);
+    setMeta('meta[name="robots"]', 'content', 'index,follow,max-image-preview:large');
     setMeta('meta[property="og:title"]', 'content', r.title);
     setMeta('meta[property="og:description"]', 'content', description);
     setMeta('meta[property="og:url"]', 'content', canonical);

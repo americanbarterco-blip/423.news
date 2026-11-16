@@ -17,6 +17,11 @@
   }
   function set(selector, attr, value) {
     var el = document.querySelector(selector);
+    if (!el && selector === 'link[rel="canonical"]') {
+      el = document.createElement('link');
+      el.rel = 'canonical';
+      document.head.appendChild(el);
+    }
     if (el && value) el.setAttribute(attr, value);
   }
   function addAlternate(lang, href) {
@@ -76,6 +81,7 @@
     document.title = title + (isSpanish ? ' | Noticias 423' : ' | 423.news');
     set('meta[name="description"]', 'content', description);
     set('link[rel="canonical"]', 'href', canonical);
+    set('meta[name="robots"]', 'content', 'index,follow,max-image-preview:large');
     set('meta[property="og:title"]', 'content', title);
     set('meta[property="og:description"]', 'content', description);
     set('meta[property="og:url"]', 'content', canonical);
