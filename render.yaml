@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: 423-news-claudia-token
+    runtime: node
+    plan: starter
+    region: ohio
+    rootDir: livekit-token
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: LIVEKIT_URL
+        value: wss://project-423-rent-371z3vas.livekit.cloud
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+
+  - type: worker
+    name: 423-news-claudia-agent
+    runtime: python
+    plan: starter
+    region: ohio
+    rootDir: livekit-agent
+    buildCommand: pip install -r requirements.txt
+    startCommand: python agent.py start
+    envVars:
+      - key: LIVEKIT_URL
+        value: wss://project-423-rent-371z3vas.livekit.cloud
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
