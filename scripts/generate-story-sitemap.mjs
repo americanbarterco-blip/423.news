@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /* Build a static story sitemap for GitHub Pages from public published posts. */
 const ORIGIN = "https://423.news";
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const fs = await import("node:fs/promises");
+const siteLoader = await fs.readFile("story-page.js", "utf8");
+const SUPABASE_URL = process.env.SUPABASE_URL || siteLoader.match(/var SB_URL = '([^']+)'/)?.[1];
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || siteLoader.match(/var SB_KEY = '([^']+)'/)?.[1];
 const PAGE_SIZE = 1000;
 const MAX_STORIES = 24000;
 const MARKER_START = "  <!-- DYNAMIC-STORIES:START -->";
@@ -77,18 +79,12 @@ async function main() {
     order: "created_at.desc"
   });
 
-  let translations = [];
-  try {
-    translations = await fetchAll("news_translations", {
-      select: "source_id",
-      source_table: "eq.news_posts",
-      locale: "eq.es",
-      status: "eq.approved"
-    });
-  } catch (error) {
-    // If the translations table is not deployed, keep English story URLs.
-    console.warn("Spanish translation list unavailable; publishing English URLs only:", error.message);
-  }
+  const translations = await fetchAll("news_translations", {
+    select: "source_id",
+    source_table: "eq.news_posts",
+    locale: "eq.es",
+    status: "eq.approved"
+  });
 
   const spanishIds = new Set(translations.map(row => String(row.source_id)));
   const entries = [];
@@ -118,7 +114,6 @@ async function main() {
     }
   }
 
-  const fs = await import("node:fs/promises");
   const file = "sitemap.xml";
   let xml = await fs.readFile(file, "utf8");
   const start = xml.indexOf(MARKER_START);
