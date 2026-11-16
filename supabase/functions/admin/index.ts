@@ -199,6 +199,136 @@ Deno.serve(async (req) => {
     return approveR.ok ? j({ ok: true }) : j({ error: 'translation_approve' }, 400);
   }
 
+  // Claudia's reviewed Live Wire archive. The staff session protects both individual
+  // publication and idempotent batch conversion of the existing reviewed wire archive.
+  const claudiaSlug = (title: string, id: string) => {
+    const base = String(title || 'wire-report').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64).replace(/-+$/g, '') || 'wire-report';
+    const suffix = String(id || '').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(-16) || 'report';
+    return 'claudia-' + base + '-' + suffix;
+  };
+  const claudiaCategory = (report: any) => {
+    const title = String(report.headline || '').toLowerCase();
+    const urls = (Array.isArray(report.sources) ? report.sources : []).map((s: any) => String(s?.url || '')).join(' ').toLowerCase();
+    const text = title + ' ' + urls;
+    if (/\b(sports?|score|football|basketball|baseball|soccer|volleyball|wrestling|athletics|tennis|golf|mocs|vols|college roundup)\b|\/sports?\//i.test(text)) return { section: 'sports', topic: null };
+    if (/\b(weather|forecast|storm|tornado|flood|rain|snow|temperature|cold front|heat advisory|wind advisory|meteorolog)\b|\/weather\//i.test(text)) return { section: 'news', topic: 'weather' };
+    if (/\b(traffic|crash|collision|road closure|bridge closure|interstate|highway|lane closure|detour|roadwork|commute|transportation)\b|\/traffic\//i.test(text)) return { section: 'news', topic: 'traffic' };
+    if (/\b(school|education|student|teacher|campus|university|school board|classroom|graduation)\b|\/education\//i.test(text)) return { section: 'schools', topic: null };
+    if (/\b(outdoors?|wildlife|fishing|hunting|hiking|trail|conservation|camping|state park)\b|\/outdoors?\//i.test(text)) return { section: 'outdoors', topic: null };
+    if (/\b(government|city council|county commission|mayor|election|legislature|lawmakers|court|ordinance|public meeting|sheriff|police department)\b/i.test(text)) return { section: 'government', topic: null };
+    return { section: 'news', topic: null };
+  };
+  const claudiaBody = (report: any) => {
+    const confidence = String(report.confidence || 'developing').toLowerCase();
+    const status = confidence === 'confirmed' ? 'CONFIRMED' : confidence === 'developing' ? 'DEVELOPING' : confidence.toUpperCase();
+    const sources = (Array.isArray(report.sources) ? report.sources : []).slice(0, 12).map((source: any) => {
+      const label = String(source?.label || source?.name || 'Original report').trim().slice(0, 140);
+      const url = String(source?.url || '').trim();
+      return /^https:\/\/[^\s]+$/i.test(url) ? 'Source: ' + label + ' | ' + url : 'Source: ' + label;
+    });
+    const uncertainty = (Array.isArray(report.uncertain) ? report.uncertain : [])
+      .map((item: any) => String(item || '').trim()).filter(Boolean).slice(0, 8);
+    return [
+      'Claudia Green’s Live Wire desk has archived this reviewed report for 423.news readers.',
+      String(report.summary || 'See the linked original report for the full details.').slice(0, 1800),
+      'Live Wire desk status: ' + status + '. This label is preserved from the original report and does not mean every detail has been independently confirmed by 423.news.',
+      report.dateline ? 'Reported area: ' + String(report.dateline).slice(0, 160) : '',
+      uncertainty.length ? 'Verification notes: ' + uncertainty.join(' ') : '',
+      sources.length ? 'Original reporting and source links:\n\n' + sources.join('\n\n') : 'Original source details were not supplied with this wire record.',
+      'Archive record ID: ' + String(report.id || '')
+    ].filter(Boolean).join('\n\n').slice(0, 12000);
+  };
+  if (a === 'claudiaStoryQueue') {
+    const [reportsR, postsR] = await Promise.all([
+      rest('news_reports?select=id,ts,kind,dateline,confidence,headline,summary,sources,uncertain,published&published=eq.true&order=ts.desc&limit=100'),
+      rest('news_posts?select=slug,status&slug=like.claudia-*')
+    ]);
+    if (!reportsR.ok || !postsR.ok) return j({ error: 'claudia_queue_read' }, 500);
+    const reports = await reportsR.json(), posts = await postsR.json();
+    const existingBySlug = new Map((posts || []).map((p: any) => [String(p.slug || ''), p]));
+    return j({ reports: (reports || []).map((report: any) => {
+      const slug = claudiaSlug(report.headline, String(report.id));
+      const existing: any = existingBySlug.get(slug);
+      return { ...report, suggested_section: claudiaCategory(report).section, suggested_topic: claudiaCategory(report).topic, story_slug: existing?.slug || null, story_status: existing?.status || null };
+    }) });
+  }
+  if (a === 'archiveClaudiaBatch') {
+    const offset = Math.max(0, Math.min(24000, Number.isFinite(Number(b.offset)) ? Math.floor(Number(b.offset)) : 0));
+    const limit = Math.max(1, Math.min(50, Number.isFinite(Number(b.limit)) ? Math.floor(Number(b.limit)) : 40));
+    const reportsR = await rest('news_reports?select=id,ts,kind,dateline,confidence,headline,summary,sources,uncertain,published&published=eq.true&order=ts.asc,id.asc&limit=' + limit + '&offset=' + offset);
+    if (!reportsR.ok) return j({ error: 'claudia_archive_read' }, 500);
+    const reports = await reportsR.json();
+    if (!reports.length) return j({ ok: true, offset, scanned: 0, created: 0, skipped: 0, done: true });
+    const candidates = reports.filter((r: any) => r && r.id && String(r.headline || '').trim().length >= 3)
+      .map((report: any) => {
+        const category = claudiaCategory(report);
+        const stamp = report.ts && !Number.isNaN(new Date(report.ts).getTime()) ? new Date(report.ts).toISOString() : new Date().toISOString();
+        return {
+          slug: claudiaSlug(report.headline, String(report.id)),
+          section: category.section,
+          topic: category.topic,
+          title: String(report.headline).trim().slice(0, 200),
+          body: claudiaBody(report),
+          author_name: 'Claudia Green',
+          author_id: null,
+          status: 'published',
+          image_url: null,
+          created_at: stamp,
+          updated_at: new Date().toISOString()
+        };
+      });
+    if (!candidates.length) return j({ ok: true, offset, scanned: reports.length, created: 0, skipped: reports.length, done: reports.length < limit });
+    const slugFilter = candidates.map((p: any) => p.slug).join(',');
+    const existingR = await rest('news_posts?select=slug&slug=in.(' + encodeURIComponent(slugFilter) + ')');
+    if (!existingR.ok) return j({ error: 'claudia_archive_duplicate_check' }, 500);
+    const existing = new Set((await existingR.json()).map((p: any) => String(p.slug)));
+    const fresh = candidates.filter((p: any) => !existing.has(p.slug));
+    let created = 0;
+    if (fresh.length) {
+      const saveR = await rest('news_posts', { method: 'POST', body: JSON.stringify(fresh), prefer: 'return=representation' });
+      if (!saveR.ok) {
+        const detail = await saveR.text();
+        return j({ error: 'claudia_archive_insert', detail: detail.slice(0, 500), offset }, 400);
+      }
+      created = (await saveR.json()).length;
+    }
+    return j({ ok: true, offset, scanned: reports.length, created, skipped: reports.length - created, done: reports.length < limit, next_offset: offset + reports.length });
+  }
+  if (a === 'publishClaudiaStory') {
+    const reportId = String(b.report_id || '').trim();
+    const title = String(b.title || '').trim().slice(0, 200);
+    const body = String(b.body || '').trim().slice(0, 12000);
+    const section = String(b.section || 'news');
+    const topic = String(b.topic || '').trim().slice(0, 40) || null;
+    if (!reportId || reportId.length > 180 || !title || title.length < 3 || body.length < 80 ||
+        !['news', 'sports', 'schools', 'outdoors', 'government'].includes(section) ||
+        (topic && !['weather', 'traffic'].includes(topic))) {
+      return j({ error: 'story_fields' }, 400);
+    }
+    const reportR = await rest('news_reports?select=id,ts,kind,dateline,confidence,headline,summary,sources,uncertain,published&id=eq.' +
+      encodeURIComponent(reportId) + '&published=eq.true&limit=1');
+    if (!reportR.ok) return j({ error: 'wire_read' }, 500);
+    const report = (await reportR.json())[0];
+    if (!report) return j({ error: 'wire_not_found' }, 404);
+    const slug = claudiaSlug(title, reportId);
+    const existingR = await rest('news_posts?select=id,slug,status&slug=eq.' + encodeURIComponent(slug) + '&limit=1');
+    if (!existingR.ok) return j({ error: 'story_duplicate_check' }, 500);
+    const existing = (await existingR.json())[0];
+    if (existing) return j({ ok: true, alreadyPublished: true, slug: existing.slug, story_id: existing.id });
+    const stamp = report.ts && !Number.isNaN(new Date(report.ts).getTime()) ? new Date(report.ts).toISOString() : new Date().toISOString();
+    const post = {
+      slug, section, topic, title,
+      body: body + '\n\n' + claudiaBody(report),
+      author_name: 'Claudia Green', author_id: null, status: 'published',
+      image_url: null, created_at: stamp, updated_at: new Date().toISOString()
+    };
+    const saveR = await rest('news_posts', { method: 'POST', body: JSON.stringify(post), prefer: 'return=representation' });
+    if (!saveR.ok) return j({ error: 'story_create' }, 400);
+    const saved = (await saveR.json())[0] || {};
+    return j({ ok: true, slug: saved.slug || slug, story_id: saved.id || null });
+  }
+
   const t = String(b.table || '');
   if (!tables.includes(t)) return j({ error: 'table' }, 400);
   if (a === 'list') { const r = await rest(`${t}?select=*&limit=200`); return j({ rows: await r.json() }, r.status); }

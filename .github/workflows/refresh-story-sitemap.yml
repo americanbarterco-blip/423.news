@@ -3,7 +3,7 @@ name: Refresh and deploy published-story sitemap
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 9 * * *"
+    - cron: "17 * * * *"
 
 permissions:
   contents: read

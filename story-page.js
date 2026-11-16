@@ -9,7 +9,7 @@
   var locale = isSpanish ? 'es-US' : 'en-US';
   var slug = new URLSearchParams(location.search).get('slug') || '';
   var root = document.getElementById('story');
-  var sectionNames = { news: 'News', sports: 'Local Sports', outdoors: 'Outdoors', government: 'Government' };
+  var sectionNames = { news: 'News', sports: 'Local Sports', schools: 'Schools', outdoors: 'Outdoors', government: 'Government' };
   function esc(v) {
     return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
@@ -34,6 +34,21 @@
   function paragraphs(body) {
     return String(body || '').trim().split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean);
   }
+  function renderBody(body) {
+    return paragraphs(body).map(function (paragraph) {
+      var match = /^Source:\s*(.*?)\s+\|\s+(https:\/\/\S+)$/i.exec(paragraph);
+      if (match) {
+        try {
+          var sourceUrl = new URL(match[2]);
+          if (sourceUrl.protocol === 'https:') {
+            return '<p><strong>Source:</strong> <a href="' + esc(sourceUrl.href) + '" target="_blank" rel="noopener noreferrer">' +
+              esc(match[1] || sourceUrl.hostname) + '</a></p>';
+          }
+        } catch (error) { /* render malformed source lines as plain text */ }
+      }
+      return '<p>' + esc(paragraph) + '</p>';
+    }).join('');
+  }
   function showError(title, message) {
     document.title = title + ' | 423.news';
     set('meta[name="robots"]', 'content', 'noindex,follow');
@@ -42,6 +57,7 @@
   function render(post, translation) {
     var section = sectionNames[post.section];
     if (!section) { showError(isSpanish ? 'Artículo no disponible' : 'Story unavailable', isSpanish ? 'Este contenido no está disponible como reportaje.' : 'This content is not published as a news article.'); return; }
+    var articleSection = post.topic === 'weather' ? 'Weather' : post.topic === 'traffic' ? 'Traffic' : section;
     var translated = translation && translation.translated_content || null;
     if (isSpanish && !(translated && translated.title && translated.body)) {
       showError('Traducción no disponible', 'Este reportaje todavía no tiene una traducción al español aprobada. Consulta Noticias 423 para ver las publicaciones disponibles en español.');
@@ -74,6 +90,7 @@
       addAlternate(isSpanish ? 'es' : 'en', canonical);
     }
     var published = post.created_at;
+    var modified = post.updated_at || published;
     var schema = {
       '@context': 'https://schema.org',
       '@type': 'NewsArticle',
@@ -82,8 +99,8 @@
       description: description,
       inLanguage: locale,
       datePublished: published,
-      dateModified: published,
-      articleSection: section,
+      dateModified: modified,
+      articleSection: articleSection,
       author: { '@type': 'Person', name: author },
       publisher: {
         '@type': 'NewsMediaOrganization',
@@ -94,9 +111,9 @@
     };
     if (image) schema.image = [image];
     document.getElementById('articleSchema').textContent = JSON.stringify(schema);
-    var bodyHtml = paragraphs(body).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('');
+    var bodyHtml = renderBody(body);
     root.innerHTML =
-      '<p class="story-kicker">' + esc(isSpanish ? 'Noticias 423' : '423.news') + ' · ' + esc(isSpanish ? section : section) + '</p>' +
+      '<p class="story-kicker">' + esc(isSpanish ? 'Noticias 423' : '423.news') + ' · ' + esc(articleSection) + '</p>' +
       '<h1>' + esc(title) + '</h1>' +
       '<p class="story-meta"><time datetime="' + esc(published) + '">' + esc(date(published)) + '</time> · ' + esc(isSpanish ? 'Por ' + author : 'By ' + author) + '</p>' +
       (image ? '<figure><img class="story-image" src="' + esc(image) + '" alt="' + esc(title) + '"></figure>' : '') +
@@ -111,7 +128,7 @@
     return;
   }
   var headers = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
-  fetch(SB_URL + '/rest/v1/news_posts?select=id,slug,section,title,body,image_url,author_name,status,created_at&slug=eq.' + encodeURIComponent(slug) + '&status=eq.published&limit=1', { headers: headers, cache: 'no-store' })
+  fetch(SB_URL + '/rest/v1/news_posts?select=id,slug,section,topic,title,body,image_url,author_name,status,created_at,updated_at&slug=eq.' + encodeURIComponent(slug) + '&status=eq.published&limit=1', { headers: headers, cache: 'no-store' })
     .then(function (response) { if (!response.ok) throw new Error('Story request failed'); return response.json(); })
     .then(function (rows) {
       if (!rows.length) throw new Error('Story not found');

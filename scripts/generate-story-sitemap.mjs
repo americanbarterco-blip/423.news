@@ -58,7 +58,7 @@ function storyUrl(path, slug) {
   return url.toString();
 }
 
-function entry(loc, alternates) {
+function entry(loc, alternates, lastmod) {
   const links = alternates.map(item =>
     '    <xhtml:link rel="alternate" hreflang="' + item.lang +
     '" href="' + escapeXml(item.url) + '"/>'
@@ -66,6 +66,7 @@ function entry(loc, alternates) {
   return [
     "  <url>",
     "    <loc>" + escapeXml(loc) + "</loc>",
+    lastmod ? "    <lastmod>" + escapeXml(lastmod) + "</lastmod>" : "",
     links,
     "  </url>"
   ].join("\n");
@@ -73,9 +74,9 @@ function entry(loc, alternates) {
 
 async function main() {
   const posts = await fetchAll("news_posts", {
-    select: "id,slug,section",
+    select: "id,slug,section,updated_at,created_at",
     status: "eq.published",
-    section: "in.(news,sports,outdoors,government)",
+    section: "in.(news,sports,schools,outdoors,government)",
     order: "created_at.desc"
   });
 
@@ -93,7 +94,7 @@ async function main() {
   for (const post of posts) {
     if (!post || !post.id || !post.slug ||
         !/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(post.slug) ||
-        !["news", "sports", "outdoors", "government"].includes(post.section)) continue;
+        !["news", "sports", "schools", "outdoors", "government"].includes(post.section)) continue;
 
     const en = storyUrl("/story.html", post.slug);
     const es = storyUrl("/es/historia.html", post.slug);
@@ -101,7 +102,7 @@ async function main() {
       const alternates = [{ lang: "en", url: en }];
       if (spanishIds.has(String(post.id))) alternates.push({ lang: "es", url: es });
       alternates.push({ lang: "x-default", url: en });
-      entries.push(entry(en, alternates));
+      entries.push(entry(en, alternates, post.updated_at || post.created_at));
       seen.add(en);
     }
     if (spanishIds.has(String(post.id)) && !seen.has(es)) {
@@ -109,7 +110,7 @@ async function main() {
         { lang: "en", url: en },
         { lang: "es", url: es },
         { lang: "x-default", url: en }
-      ]));
+      ], post.updated_at || post.created_at));
       seen.add(es);
     }
   }
