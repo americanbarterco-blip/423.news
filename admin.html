@@ -51,7 +51,7 @@ function draw(){
   if(cur==='scanner')drawScanner();else if(cur==='claudiaStories')drawClaudiaStories();else if(cur==='pw')drawPw();else if(cur==='news_ads')drawAds();else if(!tables.length)document.getElementById('body').innerHTML='<div class="card">No tables set yet. Add ADMIN_TABLES in the function secrets.</div>';else load()}
 function drawClaudiaStories(){
   var b=document.getElementById('body');
-  b.innerHTML='<div class="card"><b>Claudia Green — Permanent News Archive</b><p><small>Claudia reports across the 423 newsroom: news, weather, traffic, sports, schools, outdoors and government. The archive action converts all published, editorially reviewed Live Wire records into permanent articles in safe batches. Original dates, source links, locations and confidence labels are preserved; source articles are linked, not copied.</small></p><button id="cgArchive">Archive all reviewed Live Wire reports</button><p id="cgArchiveStatus"><small>Already archived stories are skipped, so it is safe to resume if a batch is interrupted.</small></p></div><div id="cgStoryRows" class="card">Loading Claudia\\'s latest reports…</div>';
+  b.innerHTML='<div class="card"><b>Claudia Green — Permanent News Archive</b><p><small>Claudia reports across the 423 newsroom: news, weather, traffic, sports, schools, outdoors and government. The archive action converts all published, editorially reviewed Live Wire records into permanent articles in safe batches. Original dates, source links, locations and confidence labels are preserved; source articles are linked, not copied.</small></p><button id="cgArchive">Archive all reviewed Live Wire reports</button><p id="cgArchiveStatus"><small>Already archived stories are skipped, so it is safe to resume if a batch is interrupted.</small></p></div><div id="cgStoryRows" class="card">Loading Claudia\'s latest reports…</div>';
   var archiveButton=document.getElementById('cgArchive');
   archiveButton.onclick=function(){
     if(!confirm('Convert every existing published Live Wire report into a permanent Claudia Green article? Existing articles will be skipped. This will create public articles and add them to the sitemap on its next refresh.'))return;
@@ -68,7 +68,7 @@ function drawClaudiaStories(){
     next();
   };
   call('claudiaStoryQueue').then(function(r){
-    if(r.s!==200){document.getElementById('cgStoryRows').textContent='Could not load Claudia\\'s reports. Check the admin function deployment.';return}
+    if(r.s!==200){document.getElementById('cgStoryRows').textContent='Could not load Claudia\'s reports. Check the admin function deployment.';return}
     var reports=r.j.reports||[];
     var target=document.getElementById('cgStoryRows');
     if(!reports.length){target.textContent='No published Live Wire reports are available.';return}
@@ -84,11 +84,11 @@ function drawClaudiaStories(){
       if(e.target.getAttribute('data-cg-edit')){
         var section=String(report.suggested_section||'news'),topic=String(report.suggested_topic||'');
         card.insertAdjacentHTML('beforeend',
-          '<div class="card" id="cgEditor"><b>Editorial article editor</b><p><small>Preserve the original confidence label and uncertainty notes. Use the source link for original reporting; do not copy another outlet\\'s full article.</small></p>'+
+          '<div class="card" id="cgEditor"><b>Editorial article editor</b><p><small>Preserve the original confidence label and uncertainty notes. Use the source link for original reporting; do not copy another outlet\'s full article.</small></p>'+
           '<label><small>Headline</small></label><input id="cgTitle" maxlength="200" value="'+esc(report.headline||'')+'">'+
           '<label><small>Category</small></label><select id="cgSection"><option value="news" '+(section==='news'?'selected':'')+'>News</option><option value="sports" '+(section==='sports'?'selected':'')+'>Sports</option><option value="schools" '+(section==='schools'?'selected':'')+'>Schools</option><option value="outdoors" '+(section==='outdoors'?'selected':'')+'>Outdoors</option><option value="government" '+(section==='government'?'selected':'')+'>Government</option></select>'+
           '<label><small>News topic (optional)</small></label><select id="cgTopic"><option value="" '+(!topic?'selected':'')+'>General</option><option value="weather" '+(topic==='weather'?'selected':'')+'>Weather</option><option value="traffic" '+(topic==='traffic'?'selected':'')+'>Traffic</option></select>'+
-          '<label><small>Article text</small></label><textarea id="cgBody" rows="8" maxlength="12000" placeholder="Write a short original report based on the verified details.">'+esc(String(report.summary||'')+'\\n\\nClaudia Green’s Live Wire desk is preserving this report for 423.news readers.')+'</textarea>'+
+          '<label><small>Article text</small></label><textarea id="cgBody" rows="8" maxlength="12000" placeholder="Write a short original report based on the verified details.">'+esc(String(report.summary||'')+'\n\nClaudia Green’s Live Wire desk is preserving this report for 423.news readers.')+'</textarea>'+
           '<label style="display:block;margin:10px 0"><input id="cgConfirm" type="checkbox" style="width:auto"> I confirm this report has been reviewed and approve it for permanent publication.</label>'+
           '<button data-cg-publish="1">Publish permanent story</button> <button class="g" data-cg-cancel="1">Cancel</button></div>');
         return;
@@ -102,7 +102,7 @@ function drawClaudiaStories(){
         if(!confirm('Publish this permanent 423.news article under Claudia Green?'))return;
         e.target.disabled=true;e.target.textContent='Publishing…';
         call('publishClaudiaStory',{report_id:report.id,title:title,body:body,section:section,topic:topic}).then(function(x){
-          if(x.s===200&&x.j.ok){say(x.j.alreadyPublished?'This report already has a permanent article.':'Claudia\\'s permanent story is published.');drawClaudiaStories()}
+          if(x.s===200&&x.j.ok){say(x.j.alreadyPublished?'This report already has a permanent article.':'Claudia\'s permanent story is published.');drawClaudiaStories()}
           else{say('Could not publish this story ('+(x.j.error||x.s)+').');e.target.disabled=false;e.target.textContent='Publish permanent story'}
         });
       }
