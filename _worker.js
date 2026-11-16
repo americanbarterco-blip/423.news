@@ -135,8 +135,8 @@ export default {
     const staticResponse = await env.ASSETS.fetch(new Request(SITE_ORIGIN + "/sitemap.xml"));
     if (!staticResponse.ok) return staticResponse;
 
+    const staticXml = await staticResponse.text();
     try {
-      const staticXml = await staticResponse.text();
       const xml = await buildSitemap(staticXml, env);
       const response = new Response(xml, {
         status: 200,
@@ -150,7 +150,7 @@ export default {
       return response;
     } catch (error) {
       // Preserve the known-good static sitemap if the database is temporarily unavailable.
-      return new Response(await staticResponse.text(), {
+      return new Response(staticXml, {
         status: 200,
         headers: {
           "Content-Type": "application/xml; charset=utf-8",
