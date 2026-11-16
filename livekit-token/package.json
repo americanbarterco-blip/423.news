@@ -1,12 +1,17 @@
 {
-  "name": "423-news-livekit-token",
+  "name": "423-news-claudia-token-worker",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "scripts": { "start": "node server.js" },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
   "dependencies": {
     "@livekit/protocol": "^1.39.3",
-    "express": "^5.1.0",
     "livekit-server-sdk": "^2.19.2"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   }
 }
