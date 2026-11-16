@@ -1,0 +1,12 @@
+{
+  "name": "423-news-livekit-token",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "@livekit/protocol": "^1.39.3",
+    "express": "^5.1.0",
+    "livekit-server-sdk": "^2.19.2"
+  }
+}
