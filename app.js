@@ -170,7 +170,7 @@
       var quick = '<div class="quick">' +
         [['news', '#db2777'], ['sports', '#2563eb'], ['schools', '#0d9488'], ['outdoors', '#ca8a04'], ['government', '#475569'], ['classifieds', '#ea580c'], ['community', '#7c3aed']].map(function (x) {
           return '<a href="#/' + x[0] + '"><span style="background:' + x[1] + '" aria-hidden="true">' + SECTIONS[x[0]].emoji + '</span>' + SECTIONS[x[0]].label + '</a>';
-        }).join('') + '</div>';
+        }).join('') + '<a href="#/news/weather">☀️ Weather</a><a href="#/news/traffic">🚗 Traffic</a></div>';
 
       if (news.length) {
         var lead = news[0], rail = news.slice(1, 4);
