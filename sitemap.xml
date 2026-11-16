@@ -127,4 +127,6 @@
     <changefreq>hourly</changefreq>
     <priority>0.85</priority>
   </url>
+  <!-- DYNAMIC-STORIES:START -->
+  <!-- DYNAMIC-STORIES:END -->
 </urlset>
