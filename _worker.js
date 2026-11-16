@@ -99,15 +99,13 @@ async function buildSitemap(staticXml, env) {
     const english = storyUrl("/story.html", post.slug);
     const spanish = storyUrl("/es/historia.html", post.slug);
     const hasSpanish = spanishIds.has(String(post.id));
-    const lastmod = post.created_at && !Number.isNaN(Date.parse(post.created_at))
-      ? new Date(post.created_at).toISOString() : "";
     const englishAlternates = [{ lang: "en", url: english }];
     if (hasSpanish) englishAlternates.push({ lang: "es", url: spanish });
     englishAlternates.push({ lang: "x-default", url: english });
-    entries.push(sitemapEntry(english, lastmod, englishAlternates));
+    entries.push(sitemapEntry(english, "", englishAlternates));
 
     if (hasSpanish) {
-      entries.push(sitemapEntry(spanish, lastmod, [
+      entries.push(sitemapEntry(spanish, "", [
         { lang: "en", url: english },
         { lang: "es", url: spanish },
         { lang: "x-default", url: english }
