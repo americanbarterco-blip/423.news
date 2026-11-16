@@ -4,7 +4,7 @@
  */
 const SITE_ORIGIN = "https://423.news";
 const SUPABASE_URL = "https://kdiwehqtezlhecxsoysj.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXAiLCJyZWYiOiJrZGl3ZWhxdGV6bGhlY3hzb3lzcWoiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc5MDY0NDM5MSwiZXhwIjoyMTA2MjIwMzkxfQ.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE";
 const PAGE_SIZE = 1000;
 const MAX_STORIES = 24000;
 const INDEXABLE_SECTIONS = new Set(["news", "sports", "outdoors", "government"]);
