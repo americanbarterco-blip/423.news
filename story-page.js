@@ -34,6 +34,21 @@
   function paragraphs(body) {
     return String(body || '').trim().split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean);
   }
+  function renderBody(body) {
+    return paragraphs(body).map(function (paragraph) {
+      var match = /^Source:\\s*(.*?)\\s+\\|\\s+(https:\\/\\/\\S+)$/i.exec(paragraph);
+      if (match) {
+        try {
+          var sourceUrl = new URL(match[2]);
+          if (sourceUrl.protocol === 'https:') {
+            return '<p><strong>Source:</strong> <a href="' + esc(sourceUrl.href) + '" target="_blank" rel="noopener noreferrer">' +
+              esc(match[1] || sourceUrl.hostname) + '</a></p>';
+          }
+        } catch (error) { /* render malformed source lines as plain text */ }
+      }
+      return '<p>' + esc(paragraph) + '</p>';
+    }).join('');
+  }
   function showError(title, message) {
     document.title = title + ' | 423.news';
     set('meta[name="robots"]', 'content', 'noindex,follow');
@@ -74,6 +89,7 @@
       addAlternate(isSpanish ? 'es' : 'en', canonical);
     }
     var published = post.created_at;
+    var modified = post.updated_at || published;
     var schema = {
       '@context': 'https://schema.org',
       '@type': 'NewsArticle',
@@ -82,7 +98,7 @@
       description: description,
       inLanguage: locale,
       datePublished: published,
-      dateModified: published,
+      dateModified: modified,
       articleSection: section,
       author: { '@type': 'Person', name: author },
       publisher: {
@@ -94,7 +110,7 @@
     };
     if (image) schema.image = [image];
     document.getElementById('articleSchema').textContent = JSON.stringify(schema);
-    var bodyHtml = paragraphs(body).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('');
+    var bodyHtml = renderBody(body);
     root.innerHTML =
       '<p class="story-kicker">' + esc(isSpanish ? 'Noticias 423' : '423.news') + ' · ' + esc(isSpanish ? section : section) + '</p>' +
       '<h1>' + esc(title) + '</h1>' +
@@ -111,7 +127,7 @@
     return;
   }
   var headers = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
-  fetch(SB_URL + '/rest/v1/news_posts?select=id,slug,section,title,body,image_url,author_name,status,created_at&slug=eq.' + encodeURIComponent(slug) + '&status=eq.published&limit=1', { headers: headers, cache: 'no-store' })
+  fetch(SB_URL + '/rest/v1/news_posts?select=id,slug,section,title,body,image_url,author_name,status,created_at,updated_at&slug=eq.' + encodeURIComponent(slug) + '&status=eq.published&limit=1', { headers: headers, cache: 'no-store' })
     .then(function (response) { if (!response.ok) throw new Error('Story request failed'); return response.json(); })
     .then(function (rows) {
       if (!rows.length) throw new Error('Story not found');
