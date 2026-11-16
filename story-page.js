@@ -36,7 +36,7 @@
   }
   function renderBody(body) {
     return paragraphs(body).map(function (paragraph) {
-      var match = /^Source:\\s*(.*?)\\s+\\|\\s+(https:\\/\\/\\S+)$/i.exec(paragraph);
+      var match = /^Source:\s*(.*?)\s+\|\s+(https:\/\/\S+)$/i.exec(paragraph);
       if (match) {
         try {
           var sourceUrl = new URL(match[2]);
