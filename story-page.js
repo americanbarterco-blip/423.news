@@ -104,7 +104,7 @@
       '<div class="story-body">' + bodyHtml + '</div>' +
       '<div class="story-actions"><a href="' + (isSpanish ? '/es/noticias.html' : '/news.html') + '">' + (isSpanish ? '← Todas las noticias' : '← All local news') + '</a>' +
       (isSpanish ? '<a href="' + englishUrl + '" lang="en">Read in English</a>' : (translated && translated.title && translated.body ? '<a href="' + spanishUrl + '" lang="es">Leer en español</a>' : '')) +
-      '<a href="/#' + encodeURIComponent('/story/' + post.slug) + '">' + (isSpanish ? 'Abrir comentarios' : 'Open discussion') + '</a></div>';
+      '<a href="/#/story/' + encodeURIComponent(post.slug) + '">' + (isSpanish ? 'Abrir comentarios' : 'Open discussion') + '</a></div>';
   }
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(slug)) {
     showError(isSpanish ? 'Enlace no válido' : 'Invalid story link', isSpanish ? 'El enlace no contiene un identificador válido.' : 'This link does not contain a valid story slug.');
