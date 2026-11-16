@@ -11,7 +11,8 @@
   var SECTIONS = {
     news:        { label: 'News',        emoji: '📰', blurb: 'Local reporting from across the region.' },
     sports:      { label: 'Local Sports', emoji: '🏈', blurb: 'High school, college, youth and Little League sports from every program across the 423.' },
-        outdoors:    { label: 'Outdoors',    emoji: '🏞️', blurb: 'Trails, lakes, hunting, fishing and getting outside.' },
+    schools:     { label: 'Schools',      emoji: '🎓', blurb: 'Education, students and schools across the region.' },
+    outdoors:    { label: 'Outdoors',    emoji: '🏞️', blurb: 'Trails, lakes, hunting, fishing and getting outside.' },
     classifieds: { label: 'Classifieds', emoji: '🏷️', blurb: 'Buy, sell and trade with your neighbors.' },
     community:   { label: 'citizen423report',   emoji: '👥', blurb: 'Real people. Local stories.' },
     government:  { label: 'Government',  emoji: '🏛️', blurb: 'Councils, commissions, courts and public meetings.' }
@@ -23,7 +24,7 @@
     ['checkpoint', 'Checkpoints'], ['accident', 'Accidents'], ['roadblock', 'Roadblocks']
   ];
   var CLASSIFIED_TOPICS = [['all', 'All'], ['sell', 'For Sale'], ['buy', 'Wanted'], ['trade', 'Trade']];
-  var TOPIC_LABEL = { events: 'Events', discussions: 'Discussions', lost: 'Lost & Found', announcements: 'Announcements', highschool: 'High School', college: 'College', littleleague: 'Little League', youth: 'Youth & Rec', checkpoint: 'Checkpoint', accident: 'Accident', roadblock: 'Roadblock', general: 'General', sell: 'For Sale', buy: 'Wanted', trade: 'Trade', photos: 'Photos' };
+  var TOPIC_LABEL = { weather: 'Weather', traffic: 'Traffic', events: 'Events', discussions: 'Discussions', lost: 'Lost & Found', announcements: 'Announcements', highschool: 'High School', college: 'College', littleleague: 'Little League', youth: 'Youth & Rec', checkpoint: 'Checkpoint', accident: 'Accident', roadblock: 'Roadblock', general: 'General', sell: 'For Sale', buy: 'Wanted', trade: 'Trade', photos: 'Photos' };
 
   /* GPS on road reports: the post body carries one marker line, [[gps:lat,lng]], added only when the poster ticks the box. */
   var GPS_TOPICS = { checkpoint: 1, accident: 1, roadblock: 1 };
@@ -89,7 +90,7 @@
     return u ? '<img ' + (cls ? 'class="' + cls + '" ' : '') + 'src="' + esc(u) + '" alt="" loading="lazy">'
              : '<div class="ph ' + (cls || '') + '" aria-hidden="true">' + secEmoji(p.section) + '</div>';
   }
-  function href(p) { return ['news','sports','outdoors','government'].indexOf(p.section) >= 0 ? '/story.html?slug=' + encodeURIComponent(p.slug) : '#/story/' + encodeURIComponent(p.slug); }
+  function href(p) { return ['news','sports','schools','outdoors','government'].indexOf(p.section) >= 0 ? '/story.html?slug=' + encodeURIComponent(p.slug) : '#/story/' + encodeURIComponent(p.slug); }
   function label(p) { return (p.topic && TOPIC_LABEL[p.topic]) || (SECTIONS[p.section] || {}).label || 'News'; }
 
   /* ---------- cards ---------- */
@@ -158,7 +159,7 @@
 
   views.home = function () {
     return Promise.all([
-      listPosts({ sections: ['news', 'sports', 'outdoors', 'government'], limit: 40 }),
+      listPosts({ sections: ['news', 'sports', 'schools', 'outdoors', 'government'], limit: 40 }),
       listPosts({ section: 'community', limit: 5 }),
       listPosts({ section: 'classifieds', limit: 4 }),
       sb.from('news_reports').select('id,kind,dateline,headline,ts').eq('published', true).order('ts', { ascending: false }).limit(4),
@@ -229,7 +230,7 @@
   function sectionView(sec, topic) {
     var meta = SECTIONS[sec];
     var tabs = '';
-    var topics = sec === 'community' ? COMMUNITY_TOPICS : sec === 'classifieds' ? CLASSIFIED_TOPICS : sec === 'sports' ? SPORTS_TOPICS : null;
+    var topics = sec === 'community' ? COMMUNITY_TOPICS : sec === 'classifieds' ? CLASSIFIED_TOPICS : sec === 'sports' ? SPORTS_TOPICS : sec === 'news' ? [['all', 'All News'], ['weather', 'Weather'], ['traffic', 'Traffic']] : null;
     topic = topic || 'all';
     if (topics) {
       tabs = '<div class="tabs">' + topics.map(function (t) {
