@@ -9,7 +9,7 @@
   var locale = isSpanish ? 'es-US' : 'en-US';
   var slug = new URLSearchParams(location.search).get('slug') || '';
   var root = document.getElementById('story');
-  var sectionNames = { news: 'News', sports: 'Local Sports', outdoors: 'Outdoors', government: 'Government' };
+  var sectionNames = { news: 'News', sports: 'Local Sports', schools: 'Schools', outdoors: 'Outdoors', government: 'Government' };
   function esc(v) {
     return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
@@ -57,6 +57,7 @@
   function render(post, translation) {
     var section = sectionNames[post.section];
     if (!section) { showError(isSpanish ? 'Artículo no disponible' : 'Story unavailable', isSpanish ? 'Este contenido no está disponible como reportaje.' : 'This content is not published as a news article.'); return; }
+    var articleSection = post.topic === 'weather' ? 'Weather' : post.topic === 'traffic' ? 'Traffic' : section;
     var translated = translation && translation.translated_content || null;
     if (isSpanish && !(translated && translated.title && translated.body)) {
       showError('Traducción no disponible', 'Este reportaje todavía no tiene una traducción al español aprobada. Consulta Noticias 423 para ver las publicaciones disponibles en español.');
@@ -99,7 +100,7 @@
       inLanguage: locale,
       datePublished: published,
       dateModified: modified,
-      articleSection: section,
+      articleSection: articleSection,
       author: { '@type': 'Person', name: author },
       publisher: {
         '@type': 'NewsMediaOrganization',
@@ -112,7 +113,7 @@
     document.getElementById('articleSchema').textContent = JSON.stringify(schema);
     var bodyHtml = renderBody(body);
     root.innerHTML =
-      '<p class="story-kicker">' + esc(isSpanish ? 'Noticias 423' : '423.news') + ' · ' + esc(isSpanish ? section : section) + '</p>' +
+      '<p class="story-kicker">' + esc(isSpanish ? 'Noticias 423' : '423.news') + ' · ' + esc(articleSection) + '</p>' +
       '<h1>' + esc(title) + '</h1>' +
       '<p class="story-meta"><time datetime="' + esc(published) + '">' + esc(date(published)) + '</time> · ' + esc(isSpanish ? 'Por ' + author : 'By ' + author) + '</p>' +
       (image ? '<figure><img class="story-image" src="' + esc(image) + '" alt="' + esc(title) + '"></figure>' : '') +
