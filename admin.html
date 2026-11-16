@@ -61,7 +61,7 @@ function drawClaudiaStories(){
       call('archiveClaudiaBatch',{offset:offset,limit:40}).then(function(r){
         if(r.s!==200||!r.j.ok){document.getElementById('cgArchiveStatus').textContent='Stopped at offset '+offset+'. '+(r.j.error||'Request failed')+'. Press the button again to safely resume.';archiveButton.disabled=false;return}
         scanned+=Number(r.j.scanned||0);created+=Number(r.j.created||0);skipped+=Number(r.j.skipped||0);
-        if(r.j.done){document.getElementById('cgArchiveStatus').textContent='Complete: '+scanned+' reports checked; '+created+' new permanent articles created; '+skipped+' already archived or skipped. The sitemap refresh will pick up the published articles.';archiveButton.disabled=false;drawClaudiaStories();return}
+        if(r.j.done){document.getElementById('cgArchiveStatus').textContent='Complete: '+scanned+' reports checked; '+created+' new permanent articles created; '+skipped+' already archived or skipped. The sitemap refresh will pick up the published articles.';archiveButton.disabled=false;archiveButton.textContent='Archive complete — run again to verify';return}
         offset=Number(r.j.next_offset||offset+40);next();
       });
     }
