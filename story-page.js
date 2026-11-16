@@ -128,7 +128,7 @@
     return;
   }
   var headers = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
-  fetch(SB_URL + '/rest/v1/news_posts?select=id,slug,section,title,body,image_url,author_name,status,created_at,updated_at&slug=eq.' + encodeURIComponent(slug) + '&status=eq.published&limit=1', { headers: headers, cache: 'no-store' })
+  fetch(SB_URL + '/rest/v1/news_posts?select=id,slug,section,topic,title,body,image_url,author_name,status,created_at,updated_at&slug=eq.' + encodeURIComponent(slug) + '&status=eq.published&limit=1', { headers: headers, cache: 'no-store' })
     .then(function (response) { if (!response.ok) throw new Error('Story request failed'); return response.json(); })
     .then(function (rows) {
       if (!rows.length) throw new Error('Story not found');
