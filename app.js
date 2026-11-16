@@ -154,7 +154,7 @@
           '<span aria-hidden="true" style="flex:0 0 32px;width:32px;height:32px;border-radius:50%;background:#7c3aed;color:#fff;display:grid;place-items:center;font-weight:800">' + esc(nm.charAt(0).toUpperCase()) + '</span>' +
           '<span style="min-width:0"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(p.title) + '</b>' +
           '<small class="muted">' + esc(nm) + ' · ' + esc(ago(p.created_at)) + '</small></span></a>';
-      }).join('') + '</div>';
+      }).join('') + '<a href="#/news/weather">☀️ Weather</a><a href="#/news/traffic">🚗 Traffic</a></div>';
   }
 
   views.home = function () {
@@ -168,7 +168,7 @@
       var news = r[0], comm = r[1], cls = r[2], wire = (r[3] && r[3].data) || [];
       var out = '';
       var quick = '<div class="quick">' +
-        [['news', '#db2777'], ['sports', '#2563eb'], ['outdoors', '#ca8a04'], ['classifieds', '#ea580c'], ['community', '#7c3aed']].map(function (x) {
+        [['news', '#db2777'], ['sports', '#2563eb'], ['schools', '#0d9488'], ['outdoors', '#ca8a04'], ['government', '#475569'], ['classifieds', '#ea580c'], ['community', '#7c3aed']].map(function (x) {
           return '<a href="#/' + x[0] + '"><span style="background:' + x[1] + '" aria-hidden="true">' + SECTIONS[x[0]].emoji + '</span>' + SECTIONS[x[0]].label + '</a>';
         }).join('') + '</div>';
 
@@ -553,7 +553,7 @@
     return { name: parts[0] || 'home', a: parts[1], b: parts[2] };
   }
   function setActive(name) {
-    var map = { home: '#/home', forecast: '#/forecast', news: '#/news', sports: '#/sports', scores: '#/scores',  outdoors: '#/outdoors', classifieds: '#/classifieds', community: '#/community', teams: '#/sports', alerts: '#/alerts', yardsales: '#/yardsales', perks: '#/perks', games: '#/perks', government: '#/government' };
+    var map = { home: '#/home', forecast: '#/forecast', news: '#/news', sports: '#/sports', scores: '#/scores',  outdoors: '#/outdoors', classifieds: '#/classifieds', community: '#/community', teams: '#/sports', alerts: '#/alerts', yardsales: '#/yardsales', perks: '#/perks', games: '#/perks', government: '#/government', schools: '#/schools' };
     document.querySelectorAll('#nav a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === map[name]); });
   }
   function render() {
