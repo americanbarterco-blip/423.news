@@ -133,7 +133,7 @@ function jsonResponse(data, status = 200) {
 function base64url(bytes) {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/=/g, "").replace(/\\+/g, "-").replace(/\\//g, "_");
+  return btoa(binary).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 }
 
 function encodeJson(value) {
@@ -190,7 +190,7 @@ async function livekitToken(request, env) {
   const now = Math.floor(Date.now() / 1000);
   if (role === "probe") {
     try {
-      const host = livekitUrl.replace(/^wss:/i, "https:").replace(/^ws:/i, "http:").replace(/\\/$/, "");
+      const host = livekitUrl.replace(/^wss:/i, "https:").replace(/^ws:/i, "http:").replace(/\/$/, "");
       const adminJwt = await signJwt({
         iss: apiKey, sub: "423-news-status", nbf: now - 5, exp: now + 60,
         video: { roomAdmin: true, room: room }
