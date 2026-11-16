@@ -1,6 +1,10 @@
 User-agent: *
 Allow: /
+
+# Private and machine-readable endpoints are not search landing pages.
 Disallow: /admin.html
 Disallow: /offline.html
+Disallow: /api/
+Disallow: /rest/v1/
 
 Sitemap: https://423.news/sitemap.xml
