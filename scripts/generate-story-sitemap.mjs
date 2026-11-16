@@ -76,7 +76,7 @@ async function main() {
   const posts = await fetchAll("news_posts", {
     select: "id,slug,section,updated_at,created_at",
     status: "eq.published",
-    section: "in.(news,sports,outdoors,government)",
+    section: "in.(news,sports,schools,outdoors,government)",
     order: "created_at.desc"
   });
 
@@ -94,7 +94,7 @@ async function main() {
   for (const post of posts) {
     if (!post || !post.id || !post.slug ||
         !/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(post.slug) ||
-        !["news", "sports", "outdoors", "government"].includes(post.section)) continue;
+        !["news", "sports", "schools", "outdoors", "government"].includes(post.section)) continue;
 
     const en = storyUrl("/story.html", post.slug);
     const es = storyUrl("/es/historia.html", post.slug);
