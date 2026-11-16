@@ -199,6 +199,80 @@ Deno.serve(async (req) => {
     return approveR.ok ? j({ ok: true }) : j({ error: 'translation_approve' }, 400);
   }
 
+  // Claudia's reviewed Live Wire reports can be filed as permanent editorial stories.
+  // This action is protected by the same short-lived staff token as the rest of this admin function.
+  if (a === 'claudiaStoryQueue') {
+    const [reportsR, postsR] = await Promise.all([
+      rest('news_reports?select=id,ts,kind,dateline,confidence,headline,summary,sources,uncertain,published&published=eq.true&order=ts.desc&limit=100'),
+      rest('news_posts?select=topic,slug,status&topic=like.claudia-wire-*')
+    ]);
+    if (!reportsR.ok || !postsR.ok) return j({ error: 'claudia_queue_read' }, 500);
+    const reports = await reportsR.json(), posts = await postsR.json();
+    const publishedByTopic = new Map((posts || []).map((p: any) => [String(p.topic || ''), p]));
+    return j({ reports: (reports || []).map((report: any) => {
+      const safeId = String(report.id || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(-36);
+      const existing: any = publishedByTopic.get('claudia-wire-' + safeId);
+      return { ...report, story_slug: existing?.slug || null, story_status: existing?.status || null };
+    }) });
+  }
+  if (a === 'publishClaudiaStory') {
+    const reportId = String(b.report_id || '').trim();
+    const title = String(b.title || '').trim().slice(0, 160);
+    const body = String(b.body || '').trim().slice(0, 12000);
+    const section = String(b.section || 'news');
+    if (!reportId || reportId.length > 180 || !title || title.length < 8 || body.length < 80 ||
+        !['news', 'sports', 'outdoors', 'government'].includes(section)) {
+      return j({ error: 'story_fields' }, 400);
+    }
+    const reportR = await rest('news_reports?select=id,ts,kind,dateline,confidence,headline,summary,sources,uncertain,published&id=eq.' +
+      encodeURIComponent(reportId) + '&published=eq.true&limit=1');
+    if (!reportR.ok) return j({ error: 'wire_read' }, 500);
+    const report = (await reportR.json())[0];
+    if (!report) return j({ error: 'wire_not_found' }, 404);
+    const confidence = String(report.confidence || '').toLowerCase();
+    if (confidence !== 'confirmed' && confidence !== 'developing') {
+      return j({ error: 'wire_not_eligible', message: 'Only confirmed or developing reports can be filed as permanent stories. Unconfirmed scanner leads must remain in the wire queue.' }, 409);
+    }
+    const safeId = reportId.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(-36);
+    if (!safeId) return j({ error: 'wire_id' }, 400);
+    const topic = 'claudia-wire-' + safeId;
+    const existingR = await rest('news_posts?select=id,slug,status&topic=eq.' + encodeURIComponent(topic) + '&limit=1');
+    if (!existingR.ok) return j({ error: 'story_duplicate_check' }, 500);
+    const existing = (await existingR.json())[0];
+    if (existing) return j({ ok: true, alreadyPublished: true, slug: existing.slug, story_id: existing.id });
+    const slugBase = title.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64).replace(/-+$/g, '') || 'wire-report';
+    const slug = 'claudia-' + slugBase + '-' + safeId.slice(-10);
+    const sourceLines = (Array.isArray(report.sources) ? report.sources : []).slice(0, 12).map((source: any) => {
+      const label = String(source?.label || source?.name || 'Source').trim().slice(0, 140);
+      const url = String(source?.url || '').trim();
+      return /^https:\/\/[^\s]+$/i.test(url) ? 'Source: ' + label + ' | ' + url : 'Source: ' + label;
+    });
+    const uncertainty = (Array.isArray(report.uncertain) ? report.uncertain : [])
+      .map((item: any) => String(item || '').trim()).filter(Boolean).slice(0, 8);
+    const deskNote = confidence === 'developing'
+      ? 'Claudia Green Live Wire desk status: DEVELOPING. Details may change as more information is confirmed.'
+      : 'Claudia Green Live Wire desk status: CONFIRMED.';
+    const additions = [
+      'Claudia Green | 423.news Live Wire',
+      deskNote,
+      report.dateline ? 'Reported area: ' + String(report.dateline).slice(0, 160) : '',
+      uncertainty.length ? 'Details still being checked: ' + uncertainty.join(' ') : '',
+      sourceLines.length ? 'Sources reviewed:\n\n' + sourceLines.join('\n\n') : ''
+    ].filter(Boolean);
+    const now = new Date().toISOString();
+    const post = {
+      slug: slug, section: section, topic: topic, title: title,
+      body: body + '\n\n' + additions.join('\n\n'),
+      author_name: 'Claudia Green', author_id: null, status: 'published',
+      image_url: null, created_at: now, updated_at: now
+    };
+    const saveR = await rest('news_posts', { method: 'POST', body: JSON.stringify(post), prefer: 'return=representation' });
+    if (!saveR.ok) return j({ error: 'story_create' }, 400);
+    const saved = (await saveR.json())[0] || {};
+    return j({ ok: true, slug: saved.slug || slug, story_id: saved.id || null });
+  }
+
   const t = String(b.table || '');
   if (!tables.includes(t)) return j({ error: 'table' }, 400);
   if (a === 'list') { const r = await rest(`${t}?select=*&limit=200`); return j({ rows: await r.json() }, r.status); }
