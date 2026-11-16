@@ -51,45 +51,58 @@ function draw(){
   if(cur==='scanner')drawScanner();else if(cur==='claudiaStories')drawClaudiaStories();else if(cur==='pw')drawPw();else if(cur==='news_ads')drawAds();else if(!tables.length)document.getElementById('body').innerHTML='<div class="card">No tables set yet. Add ADMIN_TABLES in the function secrets.</div>';else load()}
 function drawClaudiaStories(){
   var b=document.getElementById('body');
-  b.innerHTML='<div class="card"><b>Claudia Green — Permanent Stories</b><p><small>Turn a reviewed Live Wire report into a lasting 423.news article. Scanner leads are not published automatically. Confirmed and developing reports can be filed after editorial review; unconfirmed leads stay private until verified.</small></p><p><small>Published articles receive a permanent story URL, appear in the news feed, and are picked up by the scheduled sitemap refresh.</small></p></div><div id="cgStoryRows" class="card">Loading Claudia\'s latest reports…</div>';
+  b.innerHTML='<div class="card"><b>Claudia Green — Permanent News Archive</b><p><small>Claudia reports across the 423 newsroom: news, weather, traffic, sports, schools, outdoors and government. The archive action converts all published, editorially reviewed Live Wire records into permanent articles in safe batches. Original dates, source links, locations and confidence labels are preserved; source articles are linked, not copied.</small></p><button id="cgArchive">Archive all reviewed Live Wire reports</button><p id="cgArchiveStatus"><small>Already archived stories are skipped, so it is safe to resume if a batch is interrupted.</small></p></div><div id="cgStoryRows" class="card">Loading Claudia\\'s latest reports…</div>';
+  var archiveButton=document.getElementById('cgArchive');
+  archiveButton.onclick=function(){
+    if(!confirm('Convert every existing published Live Wire report into a permanent Claudia Green article? Existing articles will be skipped. This will create public articles and add them to the sitemap on its next refresh.'))return;
+    archiveButton.disabled=true;var offset=0,created=0,skipped=0,scanned=0;
+    function next(){
+      document.getElementById('cgArchiveStatus').textContent='Archiving reviewed reports… '+scanned+' scanned, '+created+' new articles created.';
+      call('archiveClaudiaBatch',{offset:offset,limit:40}).then(function(r){
+        if(r.s!==200||!r.j.ok){document.getElementById('cgArchiveStatus').textContent='Stopped at offset '+offset+'. '+(r.j.error||'Request failed')+'. Press the button again to safely resume.';archiveButton.disabled=false;return}
+        scanned+=Number(r.j.scanned||0);created+=Number(r.j.created||0);skipped+=Number(r.j.skipped||0);
+        if(r.j.done){document.getElementById('cgArchiveStatus').textContent='Complete: '+scanned+' reports checked; '+created+' new permanent articles created; '+skipped+' already archived or skipped. The sitemap refresh will pick up the published articles.';archiveButton.disabled=false;drawClaudiaStories();return}
+        offset=Number(r.j.next_offset||offset+40);next();
+      });
+    }
+    next();
+  };
   call('claudiaStoryQueue').then(function(r){
-    if(r.s!==200){document.getElementById('cgStoryRows').textContent='Could not load Claudia\'s reports. Check the admin function deployment.';return}
+    if(r.s!==200){document.getElementById('cgStoryRows').textContent='Could not load Claudia\\'s reports. Check the admin function deployment.';return}
     var reports=r.j.reports||[];
     var target=document.getElementById('cgStoryRows');
     if(!reports.length){target.textContent='No published Live Wire reports are available.';return}
-    target.innerHTML=reports.map(function(row){
-      var id=String(row.id||''), confidence=String(row.confidence||'').toLowerCase();
-      var eligible=confidence==='confirmed'||confidence==='developing';
-      var sources=Array.isArray(row.sources)?row.sources.slice(0,4).map(function(s){return esc(s.label||s.name||'Source')}).join(' · '):'';
-      var state=row.story_slug?'<p><b>Permanent story already filed.</b> <a href="/story.html?slug='+encodeURIComponent(row.story_slug)+'" target="_blank" rel="noopener">Open article →</a></p>':
-        (eligible?'<button data-cg-edit="1">Prepare permanent story</button>':'<p><small>Not eligible for publication yet — keep this as a private scanner lead until verified.</small></p>');
-      return '<div class="card" data-cg-id="'+esc(id)+'"><b>'+esc(row.headline||'Untitled wire report')+'</b><p><small>'+esc(row.kind||'WIRE')+' · '+esc(row.dateline||'Area not specified')+' · '+esc(confidence||'unrated').toUpperCase()+' · '+esc(row.ts||'')+'</small></p><p>'+esc(row.summary||'No summary supplied.')+'</p>'+(sources?'<p><small>Sources: '+sources+'</small></p>':'')+state+'</div>';
+    target.innerHTML='<b>Latest reports awaiting permanent article filing ('+reports.length+' shown)</b>'+reports.map(function(row){
+      var id=String(row.id||''),section=String(row.suggested_section||'news'),topic=String(row.suggested_topic||'');
+      var sources=Array.isArray(row.sources)?row.sources.slice(0,4).map(function(x){return esc(x.label||x.name||'Source')}).join(' · '):'';
+      var state=row.story_slug?'<p><b>Permanent story already filed.</b> <a href="/story.html?slug='+encodeURIComponent(row.story_slug)+'" target="_blank" rel="noopener">Open article →</a></p>':'<button data-cg-edit="1">Prepare permanent story</button>';
+      return '<div class="card" data-cg-id="'+esc(id)+'"><b>'+esc(row.headline||'Untitled wire report')+'</b><p><small>'+esc(row.kind||'WIRE')+' · '+esc(row.dateline||'Area not specified')+' · '+esc(String(row.confidence||'unrated').toUpperCase())+' · '+esc(row.ts||'')+' · Suggested: '+esc(topic==='weather'?'Weather':topic==='traffic'?'Traffic':section)+'</small></p><p>'+esc(row.summary||'No summary supplied.')+'</p>'+(sources?'<p><small>Sources: '+sources+'</small></p>':'')+state+'</div>';
     }).join('');
     target.onclick=function(e){
       var card=e.target.closest('[data-cg-id]');if(!card)return;
       var report=reports.filter(function(x){return String(x.id)===card.getAttribute('data-cg-id')})[0];if(!report)return;
       if(e.target.getAttribute('data-cg-edit')){
-        var confidence=String(report.confidence||'').toLowerCase();
-        if(confidence!=='confirmed'&&confidence!=='developing')return;
-        var starter=String(report.summary||'').trim();
+        var section=String(report.suggested_section||'news'),topic=String(report.suggested_topic||'');
         card.insertAdjacentHTML('beforeend',
-          '<div class="card" id="cgEditor"><b>Editorial review before publication</b><p><small>Expand the summary into a complete article. Keep uncertain details clearly labeled, avoid identifying private individuals from scanner traffic, and do not state an allegation as fact.</small></p>'+
-          '<label><small>Headline</small></label><input id="cgTitle" maxlength="160" value="'+esc(report.headline||'')+'">'+
-          '<label><small>Permanent article category</small></label><select id="cgSection"><option value="news">Local News</option><option value="government">Government</option><option value="outdoors">Outdoors</option><option value="sports">Local Sports</option></select>'+
-          '<label><small>Article text</small></label><textarea id="cgBody" rows="10" maxlength="12000" placeholder="Write the complete story using information supported by the report and its sources.">'+esc(starter)+'</textarea>'+
-          '<label style="display:block;margin:10px 0"><input id="cgConfirm" type="checkbox" style="width:auto"> I reviewed the story, its sourcing, and its wording. I approve publishing it as a permanent article.</label>'+
+          '<div class="card" id="cgEditor"><b>Editorial article editor</b><p><small>Preserve the original confidence label and uncertainty notes. Use the source link for original reporting; do not copy another outlet\\'s full article.</small></p>'+
+          '<label><small>Headline</small></label><input id="cgTitle" maxlength="200" value="'+esc(report.headline||'')+'">'+
+          '<label><small>Category</small></label><select id="cgSection"><option value="news" '+(section==='news'?'selected':'')+'>News</option><option value="sports" '+(section==='sports'?'selected':'')+'>Sports</option><option value="schools" '+(section==='schools'?'selected':'')+'>Schools</option><option value="outdoors" '+(section==='outdoors'?'selected':'')+'>Outdoors</option><option value="government" '+(section==='government'?'selected':'')+'>Government</option></select>'+
+          '<label><small>News topic (optional)</small></label><select id="cgTopic"><option value="" '+(!topic?'selected':'')+'>General</option><option value="weather" '+(topic==='weather'?'selected':'')+'>Weather</option><option value="traffic" '+(topic==='traffic'?'selected':'')+'>Traffic</option></select>'+
+          '<label><small>Article text</small></label><textarea id="cgBody" rows="8" maxlength="12000" placeholder="Write a short original report based on the verified details.">'+esc(String(report.summary||'')+'\\n\\nClaudia Green’s Live Wire desk is preserving this report for 423.news readers.')+'</textarea>'+
+          '<label style="display:block;margin:10px 0"><input id="cgConfirm" type="checkbox" style="width:auto"> I confirm this report has been reviewed and approve it for permanent publication.</label>'+
           '<button data-cg-publish="1">Publish permanent story</button> <button class="g" data-cg-cancel="1">Cancel</button></div>');
         return;
       }
       if(e.target.getAttribute('data-cg-cancel')){var ed=card.querySelector('#cgEditor');if(ed)ed.remove();return}
       if(e.target.getAttribute('data-cg-publish')){
-        var title=card.querySelector('#cgTitle').value.trim(),body=card.querySelector('#cgBody').value.trim(),section=card.querySelector('#cgSection').value;
+        var title=card.querySelector('#cgTitle').value.trim(),body=card.querySelector('#cgBody').value.trim(),section=card.querySelector('#cgSection').value,topic=card.querySelector('#cgTopic').value;
         if(!card.querySelector('#cgConfirm').checked){say('Please confirm the editorial review before publishing.');return}
-        if(title.length<8||body.length<80){say('Add a clear headline and at least 80 characters of story text.');return}
-        if(!confirm('Publish this as a permanent 423.news article under Claudia Green?'))return;
+        if(title.length<3||body.length<80){say('Add a clear headline and at least 80 characters of story text.');return}
+        if(topic&&section!=='news'){say('Weather and Traffic topics must be filed under News.');return}
+        if(!confirm('Publish this permanent 423.news article under Claudia Green?'))return;
         e.target.disabled=true;e.target.textContent='Publishing…';
-        call('publishClaudiaStory',{report_id:report.id,title:title,body:body,section:section}).then(function(x){
-          if(x.s===200&&x.j.ok){say(x.j.alreadyPublished?'This report already has a permanent article.':'Claudia\'s permanent story is published.');drawClaudiaStories()}
+        call('publishClaudiaStory',{report_id:report.id,title:title,body:body,section:section,topic:topic}).then(function(x){
+          if(x.s===200&&x.j.ok){say(x.j.alreadyPublished?'This report already has a permanent article.':'Claudia\\'s permanent story is published.');drawClaudiaStories()}
           else{say('Could not publish this story ('+(x.j.error||x.s)+').');e.target.disabled=false;e.target.textContent='Publish permanent story'}
         });
       }
