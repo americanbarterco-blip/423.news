@@ -118,9 +118,121 @@ async function buildSitemap(staticXml, env) {
   return staticXml.replace(closingTag, entries.length ? entries.join("\n") + "\n</urlset>" : "</urlset>");
 }
 
+
+function jsonResponse(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff"
+    }
+  });
+}
+
+function base64url(bytes) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/=/g, "").replace(/\\+/g, "-").replace(/\\//g, "_");
+}
+
+function encodeJson(value) {
+  return base64url(new TextEncoder().encode(JSON.stringify(value)));
+}
+
+async function signJwt(payload, secret) {
+  const header = encodeJson({ alg: "HS256", typ: "JWT" });
+  const body = encodeJson(payload);
+  const unsigned = header + "." + body;
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(unsigned));
+  return unsigned + "." + base64url(new Uint8Array(signature));
+}
+
+async function constantTimeEqual(left, right) {
+  const encoder = new TextEncoder();
+  const a = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(String(left || ""))));
+  const b = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(String(right || ""))));
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+
+async function livekitToken(request, env) {
+  if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405);
+  const url = new URL(request.url);
+  const role = url.searchParams.get("role") || "listener";
+  const room = url.searchParams.get("room") || "claudia-desk";
+  if (!["listener", "publisher", "probe"].includes(role)) {
+    return jsonResponse({ error: "invalid_role" }, 400);
+  }
+  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(room)) {
+    return jsonResponse({ error: "invalid_room" }, 400);
+  }
+
+  const livekitUrl = env.LIVEKIT_URL || "";
+  const apiKey = env.LIVEKIT_API_KEY || "";
+  const apiSecret = env.LIVEKIT_API_SECRET || "";
+  if (!livekitUrl || !apiKey || !apiSecret) {
+    return jsonResponse({ error: "livekit_not_configured" }, 501);
+  }
+
+  if (role === "publisher") {
+    const supplied = request.headers.get("x-editor-key") || "";
+    if (!env.EDITOR_KEY || !(await constantTimeEqual(supplied, env.EDITOR_KEY))) {
+      return jsonResponse({ error: "unauthorized" }, 401);
+    }
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  if (role === "probe") {
+    try {
+      const host = livekitUrl.replace(/^wss:/i, "https:").replace(/^ws:/i, "http:").replace(/\\/$/, "");
+      const adminJwt = await signJwt({
+        iss: apiKey, sub: "423-news-status", nbf: now - 5, exp: now + 60,
+        video: { roomAdmin: true, room: room }
+      }, apiSecret);
+      const response = await fetch(host + "/twirp/livekit.RoomService/ListParticipants", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + adminJwt, "Content-Type": "application/json" },
+        body: JSON.stringify({ room })
+      });
+      if (!response.ok) return jsonResponse({ live: false });
+      const data = await response.json();
+      const live = Array.isArray(data.participants) && data.participants.some(p => p && p.identity !== "423-news-status");
+      return jsonResponse({ live });
+    } catch (_) {
+      return jsonResponse({ live: false });
+    }
+  }
+
+  const isPublisher = role === "publisher";
+  const token = await signJwt({
+    iss: apiKey,
+    sub: (isPublisher ? "claudia-desk-" : "423-news-listener-") + crypto.randomUUID(),
+    nbf: now - 5,
+    exp: now + 1800,
+    video: {
+      roomJoin: true,
+      room,
+      canPublish: isPublisher,
+      canSubscribe: true,
+      canPublishData: isPublisher
+    }
+  }, apiSecret);
+
+  return jsonResponse({ token, url: livekitUrl, room, role });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/livekit-token") {
+      return livekitToken(request, env);
+    }
     if (url.pathname !== "/sitemap.xml" || request.method !== "GET") {
       return env.ASSETS.fetch(request);
     }
