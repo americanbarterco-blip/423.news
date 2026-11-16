@@ -1,4 +1,4 @@
-name: Refresh published story sitemap
+name: Refresh and deploy published-story sitemap
 
 on:
   workflow_dispatch:
@@ -6,14 +6,16 @@ on:
     - cron: "17 9 * * *"
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
-  group: refresh-story-sitemap
+  group: github-pages
   cancel-in-progress: false
 
 jobs:
-  refresh:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Check out main
@@ -25,18 +27,24 @@ jobs:
         with:
           node-version: "20"
       - name: Generate sitemap from published editorial stories
-        env:
-          SUPABASE_URL: "https://kdiwehqtezlhecxsoysj.supabase.co"
-          SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE"
         run: node scripts/generate-story-sitemap.mjs
-      - name: Commit sitemap when it changes
-        run: |
-          if git diff --quiet -- sitemap.xml; then
-            echo "Sitemap is already current."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add sitemap.xml
-          git commit -m "Refresh published story sitemap"
-          git push
+      - name: Build GitHub Pages site
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
