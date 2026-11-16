@@ -1,14 +1,10 @@
 User-agent: *
 Allow: /
 
-# Keep private/admin and application-only endpoints out of search crawling.
-# These rules do not provide access control; API handlers must enforce auth.
+# Private and machine-readable endpoints are not search landing pages.
 Disallow: /admin.html
 Disallow: /offline.html
 Disallow: /api/
 Disallow: /rest/v1/
-Disallow: /posts
-Disallow: /wire
-Disallow: /scanner/config
 
 Sitemap: https://423.news/sitemap.xml
