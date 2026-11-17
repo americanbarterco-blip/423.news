@@ -18,7 +18,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: claudia-livekit-\${{ github.ref }}
+  group: claudia-livekit-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -34,11 +34,11 @@ jobs:
       - name: Create and deploy Claudia Green to LiveKit Cloud
         uses: livekit/deploy-action@v2.12.2
         env:
-          LIVEKIT_URL: \${{ secrets.LIVEKIT_URL }}
-          LIVEKIT_API_KEY: \${{ secrets.LIVEKIT_API_KEY }}
-          LIVEKIT_API_SECRET: \${{ secrets.LIVEKIT_API_SECRET }}
-          SECRET_LIST: \${{ secrets.SECRET_LIST }}
-          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+          LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
+          LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
+          LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
+          SECRET_LIST: ${{ secrets.SECRET_LIST }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           OPERATION: create
           WORKING_DIRECTORY: livekit-agent
@@ -46,7 +46,7 @@ jobs:
       - name: Save LiveKit agent configuration in a pull request
         uses: peter-evans/create-pull-request@v7
         with:
-          token: \${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           add-paths: livekit-agent/livekit.toml
           branch: claudia-livekit-agent-config
           delete-branch: false
@@ -56,12 +56,17 @@ jobs:
             This pull request adds the LiveKit-generated configuration for Claudia Green.
             The agent deployment is performed only when the manual workflow is run.
 
+      - name: Check out the generated agent configuration
+        uses: actions/checkout@v4
+        with:
+          ref: claudia-livekit-agent-config
+
       - name: Check that Claudia is running
         uses: livekit/deploy-action@v2.12.2
         env:
-          LIVEKIT_URL: \${{ secrets.LIVEKIT_URL }}
-          LIVEKIT_API_KEY: \${{ secrets.LIVEKIT_API_KEY }}
-          LIVEKIT_API_SECRET: \${{ secrets.LIVEKIT_API_SECRET }}
+          LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
+          LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
+          LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
         with:
           OPERATION: status-retry
           WORKING_DIRECTORY: livekit-agent
@@ -77,10 +82,10 @@ jobs:
       - name: Deploy Claudia Green update to LiveKit Cloud
         uses: livekit/deploy-action@v2.12.2
         env:
-          LIVEKIT_URL: \${{ secrets.LIVEKIT_URL }}
-          LIVEKIT_API_KEY: \${{ secrets.LIVEKIT_API_KEY }}
-          LIVEKIT_API_SECRET: \${{ secrets.LIVEKIT_API_SECRET }}
-          SECRET_LIST: \${{ secrets.SECRET_LIST }}
+          LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
+          LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
+          LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
+          SECRET_LIST: ${{ secrets.SECRET_LIST }}
         with:
           OPERATION: deploy
           WORKING_DIRECTORY: livekit-agent
