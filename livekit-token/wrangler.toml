@@ -1,0 +1,11 @@
+name = "423-news-claudia-token"
+main = "server.js"
+compatibility_date = "2026-11-16"
+workers_dev = false
+
+[[routes]]
+pattern = "voice-api.423.news"
+custom_domain = true
+
+[vars]
+LIVEKIT_URL = "wss://project-423-rent-371z3vas.livekit.cloud"
