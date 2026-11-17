@@ -26,15 +26,18 @@
     var dateline = String(report.dateline || '');
     var tags = Array.isArray(report.tags) ? report.tags.join(' ') : String(report.tags || '');
     var sources = Array.isArray(report.sources) ? report.sources : [];
-    var storyText = headline + ' ' + summary + ' ' + tags + ' ' + dateline;
+    /* Automated feed summaries often repeat the publisher name and a broad
+       dateline. Neither is proof that the story itself is about the 423 area. */
+    var placeholderSummary = /^.+ reports this story\. Claudia has not independently confirmed it; open the original report for the full details\.?$/i.test(summary.trim());
+    var substantiveSummary = placeholderSummary ? '' : summary;
+    var storyText = headline + ' ' + substantiveSummary + ' ' + tags;
     var explicitLocal = LOCAL_RE.test(storyText);
     var urls = sources.map(function (s) { return String((s && s.url) || ''); });
     var regionalSyndication = urls.some(function (u) { return NONLOCAL_ROUTE_RE.test(u); });
 
-    /* Explicit place names in the story can establish local relevance.
-       A Chattanooga dateline cannot override a national/regional syndication URL. */
+    /* A dateline or publisher name alone cannot make syndicated content local. */
+    if (regionalSyndication || WORLD_RE.test(headline + ' ' + substantiveSummary)) return false;
     if (explicitLocal) return true;
-    if (regionalSyndication || WORLD_RE.test(headline + ' ' + summary)) return false;
 
     /* Permit generic local service items only when both the dateline and
        the source's URL identify a local publisher/local-news section. */
