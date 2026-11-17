@@ -6,7 +6,7 @@
 <title>Report — 423.news</title>
 <meta name="description" content="Verified public safety reports from Claudia Green on 423.news across East Tennessee and North Georgia.">
 <link id="canonicalUrl" rel="canonical" href="https://423.news/report.html">
-<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<meta name="robots" content="noindex, follow, max-image-preview:large, max-snippet:-1">
 
 <!-- Geo & Local Relevance -->
 <meta name="geo.region" content="US-TN">
@@ -264,7 +264,14 @@ function render(r, all) {
   document.title = r.headline + ' — 423.news';
 
   // Update dynamic meta for crawlers & link previews
-  var desc = (r.summary || '').slice(0, 180);
+  var summaryText = String(r.summary || '').trim();
+  var placeholderSummary = /^.+ reports this story\. Claudia has not independently confirmed it; open the original report for the full details\.?$/i.test(summaryText);
+  var indexWorthy = !placeholderSummary && summaryText.length >= 220 && Array.isArray(r.sources) && r.sources.length > 0;
+  var robotsMeta = document.querySelector('meta[name="robots"]');
+  if (robotsMeta) robotsMeta.setAttribute('content', indexWorthy
+    ? 'index,follow,max-image-preview:large,max-snippet:-1'
+    : 'noindex,follow,max-image-preview:large');
+  var desc = summaryText.slice(0, 180);
   document.getElementById('ogTitle').setAttribute('content', r.headline);
   document.getElementById('ogDesc').setAttribute('content', desc);
   document.getElementById('ogUrl').setAttribute('content', canonUrl);
