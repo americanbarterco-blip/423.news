@@ -49,11 +49,6 @@
     <priority>0.90</priority>
   </url>
   <url>
-    <loc>https://423.news/report.html</loc>
-    <changefreq>always</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
     <loc>https://423.news/community.html</loc>
     <changefreq>daily</changefreq>
     <priority>0.85</priority>
@@ -67,11 +62,6 @@
     <loc>https://423.news/events.html</loc>
     <changefreq>daily</changefreq>
     <priority>0.80</priority>
-  </url>
-  <url>
-    <loc>https://423.news/hotspots.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://423.news/es/noticias.html</loc>
