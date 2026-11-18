@@ -110,7 +110,10 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
             })
             out = [{"type": "published site story", "title": x.get("title"), "section": x.get("section"),
                     "topic": x.get("topic"), "published_at": x.get("created_at"),
-                    "summary": (x.get("body") or "")[:900], "url": f"https://423.news/index.html#/story/{x.get('slug')}"}
+                    "summary": (x.get("body") or "")[:900],
+                    "url": (f"https://423.news/story.html?slug={urllib.parse.quote(str(x.get('slug') or ''))}"
+                            if x.get("section") in {"news", "sports", "schools", "outdoors", "government"}
+                            else f"https://423.news/index.html#/story/{urllib.parse.quote(str(x.get('slug') or ''))}")}
                    for x in posts]
             out += [{"type": "published Claudia report", "title": x.get("headline"), "section": "Claudia reports",
                      "confidence": x.get("confidence"), "dateline": x.get("dateline"), "published_at": x.get("ts"),
