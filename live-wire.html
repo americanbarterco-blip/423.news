@@ -1415,20 +1415,11 @@ window.CLAUDIA_CONFIG = {
       }
     ],
     scanner: {
-      feeds: [
-        { name: 'County Fire — Ops 1', status: 'hot', listeners: 214 },
-        { name: 'County Sheriff — Dispatch B', status: 'active', listeners: 96 },
-        { name: 'City PD — Channel 2', status: 'active', listeners: 61 },
-        { name: 'County EMS — Med 1', status: 'idle', listeners: 12 },
-        { name: 'State Patrol — Post 7', status: 'idle', listeners: 7 }
-      ],
-      log: [
-        { minutesAgo: 3, feed: 'FIRE1', text: 'Second alarm requested, 1400 block commercial', grade: 'A' },
-        { minutesAgo: 11, feed: 'SO-B', text: 'Unit 21 clearing, report number issued', grade: 'C' },
-        { minutesAgo: 26, feed: 'FIRE1', text: 'Ventilation complete, primary search negative', grade: 'A' },
-        { minutesAgo: 40, feed: 'PD-2', text: 'Traffic stop, no further, code 4', grade: 'C' },
-        { minutesAgo: 58, feed: 'EMS1', text: 'Medic 4 transporting one, priority 2', grade: 'B' }
-      ]
+      provider: 'Broadcastify',
+      connected: false,
+      note: 'No verified Broadcastify connection. Scanner activity will appear here after the approved Calls API is connected.',
+      feeds: [],
+      log: []
     }
   };
 
@@ -1580,29 +1571,39 @@ window.CLAUDIA_CONFIG = {
 
   /* ---------------- render: scanner ---------------- */
   function renderScanner(feed) {
+    var scanner = feed.scanner || {};
+    var feeds = Array.isArray(scanner.feeds) ? scanner.feeds : [];
+    var logs = Array.isArray(scanner.log) ? scanner.log : [];
     var fh = el('#feedList');
     if (fh) {
-      fh.innerHTML = feed.scanner.feeds.map(function (f) {
-        var hot = f.status === 'hot' || f.status === 'active';
-        return '<div class="feed-row">' +
-          '<span class="bars' + (hot ? ' hot' : '') + '">' +
-            '<i></i><i></i><i></i><i></i><i></i><i></i></span>' +
-          '<span class="name">' + esc(f.name) + (/^https:\/\/([a-z0-9-]+\.)*broadcastify\.com\//i.test(f.url || '') ? ' <a href="' + esc(f.url) + '" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;font-weight:700;text-decoration:underline;white-space:nowrap">Listen live</a>' : '') + '</span>' +
-          '<span class="cnt">' + (f.listeners != null ? f.listeners : '—') + '</span>' +
-        '</div>';
-      }).join('');
-      animateBars(fh);
+      if (!feeds.length) {
+        fh.innerHTML = '<div class="empty">' + esc(scanner.note || 'No verified Broadcastify connection. Scanner activity is unavailable.') + '</div>';
+      } else {
+        fh.innerHTML = feeds.map(function (f) {
+          var verified = f.live_data === true;
+          var hot = verified && (f.status === 'hot' || f.status === 'active');
+          var status = verified ? String(f.status || 'unknown').toUpperCase() : 'UNVERIFIED';
+          var listen = /^https:\/\/([a-z0-9-]+\.)*broadcastify\.com\//i.test(f.url || '');
+          return '<div class="feed-row">' +
+            '<span class="bars' + (hot ? ' hot' : '') + '"><i></i><i></i><i></i><i></i><i></i><i></i></span>' +
+            '<span class="name">' + esc(f.name) + ' <small style="color:var(--muted-2)">' + status + '</small>' +
+              (listen ? ' <a href="' + esc(f.url) + '" target="_blank" rel="noopener noreferrer">Listen on Broadcastify</a>' : '') +
+            '</span>' +
+            '<span class="cnt">' + (verified && f.listeners != null ? f.listeners : '—') + '</span>' +
+          '</div>';
+        }).join('');
+        if (feeds.some(function (f) { return f.live_data === true; })) animateBars(fh);
+      }
     }
     var lh = el('#scanLog');
     if (lh) {
-      lh.innerHTML = (feed.scanner.log || []).slice(0, 12).map(function (l) {
+      lh.innerHTML = logs.slice(0, 12).map(function (l) {
         return '<div><span class="lt">' + rel(l.minutesAgo) + '</span>' +
           '<span class="lf">' + esc(l.feed) + '</span>' +
           '<span class="lg grade-' + esc((l.grade || 'c').toLowerCase()) + '">' + esc(l.text) + '</span></div>';
-      }).join('') || '<div style="color:var(--muted-2)">No traffic logged.</div>';
+      }).join('') || '<div style="color:var(--muted-2)">No verified radio-call records yet.</div>';
     }
   }
-
   function animateBars(host) {
     var all = host.querySelectorAll('.bars.hot i');
     all.forEach(function (b) {

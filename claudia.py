@@ -3,9 +3,7 @@
 Claudia Green — Broadcastify scanner bridge for 423.news
 =========================================================
 
-Reads the public Broadcastify scanner feeds named in `scanner/config.json`,
-keeps the site's scanner rack current, records short audio segments when a
-feed gets busy, and hands those segments off for transcription.
+Reads approved Broadcastify Calls API data for configured 423-area groups and updates the site's scanner rack. The Calls Client API returns individual radio calls; it is not a continuous live-audio stream.
 
 Nothing here invents audio or invents traffic. If a credential is missing the
 module says so and writes `"connected": false` into the feed instead of
@@ -30,9 +28,7 @@ Credentials (environment, never in config files)
                                (copy the exact URL from your Broadcastify
                                account docs — the endpoint is account-specific)
 
-Without a key the module still works in `page` mode: it reads the public feed
-page and picks up the listener count and live marker. Stream capture needs the
-per-feed `stream_url` (and `mount`) from a signed-in Broadcastify session.
+The bridge does not scrape public pages or guess stream URLs. The Calls Client API returns individual calls, not a continuous live-audio feed. Implement the adapter against the official endpoint and response schema before showing activity.
 """
 
 from __future__ import annotations
@@ -53,7 +49,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-DEFAULT_CONFIG = ROOT / "config.json"
+DEFAULT_CONFIG = ROOT / "scanner" / "config.json"
 UA = "Mozilla/5.0 (compatible; ClaudiaGreen/1.0; +https://423.news)"
 
 
@@ -73,7 +69,7 @@ def load_config(path: Path) -> dict:
 
 
 def data_path(cfg: dict) -> Path:
-    p = Path(cfg.get("data_path", "../data/feed.json"))
+    p = Path(cfg.get("data_path", "feed.json"))
     return p if p.is_absolute() else (ROOT / p).resolve()
 
 
@@ -171,17 +167,8 @@ def status_via_page(feed: dict) -> dict | None:
 
 
 def status_for(cfg: dict, feed: dict) -> dict:
-    got = status_via_api(cfg, feed) or status_via_page(feed)
-    if not got:
-        return {"status": "unknown", "listeners": None, "connected": False}
-    listeners = got["listeners"]
-    if got["live"] and listeners >= int(feed.get("hot_threshold", 40)):
-        status = "hot"
-    elif got["live"] and listeners > 0:
-        status = "active"
-    else:
-        status = "idle"
-    return {"status": status, "listeners": listeners, "connected": True}
+    """Fail closed until the official Calls Client API adapter is implemented."""
+    return {"status": "unknown", "listeners": None, "connected": False}
 
 
 def cmd_status(cfg: dict, quiet: bool = False) -> dict:
@@ -191,7 +178,6 @@ def cmd_status(cfg: dict, quiet: bool = False) -> dict:
     block.setdefault("log", [])
 
     rows, any_conn = [], False
-    prior = {r.get("name"): r for r in block.get("feeds", []) if isinstance(r, dict)}
     for f in cfg.get("feeds", []):
         st = status_for(cfg, f)
         any_conn = any_conn or st["connected"]
@@ -204,11 +190,6 @@ def cmd_status(cfg: dict, quiet: bool = False) -> dict:
             "tags": f.get("tags", []),
             "live_data": st["connected"],
         }
-        if not st["connected"] and f["name"] in prior:
-            # never invent traffic: keep the last known/sample row, flagged as stale
-            old = prior[f["name"]]
-            row["status"] = old.get("status", "idle")
-            row["listeners"] = old.get("listeners")
         rows.append(row)
         if not quiet:
             log(f"  {f['name']:<34} {st['status']:<8} {st['listeners'] if st['listeners'] is not None else '—'}")
@@ -217,8 +198,8 @@ def cmd_status(cfg: dict, quiet: bool = False) -> dict:
     block["connected"] = any_conn
     block["last_poll"] = now_z()
     if not any_conn:
-        block["note"] = ("Broadcastify not connected — add BROADCASTIFY_API_KEY and per-feed "
-                         "page_url/stream_url in scanner/config.json. Rack values are not live.")
+        block["note"] = ("No verified Broadcastify status connection. Feed rows remain unknown until "
+                         "the approved Calls API adapter is configured. No sample or stale activity is shown.")
     else:
         block.pop("note", None)
     write_feed(cfg, feed)
@@ -415,7 +396,7 @@ def cmd_doctor(cfg: dict) -> int:
     print(f"  ffmpeg           {shutil.which('ffmpeg') or 'NOT FOUND'}")
     key = os.environ.get("BROADCASTIFY_API_KEY", "")
     print(f"  API key          {'set (' + key[:4] + '…)' if key else 'NOT SET — page mode only'}")
-    print(f"  status endpoint  {cfg.get('status_endpoint') or '(none)'}")
+    print(f"  Calls API adapter {'configured' if cfg.get('calls_api') else 'NOT IMPLEMENTED — waiting for official endpoint schema'}")
     for f in cfg.get("feeds", []):
         has_stream = bool(f.get("stream_url"))
         print(f"   - {f['name']:<32} stream_url {'yes' if has_stream else 'no'}")
