@@ -348,7 +348,7 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
             return _safe_error("Scanner status", exc)
 
 
-@server.rtc_session(agent_name="claudia-green-preview")
+@server.rtc_session(agent_name="claudia-green")
 async def claudia_green(ctx: agents.JobContext):
     session = AgentSession(
         stt=inference.STT(model="deepgram/nova-3", language="multi"),
