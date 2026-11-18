@@ -134,6 +134,7 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
                 "start_time": f"gte.{(now - timedelta(hours=18)).isoformat()}",
                 "order": "start_time.asc",
                 "limit": "20",
+                "limit": "20",
             })
             return json.dumps({"source": "423.news scores database", "retrieved_at": _stamp(), "games": rows}, ensure_ascii=False)
         except Exception as exc:
@@ -176,7 +177,7 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
         try:
             key = (area or "cleveland").strip().lower()
             if key not in AREAS:
-                key = "cleveland"
+                return "I can currently look up weather for Cleveland, Chattanooga, Athens, Dayton, Etowah, or Polk County. Please choose one of those 423-area locations."
             lat, lon = AREAS[key]
             wx_url = (
                 "https://api.open-meteo.com/v1/forecast?"
