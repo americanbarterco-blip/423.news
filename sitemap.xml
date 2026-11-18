@@ -114,4 +114,9 @@
   </url>
   <!-- DYNAMIC-STORIES:START -->
   <!-- DYNAMIC-STORIES:END -->
+  <url>
+    <loc>https://423.news/areas.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
 </urlset>
