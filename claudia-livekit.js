@@ -74,7 +74,9 @@
         setBusy(false); setStatus("Disconnected. You can start another chat.");
       });
       await room.connect(credentials.server_url, credentials.participant_token);
+      if (attempt !== connectAttempt) return;
       await room.localParticipant.setMicrophoneEnabled(true);
+      if (attempt !== connectAttempt) return;
       setBusy(false); setStatus("Connected. Claudia is joining — say hello!");
     } catch (error) {
       if (room) { try { await room.disconnect(); } catch (_) {} room = null; }
