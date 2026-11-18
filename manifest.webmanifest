@@ -3,7 +3,7 @@
   "short_name": "423.news",
   "description": "Local news, sports, scanner reports from Claudia Green, traffic and community reports for the 423.",
   "id": "./",
-  "start_url": "./index.html#/home",
+  "start_url": "./welcome.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
