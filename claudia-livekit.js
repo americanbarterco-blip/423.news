@@ -2,7 +2,7 @@
    LiveKit API credentials remain server-side in Cloudflare Worker secrets. */
 (function () {
   "use strict";
-  var TOKEN_ENDPOINT = "https://voice-api.423.news/getToken";
+  var TOKEN_ENDPOINT = "/api/livekit-token";
   var css = `
     #cg-livekit-launch{position:fixed;right:18px;bottom:86px;z-index:9998;border:1px solid #e8392f;border-radius:999px;background:#171b24;color:#fff;padding:12px 17px;font:700 13px system-ui;box-shadow:0 8px 28px #0008;cursor:pointer}
     #cg-livekit-panel{position:fixed;right:18px;bottom:142px;z-index:9999;width:min(340px,calc(100vw - 36px));padding:18px;border:1px solid #354052;border-radius:16px;background:#101722;color:#f3eee4;box-shadow:0 18px 50px #000a;font:14px/1.5 system-ui;display:none}
@@ -44,7 +44,7 @@
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("This browser does not support microphone access.");
       var lk = await import("https://esm.sh/livekit-client@2.15.6");
-      var response = await fetch(TOKEN_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      var response = await fetch(TOKEN_ENDPOINT, { method: "GET", credentials: "same-origin", cache: "no-store" });
       if (!response.ok) {
         var issue = await response.json().catch(function () { return {}; });
         throw new Error(issue.error || "Voice service is not ready yet.");
@@ -60,7 +60,8 @@
         room = null; attachedAudio.forEach(function (audio) { audio.remove(); }); attachedAudio = [];
         setBusy(false); setStatus("Disconnected. You can start another chat.");
       });
-      await room.connect(credentials.server_url, credentials.participant_token);
+      if (!credentials || !credentials.url || !credentials.token) throw new Error("Voice service returned incomplete connection details.");
+      await room.connect(credentials.url, credentials.token);
       await room.localParticipant.setMicrophoneEnabled(true);
       setBusy(false); setStatus("Connected. Claudia is joining — say hello!");
     } catch (error) {
