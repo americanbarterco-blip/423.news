@@ -167,17 +167,8 @@ def status_via_page(feed: dict) -> dict | None:
 
 
 def status_for(cfg: dict, feed: dict) -> dict:
-    got = status_via_api(cfg, feed)
-    if not got:
-        return {"status": "unknown", "listeners": None, "connected": False}
-    listeners = got["listeners"]
-    if got["live"] and listeners >= int(feed.get("hot_threshold", 40)):
-        status = "hot"
-    elif got["live"] and listeners > 0:
-        status = "active"
-    else:
-        status = "idle"
-    return {"status": status, "listeners": listeners, "connected": True}
+    """Fail closed until the official Calls Client API adapter is implemented."""
+    return {"status": "unknown", "listeners": None, "connected": False}
 
 
 def cmd_status(cfg: dict, quiet: bool = False) -> dict:
