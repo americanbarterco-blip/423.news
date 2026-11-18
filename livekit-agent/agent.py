@@ -35,8 +35,6 @@ AREAS = {
     "johnson city": (36.3134, -82.3535),
     "kingsport": (36.5484, -82.5618),
     "bristol": (36.5951, -82.1887),
-    "all 423": (35.1595, -84.8766),
-    "423 area": (35.1595, -84.8766),
 }
 
 TRAFFIC_HUBS = {
@@ -350,7 +348,7 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
             return _safe_error("Scanner status", exc)
 
 
-@server.rtc_session(agent_name="claudia-green")
+@server.rtc_session(agent_name="claudia-green-preview")
 async def claudia_green(ctx: agents.JobContext):
     session = AgentSession(
         stt=inference.STT(model="deepgram/nova-3", language="multi"),
@@ -360,7 +358,7 @@ async def claudia_green(ctx: agents.JobContext):
     assistant = ClaudiaGreen()
     await session.start(room=ctx.room, agent=assistant)
     await session.generate_reply(
-        instructions="Greet the visitor as Claudia Green, the 423.news virtual voice assistant. Explain briefly that you can look up published 423.news stories, local sports, 423.news road alerts, scanner connection status, and local weather. Ask how you can help."
+        instructions="Greet the visitor as Claudia Green, the 423.news virtual voice assistant. Explain briefly that you can look up published 423.news stories, local sports, TomTom traffic incidents, 423.news road alerts, scanner connection status, and local weather for a selected city. Ask how you can help."
     )
 
 
