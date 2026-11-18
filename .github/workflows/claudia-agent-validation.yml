@@ -1,0 +1,37 @@
+name: Validate Claudia preview agent
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "livekit-agent/**"
+      - ".github/workflows/claudia-agent-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: livekit-agent/requirements.txt
+
+      - name: Install LiveKit agent dependencies
+        working-directory: livekit-agent
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: Check Python syntax
+        working-directory: livekit-agent
+        run: python -m py_compile agent.py
+
+      - name: Import agent module without starting a session
+        run: python -c "import runpy; runpy.run_path('livekit-agent/agent.py', run_name='claudia_preview_validation')"
