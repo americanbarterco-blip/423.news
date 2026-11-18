@@ -1,0 +1,7 @@
+{
+  "_comment": "Template only. Do not commit scanner/config.json or API keys. Add confirmed 423-area Broadcastify Calls group IDs after the official Calls API adapter is implemented.",
+  "provider": "Broadcastify Calls",
+  "data_path": "feed.json",
+  "calls_api": null,
+  "feeds": []
+}
