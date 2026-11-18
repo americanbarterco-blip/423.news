@@ -43,12 +43,7 @@
     <changefreq>hourly</changefreq>
     <priority>0.90</priority>
   </url>
-  <url>
-    <loc>https://423.news/sports.html</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.90</priority>
-  </url>
-  <url>
+<url>
     <loc>https://423.news/community.html</loc>
     <changefreq>daily</changefreq>
     <priority>0.85</priority>

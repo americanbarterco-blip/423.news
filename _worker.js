@@ -7,7 +7,7 @@ const SUPABASE_URL = "https://kdiwehqtezlhecxsoysj.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE";
 const PAGE_SIZE = 1000;
 const MAX_STORIES = 24000;
-const INDEXABLE_SECTIONS = new Set(["news", "sports", "outdoors", "government"]);
+const INDEXABLE_SECTIONS = new Set(["news", "sports", "schools", "outdoors", "government"]);
 
 function xmlEscape(value) {
   return String(value == null ? "" : value).replace(/[&<>"']/g, (char) => ({
@@ -56,9 +56,9 @@ async function getPublishedStories(env) {
   const stories = [];
   for (let offset = 0; offset < MAX_STORIES; offset += PAGE_SIZE) {
     const rows = await fetchRows("news_posts", {
-      select: "id,slug,section,created_at",
+      select: "id,slug,section,created_at,updated_at",
       status: "eq.published",
-      section: "in.(news,sports,outdoors,government)",
+      section: "in.(news,sports,schools,outdoors,government)",
       order: "created_at.desc"
     }, offset, env);
     stories.push(...rows);
@@ -102,10 +102,10 @@ async function buildSitemap(staticXml, env) {
     const englishAlternates = [{ lang: "en", url: english }];
     if (hasSpanish) englishAlternates.push({ lang: "es", url: spanish });
     englishAlternates.push({ lang: "x-default", url: english });
-    entries.push(sitemapEntry(english, "", englishAlternates));
+    entries.push(sitemapEntry(english, post.updated_at || post.created_at || "", englishAlternates));
 
     if (hasSpanish) {
-      entries.push(sitemapEntry(spanish, "", [
+      entries.push(sitemapEntry(spanish, post.updated_at || post.created_at || "", [
         { lang: "en", url: english },
         { lang: "es", url: spanish },
         { lang: "x-default", url: english }

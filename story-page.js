@@ -92,8 +92,10 @@
     if (translated && translated.title && translated.body) {
       addAlternate('en', englishUrl);
       addAlternate('es', spanishUrl);
+      addAlternate('x-default', englishUrl);
     } else {
       addAlternate(isSpanish ? 'es' : 'en', canonical);
+      addAlternate('x-default', englishUrl);
     }
     var published = post.created_at;
     var modified = post.updated_at || published;
