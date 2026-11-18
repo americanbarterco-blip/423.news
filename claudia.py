@@ -53,7 +53,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-DEFAULT_CONFIG = ROOT / "config.json"
+DEFAULT_CONFIG = ROOT / "scanner" / "config.json"
 UA = "Mozilla/5.0 (compatible; ClaudiaGreen/1.0; +https://423.news)"
 
 
@@ -73,7 +73,7 @@ def load_config(path: Path) -> dict:
 
 
 def data_path(cfg: dict) -> Path:
-    p = Path(cfg.get("data_path", "../data/feed.json"))
+    p = Path(cfg.get("data_path", "feed.json"))
     return p if p.is_absolute() else (ROOT / p).resolve()
 
 
@@ -171,7 +171,7 @@ def status_via_page(feed: dict) -> dict | None:
 
 
 def status_for(cfg: dict, feed: dict) -> dict:
-    got = status_via_api(cfg, feed) or status_via_page(feed)
+    got = status_via_api(cfg, feed)
     if not got:
         return {"status": "unknown", "listeners": None, "connected": False}
     listeners = got["listeners"]
@@ -191,7 +191,6 @@ def cmd_status(cfg: dict, quiet: bool = False) -> dict:
     block.setdefault("log", [])
 
     rows, any_conn = [], False
-    prior = {r.get("name"): r for r in block.get("feeds", []) if isinstance(r, dict)}
     for f in cfg.get("feeds", []):
         st = status_for(cfg, f)
         any_conn = any_conn or st["connected"]
@@ -204,11 +203,6 @@ def cmd_status(cfg: dict, quiet: bool = False) -> dict:
             "tags": f.get("tags", []),
             "live_data": st["connected"],
         }
-        if not st["connected"] and f["name"] in prior:
-            # never invent traffic: keep the last known/sample row, flagged as stale
-            old = prior[f["name"]]
-            row["status"] = old.get("status", "idle")
-            row["listeners"] = old.get("listeners")
         rows.append(row)
         if not quiet:
             log(f"  {f['name']:<34} {st['status']:<8} {st['listeners'] if st['listeners'] is not None else '—'}")
@@ -217,8 +211,8 @@ def cmd_status(cfg: dict, quiet: bool = False) -> dict:
     block["connected"] = any_conn
     block["last_poll"] = now_z()
     if not any_conn:
-        block["note"] = ("Broadcastify not connected — add BROADCASTIFY_API_KEY and per-feed "
-                         "page_url/stream_url in scanner/config.json. Rack values are not live.")
+        block["note"] = ("No verified Broadcastify status connection. Feed rows remain unknown until "
+                         "the approved Calls API adapter is configured. No sample or stale activity is shown.")
     else:
         block.pop("note", None)
     write_feed(cfg, feed)
