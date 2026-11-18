@@ -58,7 +58,7 @@ async function getPublishedStories(env) {
     const rows = await fetchRows("news_posts", {
       select: "id,slug,section,created_at,updated_at",
       status: "eq.published",
-      section: "in.(news,sports,outdoors,government)",
+      section: "in.(news,sports,schools,outdoors,government)",
       order: "created_at.desc"
     }, offset, env);
     stories.push(...rows);
