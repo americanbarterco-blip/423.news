@@ -29,8 +29,24 @@ AREAS = {
     "rhea county": (35.4939, -85.0125),
     "etowah": (35.3237, -84.5241),
     "polk county": (35.0479, -84.7130),
+    "knoxville": (35.9606, -83.9207),
+    "morristown": (36.2140, -83.2949),
+    "johnson city": (36.3134, -82.3535),
+    "kingsport": (36.5484, -82.5618),
+    "bristol": (36.5951, -82.1887),
     "all 423": (35.1595, -84.8766),
     "423 area": (35.1595, -84.8766),
+}
+
+TRAFFIC_HUBS = {
+    "Chattanooga": (35.0456, -85.3097),
+    "Cleveland": (35.1595, -84.8766),
+    "Athens": (35.4429, -84.5927),
+    "Knoxville": (35.9606, -83.9207),
+    "Morristown": (36.2140, -83.2949),
+    "Johnson City": (36.3134, -82.3535),
+    "Kingsport": (36.5484, -82.5618),
+    "Bristol": (36.5951, -82.1887),
 }
 
 
@@ -138,6 +154,100 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
             return json.dumps({"source": "423.news scores database", "retrieved_at": _stamp(), "games": rows}, ensure_ascii=False)
         except Exception as exc:
             return _safe_error("423.news sports scores", exc)
+
+
+    @function_tool()
+    async def get_423_traffic_incidents(self, context: RunContext, area: str = "Cleveland") -> str:
+        """Look up TomTom traffic incidents cached by the existing 423.news traffic service. Area may be Cleveland, Chattanooga, Athens, Knoxville, Morristown, Johnson City, Kingsport, Bristol, or All 423."""
+        try:
+            key = (area or "cleveland").strip().lower()
+            if key in {"all", "all 423", "423", "423 area"}:
+                selected = list(TRAFFIC_HUBS.items())
+            else:
+                match = next(((name, coords) for name, coords in TRAFFIC_HUBS.items() if name.lower() == key), None)
+                if not match:
+                    aliases = {
+                        "bradley county": "Cleveland", "hamilton county": "Chattanooga",
+                        "mcminn county": "Athens", "rhea county": "Dayton",
+                    }
+                    canonical = aliases.get(key)
+                    match = next(((name, coords) for name, coords in TRAFFIC_HUBS.items() if name == canonical), None)
+                if not match:
+                    return "I can check traffic for Cleveland, Chattanooga, Athens, Knoxville, Morristown, Johnson City, Kingsport, Bristol, or all 423 hubs."
+                selected = [match]
+
+            payload = await _json("https://traffic.423.news/")
+            data = payload.get("data") or {}
+            if not payload.get("updated") or not data:
+                errors = payload.get("errors") or {}
+                return json.dumps({
+                    "source": "423.news TomTom traffic service",
+                    "available": False,
+                    "updated": payload.get("updated"),
+                    "errors": errors,
+                    "message": "The traffic service has no current incident snapshot. Do not infer that roads are clear.",
+                }, ensure_ascii=False)
+
+            type_names = {
+                0: "Incident", 1: "Accident", 2: "Fog", 3: "Dangerous conditions",
+                4: "Rain", 5: "Ice", 6: "Traffic jam", 7: "Lane closed",
+                8: "Road closed", 9: "Road works", 10: "Wind", 11: "Flooding",
+                14: "Broken down vehicle",
+            }
+            severe_categories = {1, 5, 6, 7, 8, 11}
+            found = []
+            unlocated = 0
+            for hub_name, (lat, lon) in selected:
+                radius_km = 12
+                dlat = radius_km / 111
+                dlon = dlat / max(0.2, __import__("math").cos(lat * __import__("math").pi / 180))
+                bounds = (lon - dlon, lat - dlat, lon + dlon, lat + dlat)
+                for incident in (data.get(hub_name, {}) or {}).get("incidents", []):
+                    props = incident.get("properties") or {}
+                    event = (props.get("events") or [{}])[0] or {}
+                    category = props.get("iconCategory", event.get("iconCategory", 0))
+                    geometry = incident.get("geometry") or {}
+                    coords = geometry.get("coordinates")
+                    point = coords[0] if geometry.get("type") == "LineString" and coords else coords
+                    if not point or len(point) < 2 or not isinstance(point[0], (int, float)):
+                        unlocated += 1
+                        continue
+                    ilon, ilat = point[0], point[1]
+                    if not (bounds[0] <= ilon <= bounds[2] and bounds[1] <= ilat <= bounds[3]):
+                        continue
+                    road_numbers = props.get("roadNumbers") or []
+                    road = ", ".join(road_numbers) if road_numbers else None
+                    found.append({
+                        "area_hub": hub_name,
+                        "type": type_names.get(category, "Incident"),
+                        "description": event.get("description") or type_names.get(category, "Incident"),
+                        "severe": category in severe_categories or (props.get("magnitudeOfDelay") or 0) >= 3,
+                        "delay_seconds": props.get("delay"),
+                        "length_meters": props.get("length"),
+                        "from": props.get("from") or road,
+                        "to": props.get("to"),
+                        "road": road,
+                        "latitude": ilat,
+                        "longitude": ilon,
+                    })
+            unique = {}
+            for item in found:
+                marker = (item["type"], item["description"], item["from"], item["to"])
+                unique[marker] = item
+            incidents = sorted(unique.values(), key=lambda item: item["severe"], reverse=True)
+            return json.dumps({
+                "source": "TomTom traffic incidents through the 423.news traffic service",
+                "area": area,
+                "retrieved_at": _stamp(),
+                "traffic_snapshot_updated_at": payload.get("updated"),
+                "refresh_note": "The 423.news traffic service refreshes its TomTom snapshot approximately hourly; this is not second-by-second traffic flow.",
+                "incident_count": len(incidents),
+                "unlocated_incidents_omitted": unlocated,
+                "incidents": incidents[:30],
+                "important_limit": "A zero incident count means no incidents were returned in the selected hub radius; it does not prove every road is clear.",
+            }, ensure_ascii=False)
+        except Exception as exc:
+            return _safe_error("423.news TomTom traffic service", exc)
 
     @function_tool()
     async def get_423_road_alerts(self, context: RunContext, area: str = "All 423") -> str:
