@@ -98,14 +98,16 @@
     if (next !== trimmed) node.nodeValue = raw.replace(trimmed,next);
   }
   function translateElement(el) {
-    if (!el || el.nodeType !== 1) return;
-    if (el.matches('script,style,noscript')) return;
+    if (!el || el.nodeType !== 1 || el.matches('script,style,noscript')) return;
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
     const nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
-    nodes.forEach(translateText);
-    attrs.forEach(a => {
-      if (!el.hasAttribute(a)) return;
-      const v=el.getAttribute(a); if (words[v]) el.setAttribute(a,words[v]);
+    nodes.forEach(n => { if (!n.parentElement || !n.parentElement.closest('script,style,noscript')) translateText(n); });
+    [el].concat(Array.from(el.querySelectorAll('*'))).forEach(node => {
+      if (node.matches('script,style,noscript')) return;
+      attrs.forEach(a => {
+        if (!node.hasAttribute(a)) return;
+        const v=node.getAttribute(a); if (words[v]) node.setAttribute(a,words[v]);
+      });
     });
   }
   function boot() {
