@@ -198,39 +198,45 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
             severe_categories = {1, 5, 6, 7, 8, 11}
             found = []
             unlocated = 0
+            bounds_by_hub = []
             for hub_name, (lat, lon) in selected:
-                radius_km = 12
-                dlat = radius_km / 111
+                dlat = 12 / 111
                 dlon = dlat / max(0.2, math.cos(lat * math.pi / 180))
-                bounds = (lon - dlon, lat - dlat, lon + dlon, lat + dlat)
-                for incident in (data.get(hub_name, {}) or {}).get("incidents", []):
-                    props = incident.get("properties") or {}
-                    event = (props.get("events") or [{}])[0] or {}
-                    category = props.get("iconCategory", event.get("iconCategory", 0))
-                    geometry = incident.get("geometry") or {}
-                    coords = geometry.get("coordinates")
-                    point = coords[0] if geometry.get("type") == "LineString" and coords else coords
-                    if not point or len(point) < 2 or not isinstance(point[0], (int, float)):
-                        unlocated += 1
-                        continue
-                    ilon, ilat = point[0], point[1]
-                    if not (bounds[0] <= ilon <= bounds[2] and bounds[1] <= ilat <= bounds[3]):
-                        continue
-                    road_numbers = props.get("roadNumbers") or []
-                    road = ", ".join(road_numbers) if road_numbers else None
-                    found.append({
-                        "area_hub": hub_name,
-                        "type": type_names.get(category, "Incident"),
-                        "description": event.get("description") or type_names.get(category, "Incident"),
-                        "severe": category in severe_categories or (props.get("magnitudeOfDelay") or 0) >= 3,
-                        "delay_seconds": props.get("delay"),
-                        "length_meters": props.get("length"),
-                        "from": props.get("from") or road,
-                        "to": props.get("to"),
-                        "road": road,
-                        "latitude": ilat,
-                        "longitude": ilon,
-                    })
+                bounds_by_hub.append((hub_name, (lon - dlon, lat - dlat, lon + dlon, lat + dlat)))
+            raw_incidents = []
+            for source_city, city_data in data.items():
+                raw_incidents.extend((source_city, incident) for incident in (city_data or {}).get("incidents", []))
+            for source_city, incident in raw_incidents:
+                props = incident.get("properties") or {}
+                event = (props.get("events") or [{}])[0] or {}
+                category = props.get("iconCategory", event.get("iconCategory", 0))
+                geometry = incident.get("geometry") or {}
+                coords = geometry.get("coordinates")
+                point = coords[0] if geometry.get("type") == "LineString" and coords else coords
+                if not point or len(point) < 2 or not isinstance(point[0], (int, float)):
+                    unlocated += 1
+                    continue
+                ilon, ilat = point[0], point[1]
+                matched_hub = next((name for name, bounds in bounds_by_hub
+                                    if bounds[0] <= ilon <= bounds[2] and bounds[1] <= ilat <= bounds[3]), None)
+                if not matched_hub:
+                    continue
+                road_numbers = props.get("roadNumbers") or []
+                road = ", ".join(road_numbers) if road_numbers else None
+                found.append({
+                    "area_hub": matched_hub,
+                    "source_city": source_city,
+                    "type": type_names.get(category, "Incident"),
+                    "description": event.get("description") or type_names.get(category, "Incident"),
+                    "severe": category in severe_categories or (props.get("magnitudeOfDelay") or 0) >= 3,
+                    "delay_seconds": props.get("delay"),
+                    "length_meters": props.get("length"),
+                    "from": props.get("from") or road,
+                    "to": props.get("to"),
+                    "road": road,
+                    "latitude": ilat,
+                    "longitude": ilon,
+                })
             unique = {}
             for item in found:
                 marker = (item["type"], item["description"], item["from"], item["to"])
