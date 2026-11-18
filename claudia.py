@@ -3,9 +3,7 @@
 Claudia Green — Broadcastify scanner bridge for 423.news
 =========================================================
 
-Reads the public Broadcastify scanner feeds named in `scanner/config.json`,
-keeps the site's scanner rack current, records short audio segments when a
-feed gets busy, and hands those segments off for transcription.
+Reads approved Broadcastify Calls API data for configured 423-area groups and updates the site's scanner rack. The Calls Client API returns individual radio calls; it is not a continuous live-audio stream.
 
 Nothing here invents audio or invents traffic. If a credential is missing the
 module says so and writes `"connected": false` into the feed instead of
@@ -30,9 +28,7 @@ Credentials (environment, never in config files)
                                (copy the exact URL from your Broadcastify
                                account docs — the endpoint is account-specific)
 
-Without a key the module still works in `page` mode: it reads the public feed
-page and picks up the listener count and live marker. Stream capture needs the
-per-feed `stream_url` (and `mount`) from a signed-in Broadcastify session.
+The bridge does not scrape public pages or guess stream URLs. The Calls Client API returns individual calls, not a continuous live-audio feed. Implement the adapter against the official endpoint and response schema before showing activity.
 """
 
 from __future__ import annotations
@@ -409,7 +405,7 @@ def cmd_doctor(cfg: dict) -> int:
     print(f"  ffmpeg           {shutil.which('ffmpeg') or 'NOT FOUND'}")
     key = os.environ.get("BROADCASTIFY_API_KEY", "")
     print(f"  API key          {'set (' + key[:4] + '…)' if key else 'NOT SET — page mode only'}")
-    print(f"  status endpoint  {cfg.get('status_endpoint') or '(none)'}")
+    print(f"  Calls API adapter {'configured' if cfg.get('calls_api') else 'NOT IMPLEMENTED — waiting for official endpoint schema'}")
     for f in cfg.get("feeds", []):
         has_stream = bool(f.get("stream_url"))
         print(f"   - {f['name']:<32} stream_url {'yes' if has_stream else 'no'}")
