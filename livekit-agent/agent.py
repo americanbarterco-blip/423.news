@@ -89,7 +89,7 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
         )
 
     @function_tool()
-    async def get_latest_423_news(self, topic: str = "all") -> str:
+    async def get_latest_423_news(self, context: RunContext, topic: str = "all") -> str:
         """Find the latest published public 423.news stories and Claudia reports. Topic can be all, news, sports, schools, outdoors, government, or community."""
         try:
             topic_key = (topic or "all").strip().lower()
@@ -122,7 +122,7 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
             return _safe_error("The 423.news story feed", exc)
 
     @function_tool()
-    async def get_423_sports_scores(self) -> str:
+    async def get_423_sports_scores(self, context: RunContext) -> str:
         """Get current and upcoming local sports scores and schedules from the 423.news scores database."""
         try:
             now = datetime.now(timezone.utc)
@@ -137,7 +137,7 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
             return _safe_error("423.news sports scores", exc)
 
     @function_tool()
-    async def get_423_road_alerts(self, area: str = "All 423") -> str:
+    async def get_423_road_alerts(self, context: RunContext, area: str = "All 423") -> str:
         """Get currently published road and traffic-related alerts posted on 423.news. These are not a complete live traffic feed."""
         try:
             now = datetime.now(timezone.utc).isoformat()
@@ -149,6 +149,12 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
                 "order": "starts_at.desc",
                 "limit": "20",
             })
+            now_dt = datetime.now(timezone.utc)
+            rows = [
+                r for r in rows
+                if not r.get("expires_at")
+                or datetime.fromisoformat(r["expires_at"].replace("Z", "+00:00")) > now_dt
+            ]
             wanted = (area or "all 423").strip().lower()
             if wanted not in {"all 423", "all", "423", "423 area"}:
                 rows = [r for r in rows if wanted in (r.get("area") or "").lower() or "all 423" in (r.get("area") or "").lower()]
@@ -162,7 +168,7 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
             return _safe_error("423.news road alerts", exc)
 
     @function_tool()
-    async def get_local_weather(self, area: str = "Cleveland") -> str:
+    async def get_local_weather(self, context: RunContext, area: str = "Cleveland") -> str:
         """Get current weather, a short forecast, and official active NWS alerts for a supported 423-area place: Cleveland, Chattanooga, Athens, Dayton, Etowah, or Polk County."""
         try:
             key = (area or "cleveland").strip().lower()
@@ -206,7 +212,7 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
             return _safe_error("Local weather", exc)
 
     @function_tool()
-    async def get_scanner_status(self) -> str:
+    async def get_scanner_status(self, context: RunContext) -> str:
         """Check public scanner-feed configuration metadata in 423.news. This does not listen to scanner audio or verify a live stream."""
         try:
             rows = await _table("news_scanner_feeds", {
