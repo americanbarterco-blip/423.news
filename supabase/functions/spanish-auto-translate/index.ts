@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
       const original=JSON.stringify(item.source_content);
       if(alreadySpanish(item.source_title+" "+(item.source_content.body||item.source_content.description||""))) return false;
       if(old && old.status==="pending_review") return false; // preserve human drafts
-      if(old && old.status==="approved" && JSON.stringify(old.original_content||{})===original) return false;
+      if(old && ["approved","auto_published"].includes(old.status) && JSON.stringify(old.original_content||{})===original) return false;
       return true;
     });
     let translated=0,failed=0,skipped=0;
@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
     for(const item of candidates.slice(0,BATCH_SIZE)){
       try {
         const translatedContent=await translate(item);
-        const payload={source_table:item.source_table,source_id:item.source_id,locale:"es",original_content:item.source_content,translated_content:translatedContent,source_updated_at:item.source_updated_at,status:"approved",review_notes:"AUTOMATED SPANISH TRANSLATION — published automatically; not human-reviewed. Source facts and wording may need editorial verification.",reviewed_at:null,approved_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+        const payload={source_table:item.source_table,source_id:item.source_id,locale:"es",original_content:item.source_content,translated_content:translatedContent,source_updated_at:item.source_updated_at,status:"auto_published",review_notes:"AUTOMATED SPANISH TRANSLATION — published automatically; not human-reviewed. Source facts and wording may need editorial verification.",reviewed_at:null,approved_at:new Date().toISOString(),updated_at:new Date().toISOString()};
         await rest("news_translations?on_conflict=source_table,source_id,locale",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(payload)});
         translated++;
       } catch(e) { failed++; errors.push({source_table:item.source_table,source_id:item.source_id,error:String(e.message||e)}); }
