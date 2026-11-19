@@ -154,7 +154,18 @@
   function toItem(r) { return { audio: r.audio || '', text: script(r), audioEs: r.audio_es || '', textEs: scriptEs(r) }; }
 
   function loadFeed() {
-    return fetch(C.feedUrl + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); });
+    return fetch(C.feedUrl + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('Briefing feed request failed');
+      return r.json();
+    }).then(function (d) {
+      var generated = Date.parse(d && d.generated_at || '');
+      var age = Date.now() - generated;
+      /* Refuse to voice archived reports as current news. */
+      if (!isFinite(generated) || age < -300000 || age > 7 * 24 * 60 * 60 * 1000) {
+        throw new Error('Briefing feed is missing a valid or recent timestamp');
+      }
+      return d;
+    });
   }
 
   /* new reports after she is on */
@@ -182,7 +193,7 @@
       queue.push({ audio: '', text: "That's the latest from 423 dot news.", es: 'Eso es lo \u00faltimo de cuatro dos tres punto news.' });
       next();
     }).catch(function () {
-      queue.push({ audio: '', text: 'I could not load the reports right now.', es: 'No pude cargar los reportes en este momento.' }); next();
+      queue.push({ audio: '', text: 'The briefing feed is unavailable or out of date. Please check 423 dot news for current reports.', es: 'El resumen de noticias no está disponible o está desactualizado. Consulte cuatro dos tres punto news para reportes actuales.' }); next();
     });
   }
   function stop() {
