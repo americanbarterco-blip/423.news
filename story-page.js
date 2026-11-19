@@ -9,7 +9,7 @@
   var locale = isSpanish ? 'es-US' : 'en-US';
   var slug = new URLSearchParams(location.search).get('slug') || '';
   var root = document.getElementById('story');
-  var sectionNames = { news: 'News', sports: 'Local Sports', schools: 'Schools', outdoors: 'Outdoors', government: 'Government' };
+  var sectionNames = { news: 'News', community: 'Community', sports: 'Local Sports', schools: 'Schools', outdoors: 'Outdoors', government: 'Government' };
   function esc(v) {
     return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
