@@ -141,7 +141,7 @@
     .then(function (rows) {
       if (!rows.length) throw new Error('Story not found');
       var post = rows[0];
-      return fetch(SB_URL + '/rest/v1/news_translations?select=translated_content,approved_at&source_table=eq.news_posts&source_id=eq.' + encodeURIComponent(post.id) + '&locale=eq.es&status=eq.approved&limit=1', { headers: headers, cache: 'no-store' })
+      return fetch(SB_URL + '/rest/v1/news_translations?select=translated_content,approved_at&source_table=eq.news_posts&source_id=eq.' + encodeURIComponent(post.id) + '&locale=eq.es&status=in.(approved,auto_published)&limit=1', { headers: headers, cache: 'no-store' })
         .then(function (response) { return response.ok ? response.json() : []; })
         .then(function (translations) { render(post, translations[0] || null); });
     })
