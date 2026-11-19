@@ -12,7 +12,10 @@ const json = (body, status=200) => new Response(JSON.stringify(body), { status, 
 const contentFor = (table,row) => table === "news_posts" ? { title: row.title || "", body: row.body || "" } : table === "events" ? { title: row.title || "", description: row.description || "" } : { title: row.title || "" };
 const updatedFor = (table,row) => row.updated_at || row.created_at || row.published || row.starts_at || null;
 async function rest(path, options={}) {
-  const r = await fetch(SUPABASE_URL + "/rest/v1/" + path, { headers: { ...headers(), ...(options.headers||{}) }, ...options });
+  const extraHeaders = options.headers || {};
+  const requestOptions = { ...options };
+  delete requestOptions.headers;
+  const r = await fetch(SUPABASE_URL + "/rest/v1/" + path, { ...requestOptions, headers: { ...headers(), ...extraHeaders } });
   if (!r.ok) throw new Error("database_" + r.status + "_" + path.split("?")[0]);
   return r.json();
 }
