@@ -228,6 +228,32 @@ async function livekitToken(request, env) {
 }
 
 export default {
+  async scheduled(event, env, ctx) {
+    const secret = env.SPANISH_AUTO_TRANSLATE_SECRET || "";
+    if (!secret) {
+      console.warn("Spanish translation scheduled run skipped: missing worker secret.");
+      return;
+    }
+    ctx.waitUntil((async () => {
+      try {
+        const response = await fetch(SUPABASE_URL + "/functions/v1/spanish-auto-translate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": env.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY,
+            "Authorization": "Bearer " + (env.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY),
+            "x-translation-cron-secret": secret
+          },
+          body: "{}"
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) console.error("Spanish translation worker failed", response.status, data);
+        else console.log("Spanish translation worker completed", data);
+      } catch (error) {
+        console.error("Spanish translation scheduled run error", String(error));
+      }
+    })());
+  },
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/api/livekit-token") {
