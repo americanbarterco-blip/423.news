@@ -1,4 +1,4 @@
-/* 423.news — crawlable story pages for English and reviewed Spanish translations. */
+/* 423.news — crawlable story pages for English and published Spanish translations. */
 (function () {
   'use strict';
   var ROOT = 'https://423.news';
@@ -65,7 +65,7 @@
     var articleSection = post.topic === 'weather' ? 'Weather' : post.topic === 'traffic' ? 'Traffic' : section;
     var translated = translation && translation.translated_content || null;
     if (isSpanish && !(translated && translated.title && translated.body)) {
-      showError('Traducción no disponible', 'Este reportaje todavía no tiene una traducción al español aprobada. Consulta Noticias 423 para ver las publicaciones disponibles en español.');
+      showError('Traducción no disponible', 'Este reportaje todavía no tiene una versión disponible en español. Consulta Noticias 423 para ver las publicaciones disponibles en español.');
       return;
     }
     var title = isSpanish ? translated.title : post.title;
