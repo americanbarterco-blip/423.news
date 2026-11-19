@@ -59,7 +59,7 @@ async function translate(item) {
   return translated;
 }
 async function sources() {
-  const posts = await rest("news_posts?select=id,section,slug,title,body,status,updated_at,created_at&status=eq.published&section=in.("+SECTIONS.join(",")+")&order=created_at.desc&limit=100");
+  const posts = await rest("news_posts?select=id,section,slug,title,body,status,updated_at,created_at&status=eq.published&section=in.("+SECTIONS.join(",")+")undefined");
   const now = new Date().toISOString();
   const events = await rest("events?select=id,title,description,starts_at,location,city,created_at&starts_at=gte."+encodeURIComponent(now)+"&order=starts_at.asc&limit=100");
   const headlines = await rest("news_headlines?select=id,league,title,url,source,published,created_at&published=not.is.null&order=published.desc&limit=100");
