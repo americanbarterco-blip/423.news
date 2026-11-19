@@ -75,7 +75,7 @@ async function getApprovedSpanishSourceIds(env) {
         select: "source_id",
         source_table: "eq.news_posts",
         locale: "eq.es",
-        status: "eq.approved"
+        status: "in.(approved,auto_published)"
       }, offset, env);
       for (const row of rows) if (row && row.source_id) ids.add(String(row.source_id));
       if (rows.length < PAGE_SIZE || ids.size >= MAX_STORIES) break;
