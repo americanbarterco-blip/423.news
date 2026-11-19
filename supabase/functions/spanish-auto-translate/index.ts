@@ -63,7 +63,7 @@ async function sources() {
   return [
     ...posts.map(row=>({source_table:"news_posts",source_id:String(row.id),section:row.section,source_title:row.title,source_content:contentFor("news_posts",row),source_updated_at:updatedFor("news_posts",row),row})),
     ...events.map(row=>({source_table:"events",source_id:String(row.id),section:"events",source_title:row.title,source_content:contentFor("events",row),source_updated_at:updatedFor("events",row),row})),
-    ...headlines.map(row=>({source_table:"news_headlines",source_id:String(row.id),section:"sports",source_title:row.title,source_content:contentFor("news_headlines",row),source_updated_at:updatedFor("news_headlines",row),row})))
+    ...headlines.map(row=>({source_table:"news_headlines",source_id:String(row.id),section:"sports",source_title:row.title,source_content:contentFor("news_headlines",row),source_updated_at:updatedFor("news_headlines",row),row}))
   ];
 }
 Deno.serve(async (req) => {
