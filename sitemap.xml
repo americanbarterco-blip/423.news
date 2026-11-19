@@ -49,11 +49,6 @@
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://423.news/category.html</loc>
-    <changefreq>hourly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
     <loc>https://423.news/events.html</loc>
     <changefreq>daily</changefreq>
     <priority>0.80</priority>
