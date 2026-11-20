@@ -43,3 +43,20 @@ Each run: inspect site and repository -> compare against last run and open work 
 ## Remaining integration gates
 
 The voice agent and scheduled operator must be joined to an authenticated, least-privilege action service before Claudia can manage editorial publishing, admin operations, deployment, or private analytics. The current connected Supabase tools do not list the 423.news database project, and the Render MCP requires the workspace to be selected by the owner before service access. Cloudflare account management is not directly available in the current tool set. Do not claim these integrations are connected until independently verified.
+
+## Conversational technology-operator capabilities (PR #40 candidate)
+
+The LiveKit voice agent is being extended with:
+- `get_423_site_health`: read-only public route, sitemap and static feed freshness checks.
+- `read_423_repository_file`: read approved public source files from the default branch; sensitive paths are blocked.
+- `create_423_maintenance_pr`: propose a single-file code change on a new branch and open a pull request. It never merges or deploys. Restricted paths and credential patterns are rejected.
+
+
+## Credential gate for PR creation
+
+A fine-grained GitHub token is required as the LiveKit secret `CLAUDIA_GITHUB_TOKEN`, scoped only to repository `423.news`, with **Contents: read/write** and **Pull requests: read/write**. The deploy workflow passes the token through `SECRET_LIST`. Do not use a personal classic token with broad account access. If this secret is not configured, Claudia can still inspect and diagnose but cannot create maintenance PRs.
+
+
+## Agent deployment
+
+After PR #40 is merged, `.github/workflows/deploy-claudia-livekit.yml` is intended to deploy agent-code changes automatically from `main` and wait for the LiveKit agent status check. This is distinct from Cloudflare site deployment and does not mean a change is live unless the deployment run succeeds.
