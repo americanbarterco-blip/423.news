@@ -104,7 +104,7 @@ def run() -> dict:
             if not ok:
                 findings.append(finding("medium", "Sitemap URL failed", "A sampled sitemap URL returned a non-success response.", f"{url} => HTTP {result['status']}"))
             elif result.get("final_url") and result["final_url"] != url:
-                findings.append(finding("medium", "Sitemap URL redirects", "A sampled sitemap URL redirects instead of resolving directly.", f"{url} => {result['final_url]}"))
+                findings.append(finding("medium", "Sitemap URL redirects", "A sampled sitemap URL redirects instead of resolving directly.", f"{url} => {result['final_url']}"))
 
     feed_result = page_results.get("/feed.json", {})
     try:
