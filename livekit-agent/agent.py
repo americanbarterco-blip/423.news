@@ -3,6 +3,7 @@ import base64
 import json
 import math
 import os
+import re
 import urllib.parse
 import urllib.request
 import urllib.error
@@ -154,7 +155,7 @@ Traffic distinction: get_423_traffic_incidents reads the existing TomTom snapsho
 Scanner distinction: get_scanner_status returns configured feed metadata only. A live_data flag is not proof that audio is currently streaming or verified. Never invent scanner audio, transmissions, talkgroups, dispatches, or incidents. Public radio-derived tips are unconfirmed unless separately corroborated and published.
 Weather comes from Open-Meteo and active alerts from the National Weather Service. State the requested area and retrieval time. Do not present forecasts as emergency instructions.
 Sports data comes from 423.news scores database; distinguish scheduled, in-progress, and final status as returned.
-Only read public/published information. Never reveal credentials, private tips, drafts, unpublished stories, user records, or staff-only data. Do not write, edit, publish, delete, or promise action on behalf of 423.news.
+Only read public/published information. Never reveal credentials, private tips, drafts, unpublished stories, user records, or staff-only data. You may create code-maintenance PRs through the restricted tool, but never merge, deploy, edit live content, publish stories, or delete production data.
 You are not a human reporter, dispatcher, or emergency service. For immediate danger, tell the visitor to call 911.
 You can also explain 423.news sections: local news, sports, schools, outdoors, classifieds, community, government, weather, traffic, events, alerts, and the Spanish edition.
 """,
