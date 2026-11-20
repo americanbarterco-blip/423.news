@@ -7,6 +7,8 @@ on:
   pull_request:
     paths:
       - 'scripts/claudia_health.py'
+      - 'index.html'
+      - 'es/index.html'
       - '.github/workflows/claudia-autonomous-health.yml'
 
 permissions:
