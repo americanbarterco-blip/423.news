@@ -457,7 +457,7 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
             credential_patterns = [
                 r"ghp_[A-Za-z0-9]{20,}", r"github_pat_[A-Za-z0-9_]{20,}",
                 r"sk-[A-Za-z0-9]{20,}", r"-----BEGIN (?:RSA|EC|OPENSSH) PRIVATE KEY-----",
-                r"(?i)(?:api[_-]?key|secret|password|service[_-]?role)\\s*[:=]\\s*['\\\"][^'\\\"]{12,}['\\\"]",
+                r"(?i)(?:api[_-]?key|secret|password|service[_-]?role)[ :=]+[^ ,;]{12,}",
             ]
             if not content.strip():
                 return "I refused to create an empty maintenance file."
