@@ -38,7 +38,7 @@ class MetaCollector(HTMLParser):
 
 
 class HealthMonitorTests(unittest.TestCase):
-    def fake_site(self, feed_time=None, sitemap_status=200, bad_url_status=200):
+    def fake_site(self, feed_time=None, sitemap_status=200, bad_url_status=200, redirect_url=None):
         now = datetime.now(timezone.utc)
         feed_time = feed_time or now.isoformat()
         sitemap = '<urlset><url><loc>https://423.news/</loc></url></urlset>'
@@ -52,7 +52,8 @@ class HealthMonitorTests(unittest.TestCase):
             if url.endswith("/feed.json"):
                 return {"url": url, "final_url": url, "status": 200, "content_type": "application/json",
                         "body": json.dumps({"generated_at": feed_time}), "latency_ms": 1}
-            return {"url": url, "final_url": url, "status": bad_url_status, "content_type": "text/html",
+            final_url = redirect_url if method == "HEAD" and url == "https://423.news/" and redirect_url else url
+            return {"url": url, "final_url": final_url, "status": bad_url_status, "content_type": "text/html",
                     "body": "", "latency_ms": 1}
         return fake
 
@@ -96,6 +97,11 @@ class HealthMonitorTests(unittest.TestCase):
             result = health.run()
         self.assertEqual(result["summary"]["passed"], result["summary"]["checks"])
         self.assertEqual(result["findings"], [])
+
+    def test_sitemap_redirect_is_detected(self):
+        with patch.object(health, "fetch", side_effect=self.fake_site(redirect_url="https://423.news/news")):
+            result = health.run()
+        self.assertTrue(any(f["title"] == "Sitemap URL redirects" for f in result["findings"]))
 
     def test_failed_sitemap_is_detected(self):
         with patch.object(health, "fetch", side_effect=self.fake_site(sitemap_status=503)):
