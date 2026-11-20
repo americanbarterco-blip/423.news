@@ -60,3 +60,7 @@ A fine-grained GitHub token is required as the LiveKit secret `CLAUDIA_GITHUB_TO
 ## Agent deployment
 
 After PR #40 is merged, `.github/workflows/deploy-claudia-livekit.yml` is intended to deploy agent-code changes automatically from `main` and wait for the LiveKit agent status check. This is distinct from Cloudflare site deployment and does not mean a change is live unless the deployment run succeeds.
+
+## Cloudflare Worker deployment automation
+
+The repository now has a Cloudflare Wrangler deploy workflow that runs on approved main-branch changes to site assets, `_worker.js`, `wrangler.jsonc`, `sitemap.xml`, and `robots.txt`. It checks for repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`; if absent, it creates/updates a blocker issue rather than pretending deployment succeeded. The API token must be scoped to the relevant account and Workers Scripts edit permission. Cloudflare credentials cannot be read or configured from this chat connection.

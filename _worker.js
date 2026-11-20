@@ -1,6 +1,7 @@
 /* 423.news — dynamic story sitemap.
  * Serves the existing static section sitemap plus every published editorial story.
  * Spanish URLs are included only when a reviewed translation is approved.
+ * Static section entries should be canonical clean URLs; redirecting .html entries waste crawl budget.
  */
 const SITE_ORIGIN = "https://423.news";
 const SUPABASE_URL = "https://kdiwehqtezlhecxsoysj.supabase.co";
