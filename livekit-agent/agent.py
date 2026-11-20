@@ -410,7 +410,7 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
         else:
             findings.append("Sitemap could not be fetched successfully.")
         robots_text = results[4].get("body", "")
-        sitemap_refs = re.findall(r"(?im)^\\s*sitemap:\\s*(https?://\\S+)", robots_text)
+        sitemap_refs = [line.split(":", 1)[1].strip() for line in robots_text.splitlines() if line.lower().startswith("sitemap:") and ":" in line]
         if not sitemap_refs:
             findings.append("robots.txt has no Sitemap directive.")
         elif "https://423.news/sitemap.xml" not in sitemap_refs:
