@@ -28,7 +28,7 @@ jobs:
           LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
           LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
           LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
-          SECRET_LIST: ${{ format('{0},CLAUDIA_GITHUB_TOKEN={1}', secrets.SECRET_LIST, secrets.CLAUDIA_GITHUB_TOKEN) }}
+          SECRET_LIST: ${{ secrets.SECRET_LIST }}
         with:
           OPERATION: deploy
           WORKING_DIRECTORY: livekit-agent
