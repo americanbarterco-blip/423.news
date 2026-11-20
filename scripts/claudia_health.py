@@ -86,7 +86,7 @@ def run() -> dict:
         except ET.ParseError as e:
             findings.append(finding("high", "Sitemap is not valid XML", "Search engines may reject this sitemap.", str(e)))
     else:
-        findings.append(finding("high", "Sitemap request failed", "Could not retrieve sitemap.xml.", str(sitemap.get("status")))
+        findings.append(finding("high", "Sitemap request failed", "Could not retrieve sitemap.xml.", str(sitemap.get("status"))))
 
     checks.append({"name": "Sitemap XML", "ok": sitemap_valid, "url_count": len(sitemap_urls), "status": sitemap.get("status")})
     if sitemap_valid and not sitemap_urls:
