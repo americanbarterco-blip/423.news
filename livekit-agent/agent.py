@@ -409,6 +409,12 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
                 findings.append("Sitemap response is not parseable XML.")
         else:
             findings.append("Sitemap could not be fetched successfully.")
+        robots_text = results[4].get("body", "")
+        sitemap_refs = re.findall(r"(?im)^\\s*sitemap:\\s*(https?://\\S+)", robots_text)
+        if not sitemap_refs:
+            findings.append("robots.txt has no Sitemap directive.")
+        elif "https://423.news/sitemap.xml" not in sitemap_refs:
+            findings.append("robots.txt does not reference the primary sitemap.xml.")
         feed_age_hours = None
         feed = results[6]
         if feed.get("status") and 200 <= feed["status"] < 300:
