@@ -8,6 +8,7 @@ on:
     paths:
       - 'scripts/claudia_health.py'
       - 'scripts/test_claudia_health.py'
+      - 'livekit-agent/agent.py'
       - 'index.html'
       - 'es/index.html'
       - '.github/workflows/claudia-autonomous-health.yml'
@@ -32,7 +33,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Syntax-check health monitor and tests
-        run: python -m py_compile scripts/claudia_health.py scripts/test_claudia_health.py
+        run: python -m py_compile scripts/claudia_health.py scripts/test_claudia_health.py livekit-agent/agent.py
       - name: Run offline health-monitor tests
         run: python -m unittest scripts/test_claudia_health.py
 
