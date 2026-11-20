@@ -37,11 +37,11 @@ def fetch(url: str, method: str = "GET") -> dict:
     except urllib.error.HTTPError as e:
         return {"url": url, "final_url": e.geturl(), "status": e.code,
                 "content_type": e.headers.get("Content-Type", "") if e.headers else "",
-                "body": e.read(1000).decode("utf-8", "replace"), "latency_ms": round((time.monotonic()-started)*1000,
+                "body": e.read(1000).decode("utf-8", "replace"), "latency_ms": round((time.monotonic()-started)*1000),
                 "error": "HTTP error"}
     except Exception as e:
         return {"url": url, "final_url": url, "status": None, "content_type": "",
-                "body": "", "latency_ms": round((time.monotonic()-started)*1000, "error": type(e).__name__}
+                "body": "", "latency_ms": round((time.monotonic()-started)*1000), "error": type(e).__name__}
 
 
 def finding(level: str, title: str, detail: str, evidence: str = "") -> dict:
