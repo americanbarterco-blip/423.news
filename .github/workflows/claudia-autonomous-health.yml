@@ -1,0 +1,86 @@
+name: Claudia Green — autonomous site health
+
+on:
+  schedule:
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/claudia_health.py'
+      - 'scripts/test_claudia_health.py'
+      - 'index.html'
+      - 'es/index.html'
+      - '.github/workflows/claudia-autonomous-health.yml'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: claudia-site-health
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax-check health monitor and tests
+        run: python -m py_compile scripts/claudia_health.py scripts/test_claudia_health.py
+      - name: Run offline health-monitor tests
+        run: python -m unittest scripts/test_claudia_health.py
+
+  audit:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check live site
+        id: health
+        continue-on-error: true
+        run: python scripts/claudia_health.py
+      - name: Save health report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claudia-site-health
+          path: claudia-health.*
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Update Claudia findings issue
+        if: steps.health.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('claudia-health.json', 'utf8'));
+            const body = fs.readFileSync('claudia-health.md', 'utf8');
+            const title = 'Claudia autonomous health findings — 423.news';
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', per_page: 100
+            });
+            const issue = existing.data.find(i => i.title === title);
+            if (issue) {
+              await github.rest.issues.update({owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number, body});
+              core.info('Updated existing Claudia health issue #' + issue.number);
+            } else {
+              const created = await github.rest.issues.create({owner: context.repo.owner, repo: context.repo.repo,
+                title, body});
+              core.info('Created Claudia health issue #' + created.data.number);
+            }
+      - name: Fail run when site has high/medium findings
+        if: steps.health.outcome == 'failure'
+        run: exit 1
