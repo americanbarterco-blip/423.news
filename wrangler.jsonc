@@ -3,6 +3,7 @@
   "name": "423-news",
   "compatibility_date": "2026-11-12",
   "workers_dev": true,
+  "triggers": { "crons": ["*/30 * * * *"] },
   "preview_urls": true,
   "assets": {
     "directory": ".",

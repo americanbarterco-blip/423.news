@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
         new Date(item.source_updated_at).getTime() > new Date(translation.source_updated_at).getTime())));
       return { ...item, translation, stale };
     });
-    const counts = { total: items.length, untranslated: 0, pending_review: 0, approved: 0, stale: 0 };
+    const counts = { total: items.length, untranslated: 0, pending_review: 0, approved: 0, auto_published: 0, stale: 0 };
     for (const item of items) {
       const status = item.stale ? 'stale' : item.translation?.status || 'untranslated';
       if (status in counts) (counts as any)[status]++;
