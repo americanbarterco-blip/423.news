@@ -9,6 +9,14 @@ on:
       - 'scripts/claudia_health.py'
       - 'scripts/test_claudia_health.py'
       - 'livekit-agent/agent.py'
+      - '_worker.js'
+      - 'wrangler.jsonc'
+      - 'sitemap.xml'
+      - 'robots.txt'
+      - '**/*.html'
+      - '**/*.js'
+      - '**/*.css'
+      - '**/*.json'
       - 'index.html'
       - 'es/index.html'
       - '.github/workflows/claudia-autonomous-health.yml'
@@ -36,6 +44,14 @@ jobs:
         run: python -m py_compile scripts/claudia_health.py scripts/test_claudia_health.py livekit-agent/agent.py
       - name: Run offline health-monitor tests
         run: python -m unittest scripts/test_claudia_health.py
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax-check Cloudflare Worker
+        run: node --input-type=module --check < _worker.js
+      - name: Validate Wrangler config JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('wrangler.jsonc','utf8')); console.log('Wrangler config is valid JSON')"
 
   audit:
     if: github.event_name != 'pull_request'
