@@ -454,7 +454,14 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
             safe = _safe_repo_path(path)
             if len(content.encode("utf-8")) > 100000:
                 return "The proposed file is too large (maximum 100 KB). Split the change into smaller reviewed files."
-            if re.search(r"(ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9]{20,}|-----BEGIN (?:RSA|EC|OPENSSH) PRIVATE KEY-----)", content):
+            credential_patterns = [
+                r"ghp_[A-Za-z0-9]{20,}", r"github_pat_[A-Za-z0-9_]{20,}",
+                r"sk-[A-Za-z0-9]{20,}", r"-----BEGIN (?:RSA|EC|OPENSSH) PRIVATE KEY-----",
+                r"(?i)(?:api[_-]?key|secret|password|service[_-]?role)\\s*[:=]\\s*['\\\"][^'\\\"]{12,}['\\\"]",
+            ]
+            if not content.strip():
+                return "I refused to create an empty maintenance file."
+            if any(re.search(pattern, content) for pattern in credential_patterns):
                 return "I rejected the file because it appears to contain a credential or private key."
             if not title.strip() or len(title) > 110 or not summary.strip() or len(summary) > 800:
                 return "Please provide a concise PR title (max 110 characters) and summary (max 800 characters)."
