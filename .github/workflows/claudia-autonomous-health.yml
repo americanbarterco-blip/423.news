@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: "0 13 * * *"
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/claudia_health.py'
+      - '.github/workflows/claudia-autonomous-health.yml'
 
 permissions:
   contents: read
@@ -14,7 +18,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax-check health monitor
+        run: python -m py_compile scripts/claudia_health.py
+
   audit:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
