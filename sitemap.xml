@@ -18,99 +18,106 @@
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://423.news/news.html</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/news.html"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/noticias.html"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/news.html"/>
+    <loc>https://423.news/news</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/news"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/noticias"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/news"/>
     <changefreq>hourly</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://423.news/live-wire.html</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/live-wire.html"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/claudia.html"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/live-wire.html"/>
+    <loc>https://423.news/live-wire</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/live-wire"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/claudia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/live-wire"/>
     <changefreq>always</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://423.news/traffic.html</loc>
+    <loc>https://423.news/traffic</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/traffic"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/trafico"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/traffic"/>
     <changefreq>hourly</changefreq>
     <priority>0.90</priority>
   </url>
   <url>
-    <loc>https://423.news/checkpoints.html</loc>
+    <loc>https://423.news/checkpoints</loc>
     <changefreq>hourly</changefreq>
     <priority>0.90</priority>
   </url>
 <url>
-    <loc>https://423.news/community.html</loc>
+    <loc>https://423.news/community</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/community"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/comunidad"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/community"/>
     <changefreq>daily</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://423.news/events.html</loc>
+    <loc>https://423.news/events</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/events"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/eventos"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/events"/>
     <changefreq>daily</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://423.news/es/noticias.html</loc>
-    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/noticias.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/news.html"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/news.html"/>
+    <loc>https://423.news/es/noticias</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/noticias"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/news"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/news"/>
     <changefreq>daily</changefreq>
     <priority>0.90</priority>
   </url>
   <url>
-    <loc>https://423.news/es/trafico.html</loc>
-    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/trafico.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/traffic.html"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/traffic.html"/>
+    <loc>https://423.news/es/trafico</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/trafico"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/traffic"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/traffic"/>
     <changefreq>daily</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://423.news/es/deportes.html</loc>
-    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/deportes.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/sports.html"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/sports.html"/>
+    <loc>https://423.news/es/deportes</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/deportes"/>
     <changefreq>daily</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://423.news/es/comunidad.html</loc>
-    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/comunidad.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/community.html"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/community.html"/>
+    <loc>https://423.news/es/comunidad</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/comunidad"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/community"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/community"/>
     <changefreq>daily</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://423.news/es/eventos.html</loc>
-    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/eventos.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/events.html"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/events.html"/>
+    <loc>https://423.news/es/eventos</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/eventos"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/events"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/events"/>
     <changefreq>daily</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://423.news/es/reportes.html</loc>
-    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/reportes.html"/>
+    <loc>https://423.news/es/reportes</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/reportes"/>
     <changefreq>daily</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://423.news/es/claudia.html</loc>
-    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/claudia.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/live-wire.html"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/live-wire.html"/>
+    <loc>https://423.news/es/claudia</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://423.news/es/claudia"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://423.news/live-wire"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://423.news/live-wire"/>
     <changefreq>hourly</changefreq>
     <priority>0.85</priority>
   </url>
   <!-- DYNAMIC-STORIES:START -->
   <!-- DYNAMIC-STORIES:END -->
   <url>
-    <loc>https://423.news/areas.html</loc>
+    <loc>https://423.news/areas</loc>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>

@@ -3,6 +3,7 @@ import json
 import unittest
 from pathlib import Path
 from html.parser import HTMLParser
+import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
@@ -54,6 +55,24 @@ class HealthMonitorTests(unittest.TestCase):
             return {"url": url, "final_url": url, "status": bad_url_status, "content_type": "text/html",
                     "body": "", "latency_ms": 1}
         return fake
+
+    def test_static_sitemap_uses_clean_routes(self):
+        sitemap = (Path(__file__).resolve().parent.parent / "sitemap.xml").read_text(encoding="utf-8")
+        root = ET.fromstring(sitemap)
+        locs = {node.text.strip() for node in root.findall(".//{*}loc") if node.text}
+        expected = {
+            "https://423.news/", "https://423.news/es/",
+            "https://423.news/news", "https://423.news/live-wire",
+            "https://423.news/traffic", "https://423.news/checkpoints",
+            "https://423.news/community", "https://423.news/events",
+            "https://423.news/es/noticias", "https://423.news/es/trafico",
+            "https://423.news/es/deportes", "https://423.news/es/comunidad",
+            "https://423.news/es/eventos", "https://423.news/es/reportes",
+            "https://423.news/es/claudia", "https://423.news/areas",
+        }
+        self.assertTrue(expected.issubset(locs), "missing canonical sitemap URLs")
+        legacy_static = {url for url in locs if url.endswith(".html") and "/story.html?slug=" not in url}
+        self.assertEqual(legacy_static, set(), "sitemap contains redirecting legacy .html routes")
 
     def test_homepage_static_fallback_contains_h1_and_intro(self):
         html = (Path(__file__).resolve().parent.parent / "index.html").read_text(encoding="utf-8")
