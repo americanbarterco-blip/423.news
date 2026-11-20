@@ -1,10 +1,39 @@
 """Offline unit tests for Claudia's public health monitor."""
 import json
 import unittest
+from pathlib import Path
+from html.parser import HTMLParser
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 from scripts import claudia_health as health
+
+
+
+
+class MetaCollector(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.title = ""
+        self.meta = {}
+        self._in_title = False
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == "title":
+            self._in_title = True
+        if tag == "meta":
+            key = attrs.get("name") or attrs.get("property")
+            if key:
+                self.meta[key.lower()] = attrs.get("content", "")
+
+    def handle_endtag(self, tag):
+        if tag == "title":
+            self._in_title = False
+
+    def handle_data(self, data):
+        if self._in_title:
+            self.title += data
 
 
 class HealthMonitorTests(unittest.TestCase):
@@ -25,6 +54,23 @@ class HealthMonitorTests(unittest.TestCase):
             return {"url": url, "final_url": url, "status": bad_url_status, "content_type": "text/html",
                     "body": "", "latency_ms": 1}
         return fake
+
+    def test_homepage_static_fallback_contains_h1_and_intro(self):
+        html = (Path(__file__).resolve().parent.parent / "index.html").read_text(encoding="utf-8")
+        self.assertIn("<h1>Local News for Chattanooga, Cleveland &amp; the 423 Region</h1>", html)
+        self.assertIn("423.news brings local reporting", html)
+
+    def test_spanish_homepage_metadata_lengths_and_consistency(self):
+        html = (Path(__file__).resolve().parent.parent / "es" / "index.html").read_text(encoding="utf-8")
+        parser = MetaCollector()
+        parser.feed(html)
+        self.assertLessEqual(len(parser.title.strip()), 60)
+        for key in ("description", "og:description", "twitter:description"):
+            self.assertIn(key, parser.meta)
+            self.assertLessEqual(len(parser.meta[key]), 160, key)
+        for key in ("og:title", "twitter:title"):
+            self.assertIn(key, parser.meta)
+            self.assertEqual(parser.meta[key], parser.title.strip())
 
     def test_healthy_site_has_no_findings(self):
         with patch.object(health, "fetch", side_effect=self.fake_site()):
