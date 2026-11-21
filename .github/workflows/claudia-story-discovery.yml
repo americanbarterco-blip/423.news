@@ -43,7 +43,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          CLAUDIA_DISCOVERY_INGEST: 'true'
+          CLAUDIA_DISCOVERY_INGEST: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' && 'true' || 'false' }}
         run: python scripts/claudia_discovery.py
       - name: Queue research leads
         if: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
