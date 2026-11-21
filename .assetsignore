@@ -1,1 +1,18 @@
+# Exclude Worker implementation, build tools, dependency trees, and private backend source from public asset uploads.
 _worker.js
+node_modules/
+**/node_modules/
+.git/
+.github/
+.wrangler/
+livekit-agent/
+livekit-token/
+supabase/
+scripts/
+docs/
+*.py
+*.sql
+*.md
+*.ts
+geocode_cache.json
+index (7).html
