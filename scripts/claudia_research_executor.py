@@ -8,6 +8,7 @@ from __future__ import annotations
 import html, ipaddress, json, os, re, socket, time, urllib.parse, urllib.request
 from html.parser import HTMLParser
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 CONFIG=Path(__file__).resolve().parent/"claudia_sources.json"
 UA="423.news-Claudia-Research/1.0 (+https://423.news/)"
@@ -42,15 +43,31 @@ class SafeRedirect(urllib.request.HTTPRedirectHandler):
         safe_url(newurl)
         return super().redirect_request(req,fp,code,msg,headers,newurl)
 
-def fetch(url):
+def fetch_raw(url,accept="text/html,application/xhtml+xml,application/rss+xml,application/atom+xml,application/xml"):
     safe_url(url)
     opener=urllib.request.build_opener(SafeRedirect())
-    req=urllib.request.Request(url,headers={"User-Agent":UA,"Accept":"text/html,application/xhtml+xml"})
+    req=urllib.request.Request(url,headers={"User-Agent":UA,"Accept":accept})
     with opener.open(req,timeout=TIMEOUT) as r:
-        if "html" not in r.headers.get("Content-Type","").lower(): raise ValueError("not an HTML response")
         data=r.read(MAX_BYTES+1)
         if len(data)>MAX_BYTES: raise ValueError("page exceeds size cap")
-        return data.decode("utf-8","replace"),r.geturl()
+        return data.decode("utf-8","replace"),r.headers.get("Content-Type","").lower(),r.geturl()
+def fetch(url):
+    body,ctype,final=fetch_raw(url)
+    if "html" not in ctype: raise ValueError("not an HTML response")
+    return body,final
+def feed_items(xml,base):
+    root=ET.fromstring(xml); rows=[]
+    for node in root.iter():
+        if node.tag.rsplit("}",1)[-1].lower() not in {"item","entry"}:continue
+        title="";summary="";url=""
+        for child in node:
+            name=child.tag.rsplit("}",1)[-1].lower()
+            if name=="title" and child.text:title=child.text.strip()
+            if name in ("summary","description","content") and child.text:summary=child.text.strip()
+            if name=="link":url=child.attrib.get("href") or (child.text.strip() if child.text else "")
+        url=urllib.parse.urljoin(base,url)
+        if title and url.startswith(("http://","https://")):rows.append({"title":title,"summary":summary,"url":url})
+    return rows
 
 class PageParser(HTMLParser):
     def __init__(self):
@@ -88,14 +105,21 @@ def source_pages(cfg,lead):
     for source in cfg.get("sources",[]):
         if not source.get("enabled"):continue
         try:
-            raw,final=fetch(source["url"]);parser=PageParser();parser.feed(raw);data=parser.result()
-            for href in parser.links:
-                candidate=urllib.parse.urljoin(final,href)
-                try:safe_url(candidate)
-                except ValueError:continue
-                score=similarity(query,candidate+" "+data["title"]+" "+data["excerpt"])
-                if candidate.split("#")[0]!=lead.get("url","").split("#")[0] and score>=0.12:
-                    results.append({"url":candidate,"source_name":source["name"],"source_url":final,"score":round(score,3)})
+            raw,ctype,final=fetch_raw(source["url"])
+            if source.get("type")=="feed" or "xml" in ctype:
+                for item in feed_items(raw,final):
+                    score=similarity(query,item["title"]+" "+item.get("summary",""))
+                    if score>=0.12 and item["url"]!=lead.get("url"):
+                        results.append({"url":item["url"],"source_name":source["name"],"source_url":final,"score":round(score,3)})
+            else:
+                parser=PageParser();parser.feed(raw);data=parser.result()
+                for href in parser.links:
+                    candidate=urllib.parse.urljoin(final,href)
+                    try:safe_url(candidate)
+                    except ValueError:continue
+                    score=similarity(query,candidate+" "+data["title"]+" "+data["excerpt"])
+                    if candidate.split("#")[0]!=lead.get("url","").split("#")[0] and score>=0.12:
+                        results.append({"url":candidate,"source_name":source["name"],"source_url":final,"score":round(score,3)})
             time.sleep(float(cfg.get("delay_seconds",0.5)))
         except Exception as e: print(f"Source skipped: {source.get('name','?')} ({type(e).__name__})")
     unique={}
