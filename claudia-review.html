@@ -27,7 +27,7 @@ const FN='https://kdiwehqtezlhecxsoysj.supabase.co/functions/v1/admin';
 let token=sessionStorage.getItem('t423')||'',mode='drafts',drafts=[],media=[];
 const $=id=>document.getElementById(id);
 function status(t){$('status').textContent=t||''}
-function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;""}[c]))}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'": "&#39;"}[c]))}
 async function call(action,extra){try{const r=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action,token},extra||{}))});const j=await r.json();if(r.status===401){token='';sessionStorage.removeItem('t423');$('login').classList.remove('hidden');}return {ok:r.ok,j};}catch(e){return {ok:false,j:{error:'network'}}}}
 async function login(){const r=await call('login',{password:$('password').value});if(r.ok&&r.j.token){token=r.j.token;sessionStorage.setItem('t423',token);$('login').classList.add('hidden');$('password').value='';await load();}else status(r.j.error==='locked'?'Login temporarily locked. Try again later.':'Sign-in failed.')}
 async function load(){if(!token){$('login').classList.remove('hidden');return;}status('Loading private queue…');const r=await call('claudiaQueue');if(!r.ok){status('Unable to load queue. Check function deployment and permissions.');return;}drafts=r.j.drafts||[];media=r.j.media||[];render();status('Loaded review queue. Approval is editorial only; it does not publish.')}
