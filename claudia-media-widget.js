@@ -5,7 +5,7 @@
   if(window.__cgMediaWidget)return;window.__cgMediaWidget=true;
   var style=document.createElement('style');
   style.textContent=`
-    #cg-float{position:fixed;right:16px;bottom:86px;z-index:99999;font-family:system-ui}
+    #cg-livekit-launch{display:none!important}\n    #cg-float{position:fixed;right:16px;bottom:86px;z-index:99999;font-family:system-ui}
     #cg-launch{width:62px;height:62px;border-radius:50%;overflow:hidden;border:2px solid #35d1eb;background:#08324b;color:#e8faff;font-weight:900;box-shadow:0 4px 20px #0008,0 0 18px #25c7e655;cursor:pointer;padding:0}
     #cg-launch img{width:100%;height:100%;object-fit:cover;display:block}
     #cg-launch:focus-visible{outline:3px solid #f5c451;outline-offset:3px}
