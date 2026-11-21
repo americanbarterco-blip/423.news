@@ -146,9 +146,10 @@ def process(task,base,key,cfg):
     for item in source_pages(cfg,task):
         try:
             raw,url=fetch(item["url"]);parser=PageParser();parser.feed(raw);data=parser.result()
-            if data["excerpt"] or data["summary"]:
-                evidence.append(evidence_record(lead_id,"corroboration",url,item["source_name"],data["excerpt"] or data["summary"],f"Topic overlap {item['score']}; fetched page, not fact verification."))
-                candidates.append({"url":url,"source_name":item["source_name"],"topic_overlap":item["score"],"title":data["title"]})
+            actual_score=similarity(task.get("title","")+" "+(result.get("summary","") or ""),data["title"]+" "+data["summary"]+" "+data["excerpt"])
+            if (data["excerpt"] or data["summary"]) and actual_score>=0.12:
+                evidence.append(evidence_record(lead_id,"corroboration",url,item["source_name"],data["excerpt"] or data["summary"],f"Fetched page relevance {actual_score:.3f}; not fact verification."))
+                candidates.append({"url":url,"source_name":item["source_name"],"topic_overlap":round(actual_score,3),"title":data["title"]})
         except Exception as e:print(f"Candidate skipped: {type(e).__name__}")
     for rec in evidence:request_supabase(base,key,"rest/v1/claudia_story_evidence","POST",json.dumps(rec).encode(),"resolution=ignore-duplicates,return=minimal")
     status="completed" if evidence else "blocked"
