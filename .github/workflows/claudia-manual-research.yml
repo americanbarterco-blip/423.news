@@ -1,0 +1,45 @@
+name: Claudia manual research execution
+on:
+  workflow_dispatch:
+    inputs:
+      migration_applied:
+        description: Confirm both Claudia research queue migrations are applied in Supabase
+        required: true
+        type: boolean
+        default: false
+      batch_size:
+        description: Number of queued tasks to attempt (1–5)
+        required: true
+        type: choice
+        options: ['1','2','3','4','5']
+        default: '1'
+permissions:
+  contents: read
+concurrency:
+  group: claudia-manual-research
+  cancel-in-progress: false
+jobs:
+  execute:
+    if: inputs.migration_applied == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax and unit tests
+        run: |
+          python -m py_compile scripts/claudia_research_executor.py scripts/test_claudia_research_executor.py
+          python -m unittest scripts.test_claudia_research_executor
+      - name: Run bounded research executor
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CLAUDIA_RESEARCH_BATCH: ${{ inputs.batch_size }}
+        run: python scripts/claudia_research_executor.py
+  migration-not-confirmed:
+    if: inputs.migration_applied != true
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Execution stopped. Confirm migration_applied only after reviewing and applying the research queue and task-claim SQL migrations."
