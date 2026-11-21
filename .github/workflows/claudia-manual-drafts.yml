@@ -1,0 +1,40 @@
+name: Claudia manual article draft generation
+on:
+  workflow_dispatch:
+    inputs:
+      migrations_applied:
+        description: Confirm research/evidence/draft tables are deployed
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: claudia-manual-draft-generation
+  cancel-in-progress: false
+jobs:
+  generate:
+    if: inputs.migrations_applied == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax and unit tests
+        run: |
+          python -m py_compile scripts/claudia_draft_writer.py scripts/test_claudia_draft_writer.py
+          python -m unittest scripts.test_claudia_draft_writer
+      - name: Generate private, review-only drafts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CLAUDIA_WRITER_MODEL: ${{ secrets.CLAUDIA_WRITER_MODEL }}
+        run: python scripts/claudia_draft_writer.py
+  migration-not-confirmed:
+    if: inputs.migrations_applied != true
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Stopped. Confirm migrations are applied before running."
