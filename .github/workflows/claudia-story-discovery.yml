@@ -1,7 +1,7 @@
 name: Claudia public-source discovery and intake
 on:
   schedule:
-    - cron: "17 */4 * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
   pull_request:
     paths:
