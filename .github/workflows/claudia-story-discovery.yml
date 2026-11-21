@@ -7,15 +7,15 @@ on:
     paths:
       - scripts/claudia_discovery.py
       - scripts/claudia_sources.json
-      - scripts/test_claudia_discovery.py
       - scripts/claudia_workloop.py
-      - scripts/test_claudia_workloop.py
-      - scripts/claudia_media.py
-      - scripts/test_claudia_media.py
+      - scripts/claudia_research_executor.py
+      - scripts/claudia_draft_writer.py
+      - scripts/claudia_community_discovery.py
       - scripts/claudia_site_coverage_audit.py
-      - scripts/test_claudia_site_coverage_audit.py
+      - scripts/test_claudia_*.py
       - supabase/migrations/20261121000000_claudia_story_discovery.sql
       - supabase/migrations/20261121000001_claudia_media_staging.sql
+      - supabase/migrations/20261121000003_claudia_task_claim.sql
       - .github/workflows/claudia-story-discovery.yml
 permissions:
   contents: read
@@ -31,39 +31,58 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m py_compile scripts/claudia_discovery.py scripts/claudia_workloop.py scripts/test_claudia_discovery.py scripts/test_claudia_workloop.py scripts/claudia_media.py scripts/test_claudia_media.py scripts/claudia_site_coverage_audit.py scripts/test_claudia_site_coverage_audit.py
-      - run: python -m unittest scripts.test_claudia_discovery scripts.test_claudia_workloop scripts.test_claudia_media scripts.test_claudia_site_coverage_audit
-      - name: Audit static site coverage
+      - name: Compile newsroom scripts
+        run: python -m py_compile scripts/claudia_discovery.py scripts/claudia_workloop.py scripts/claudia_research_executor.py scripts/claudia_draft_writer.py scripts/claudia_community_discovery.py scripts/claudia_site_coverage_audit.py scripts/test_claudia_discovery.py scripts/test_claudia_workloop.py scripts/test_claudia_research_executor.py scripts/test_claudia_draft_writer.py scripts/test_claudia_community_discovery.py scripts/test_claudia_site_coverage_audit.py scripts/claudia_media.py scripts/claudia_media_review.py
+      - name: Run unit tests
+        run: python -m unittest scripts.test_claudia_discovery scripts.test_claudia_workloop scripts.test_claudia_research_executor scripts.test_claudia_draft_writer scripts.test_claudia_community_discovery scripts.test_claudia_site_coverage_audit scripts.test_claudia_media
+      - name: Run static coverage audit
         run: python scripts/claudia_site_coverage_audit.py --root . --json-out claudia-site-coverage.json
-      - name: Save coverage report
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: claudia-static-site-coverage
+          name: claudia-site-coverage
           path: claudia-site-coverage.json
           retention-days: 14
   scheduled-discovery:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Run public source discovery
+      - name: Discover public RSS and web leads
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           CLAUDIA_DISCOVERY_INGEST: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' && 'true' || 'false' }}
         run: python scripts/claudia_discovery.py
-      - name: Queue research leads
+      - name: Queue discoveries
         if: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python scripts/claudia_workloop.py
+      - name: Community/video discovery (optional APIs)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: python scripts/claudia_community_discovery.py
+      - name: Generate review-only article drafts (opt-in after migrations)
+        if: ${{ secrets.CLAUDIA_AUTONOMY_ENABLED == 'true' && secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' && secrets.OPENAI_API_KEY != '' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CLAUDIA_WRITER_MODEL: ${{ secrets.CLAUDIA_WRITER_MODEL }}
+          OPENAI_API_URL: ${{ secrets.OPENAI_API_URL }}
+        run: python scripts/claudia_draft_writer.py
       - name: Save discovery artifact
         uses: actions/upload-artifact@v4
         with:
-          name: claudia-public-discovery
+          name: claudia-discovery
           path: claudia-discovery.json
           retention-days: 14
