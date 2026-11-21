@@ -7,6 +7,7 @@ KEY_FILE = ROOT / "ef61166f0435493c9aae43c3d90a25cf.txt"
 DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-423-news-cloudflare.yml"
 SITEMAP = ROOT / "sitemap.xml"
 ROBOTS = ROOT / "robots.txt"
+PAGES_WORKFLOW = ROOT / ".github/workflows/refresh-story-sitemap.yml"
 
 class IndexNowDeploymentTests(unittest.TestCase):
     def test_verification_key_matches_filename(self):
@@ -26,6 +27,12 @@ class IndexNowDeploymentTests(unittest.TestCase):
         self.assertEqual(len(locs), len(set(locs)), "Sitemap locations should be unique")
         self.assertFalse(any(url.endswith(".html") for url in locs), "Sitemap should use clean canonical routes")
         self.assertFalse(any(url.startswith("http://423.news/") for url in locs), "Sitemap should use HTTPS")
+
+    def test_pages_deploy_triggers_for_indexnow_key_and_workflow(self):
+        workflow = PAGES_WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("  push:", workflow)
+        self.assertIn("      - 'ef61166f0435493c9aae43c3d90a25cf.txt'", workflow)
+        self.assertIn("      - '.github/workflows/refresh-story-sitemap.yml'", workflow)
 
     def test_robots_points_to_canonical_sitemap(self):
         robots = ROBOTS.read_text(encoding="utf-8")
