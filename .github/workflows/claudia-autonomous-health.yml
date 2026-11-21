@@ -77,7 +77,7 @@ jobs:
         id: health
         continue-on-error: true
         run: python scripts/claudia_health.py
-      - name: Generate Claudia daily work plan\n        if: always()\n        run: python scripts/claudia_daily_plan.py\n      - name: Generate Claudia daily work plan
+      - name: Generate Claudia daily work plan
         if: always()
         run: python scripts/claudia_daily_plan.py
       - name: Save health report and daily plan
