@@ -1,5 +1,5 @@
 import unittest
-from scripts.claudia_community_discovery import parse_reddit,parse_youtube,relevant
+from scripts.claudia_community_discovery import parse_reddit,parse_youtube,relevant,category,REDDIT_QUERIES,YOUTUBE_QUERIES
 class CommunityDiscoveryTests(unittest.TestCase):
     def test_reddit_author_not_stored_and_local_filter(self):
         payload={"data":{"children":[{"data":{"title":"Chattanooga road closure update","subreddit":"Chattanooga","permalink":"/r/Chattanooga/comments/abc/post","selftext":"Road work downtown","created_utc":1790000000,"author":"privateusername"}}]}}
@@ -9,11 +9,18 @@ class CommunityDiscoveryTests(unittest.TestCase):
         self.assertIn("reddit.com",rows[0]["url"])
     def test_statewide_nonlocal_post_filtered(self):
         payload={"data":{"children":[{"data":{"title":"Statewide policy debate","subreddit":"Tennessee","permalink":"/r/Tennessee/comments/abc/post","selftext":"Nothing local here","created_utc":1790000000}}]}}
-        self.assertEqual(parse_reddit(payload),[])
+        self.assertEqual(parse_reddit(payload,"Tennessee"),[])
     def test_local_keyword_matches_statewide_sub(self):
         self.assertTrue(relevant("Bradley County meeting","", "Tennessee"))
     def test_youtube_metadata_to_video_url(self):
         rows=parse_youtube({"items":[{"id":{"videoId":"abc123"},"snippet":{"title":"Local sports highlights","description":"Highlights","channelTitle":"School TV","publishedAt":"2026-11-20T12:00:00Z"}}]})
         self.assertEqual(rows[0]["url"],"https://www.youtube.com/watch?v=abc123")
         self.assertEqual(rows[0]["source_type"],"video")
+    def test_incident_category_classifies_not_verified(self):
+        self.assertEqual(category("Reported shooting and police investigation"),"violent-crime")
+        row=parse_reddit({"data":{"children":[{"data":{"title":"Reported shooting in Chattanooga","subreddit":"Chattanooga","permalink":"/r/Chattanooga/comments/abc/post","selftext":"Unconfirmed community report","created_utc":1790000000}}]}})
+        self.assertIn("NOT VERIFIED",row[0]["summary"])
+    def test_search_query_coverage(self):
+        self.assertIn("shooting",REDDIT_QUERIES)
+        self.assertTrue(any("police" in q.lower() for q in YOUTUBE_QUERIES))
 if __name__=="__main__":unittest.main()
