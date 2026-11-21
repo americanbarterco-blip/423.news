@@ -42,6 +42,42 @@
       "type": "feed",
       "url": "https://www.wbir.com/feeds/syndication/rss/news/local/",
       "enabled": true
+    },
+    {
+      "name": "Google News 423 breaking crime",
+      "type": "feed",
+      "url": "https://news.google.com/rss/search?q=%28Chattanooga+OR+Hamilton+County+TN+OR+Cleveland+TN+OR+Bradley+County+TN%29+%28crime+OR+police+OR+shooting+OR+arrest+OR+robbery+OR+crash+OR+fire%29&hl=en-US&gl=US&ceid=US%3Aen",
+      "enabled": true
+    },
+    {
+      "name": "Google News Hamilton County public safety",
+      "type": "feed",
+      "url": "https://news.google.com/rss/search?q=Hamilton+County+Tennessee+%28police+OR+crime+OR+shooting+OR+arrest+OR+fire+OR+crash%29&hl=en-US&gl=US&ceid=US%3Aen",
+      "enabled": true
+    },
+    {
+      "name": "Google News Chattanooga crime and incidents",
+      "type": "feed",
+      "url": "https://news.google.com/rss/search?q=Chattanooga+%28police+OR+crime+OR+shooting+OR+arrest+OR+robbery+OR+crash+OR+fire%29&hl=en-US&gl=US&ceid=US%3Aen",
+      "enabled": true
+    },
+    {
+      "name": "Google News Cleveland Bradley County public safety",
+      "type": "feed",
+      "url": "https://news.google.com/rss/search?q=%28Cleveland+Tennessee+OR+Bradley+County%29+%28police+OR+crime+OR+shooting+OR+arrest+OR+fire+OR+crash%29&hl=en-US&gl=US&ceid=US%3Aen",
+      "enabled": true
+    },
+    {
+      "name": "Google News surrounding counties incidents",
+      "type": "feed",
+      "url": "https://news.google.com/rss/search?q=%28Polk+County+TN+OR+Rhea+County+TN+OR+Meigs+County+TN+OR+Sequatchie+County+TN%29+%28crime+OR+police+OR+arrest+OR+fire+OR+crash%29&hl=en-US&gl=US&ceid=US%3Aen",
+      "enabled": true
+    },
+    {
+      "name": "Google News local missing persons and alerts",
+      "type": "feed",
+      "url": "https://news.google.com/rss/search?q=%28Chattanooga+OR+Cleveland+TN+OR+Bradley+County%29+%28missing+person+OR+endangered+OR+amber+alert+OR+rescue%29&hl=en-US&gl=US&ceid=US%3Aen",
+      "enabled": true
     }
   ]
 }
