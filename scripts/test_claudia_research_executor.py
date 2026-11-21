@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from scripts.claudia_research_executor import tokens, similarity, safe_url, feed_items, PageParser
+from scripts.claudia_research_executor import tokens, similarity, safe_url, feed_items, PageParser, retry_patch
 class ResearchExecutorTests(unittest.TestCase):
     def test_overlap_scoring(self):
         self.assertGreater(similarity("Cleveland schools announce winter event","Cleveland schools winter event"),0.4)
@@ -17,6 +17,13 @@ class ResearchExecutorTests(unittest.TestCase):
         rows=feed_items(xml,"https://county.gov/rss")
         self.assertEqual(rows[0]["url"],"https://county.gov/park")
         self.assertIn("park",rows[0]["title"])
+    def test_retry_backoff_and_exhaustion(self):
+        patch,delay=retry_patch({"attempt_count":2,"max_attempts":4},RuntimeError("temporary"))
+        self.assertEqual(patch["status"],"queued")
+        self.assertEqual(delay,600)
+        exhausted,delay2=retry_patch({"attempt_count":4,"max_attempts":4},ValueError("bad input"))
+        self.assertEqual(exhausted["status"],"blocked")
+        self.assertIsNone(delay2)
     def test_html_title_and_text(self):
         parser=PageParser();parser.feed("<html><title>School Board Update</title><p>Meeting on Tuesday</p><script>noise</script></html>")
         data=parser.result()
