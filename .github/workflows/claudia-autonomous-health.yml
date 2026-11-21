@@ -10,6 +10,8 @@ on:
       - 'scripts/test_claudia_health.py'
       - 'scripts/claudia_task_memory.py'
       - 'scripts/test_claudia_task_memory.py'
+      - 'scripts/claudia_task_memory.py'
+      - 'scripts/test_claudia_task_memory.py'
       - 'livekit-agent/agent.py'
       - '_worker.js'
       - 'wrangler.jsonc'
@@ -51,7 +53,7 @@ jobs:
       - name: Syntax-check monitor, tests, and LiveKit agent
         run: python -m py_compile scripts/claudia_health.py scripts/test_claudia_health.py scripts/claudia_task_memory.py scripts/test_claudia_task_memory.py livekit-agent/agent.py
       - name: Run offline health-monitor tests
-        run: python -m unittest scripts/test_claudia_health.py scripts/test_claudia_task_memory.py
+        run: python -m unittest scripts/test_claudia_health.py scripts/test_claudia_task_memory.py scripts/test_claudia_task_memory.py
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -77,7 +79,17 @@ jobs:
         id: health
         continue-on-error: true
         run: python scripts/claudia_health.py
-      - name: Update Claudia resumable task memory\n        if: always()\n        run: python scripts/claudia_task_memory.py\n      - name: Commit operational task memory\n        if: always()\n        run: |\n          git config user.name '423news-bot'\n          git config user.email 'bot@users.noreply.github.com'\n          git add claudia-work-memory.json\n          git diff --cached --quiet || (git commit -m 'Update Claudia resumable task memory' && git push)\n      - name: Save health report
+      - name: Update Claudia resumable task memory\n        if: always()\n        run: python scripts/claudia_task_memory.py\n      - name: Commit operational task memory\n        if: always()\n        run: |\n          git config user.name '423news-bot'\n          git config user.email 'bot@users.noreply.github.com'\n          git add claudia-work-memory.json\n          git diff --cached --quiet || (git commit -m 'Update Claudia resumable task memory' && git push)\n      - name: Update Claudia resumable task memory
+        if: always()
+        run: python scripts/claudia_task_memory.py
+      - name: Commit operational task memory
+        if: always()
+        run: |
+          git config user.name '423news-bot'
+          git config user.email 'bot@users.noreply.github.com'
+          git add claudia-work-memory.json
+          git diff --cached --quiet || (git commit -m 'Update Claudia resumable task memory' && git push)
+      - name: Save health report
         if: always()
         uses: actions/upload-artifact@v4
         with:
