@@ -49,7 +49,7 @@ jobs:
       - name: Syntax-check monitor, tests, and LiveKit agent
         run: python -m py_compile scripts/claudia_health.py scripts/test_claudia_health.py livekit-agent/agent.py
       - name: Run offline health-monitor tests
-        run: python -m unittest scripts/test_claudia_health.py
+        run: python -m unittest scripts/test_claudia_health.py scripts/test_claudia_daily_plan.py
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -75,12 +75,12 @@ jobs:
         id: health
         continue-on-error: true
         run: python scripts/claudia_health.py
-      - name: Save health report
+      - name: Generate Claudia daily work plan\n        if: always()\n        run: python scripts/claudia_daily_plan.py\n      - name: Save health report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: claudia-site-health
-          path: claudia-health.*
+          path: claudia-health.*\n            claudia-daily-plan.*
           if-no-files-found: warn
           retention-days: 30
       - name: Update Claudia findings issue
