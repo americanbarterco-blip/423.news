@@ -8,6 +8,11 @@ on:
       - scripts/claudia_discovery.py
       - scripts/claudia_sources.json
       - scripts/test_claudia_discovery.py
+      - scripts/claudia_media.py
+      - scripts/test_claudia_media.py
+      - supabase/migrations/20261121000000_claudia_story_discovery.sql
+      - supabase/migrations/20261121000001_claudia_media_staging.sql
+      - docs/claudia-discovery-media-engine.md
       - .github/workflows/claudia-story-discovery.yml
 permissions:
   contents: read
@@ -23,8 +28,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m py_compile scripts/claudia_discovery.py scripts/test_claudia_discovery.py
-      - run: python -m unittest scripts.test_claudia_discovery
+      - run: python -m py_compile scripts/claudia_discovery.py scripts/test_claudia_discovery.py scripts/claudia_media.py scripts/test_claudia_media.py
+      - run: python -m unittest scripts.test_claudia_discovery scripts.test_claudia_media
   discover:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest

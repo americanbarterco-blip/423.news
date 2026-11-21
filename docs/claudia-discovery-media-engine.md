@@ -18,3 +18,11 @@ Apply `supabase/migrations/20261121000000_claudia_story_discovery.sql` to create
 - Publication guard: no media without explicit rights/permission/attribution record; no private tips, scanner audio, personal identifying material, or restricted media.
 - Verify image/video URL, storage object, article rendering and metadata before marking attached.
 - Keep drafts and lead queue separate from live publication; editor approval for sensitive claims or media.
+
+## Private media staging (new)
+- `scripts/claudia_media.py` uploads editor-provided/authorized assets to a private staging bucket.
+- Requires caption, creator credit, permission/license basis, source URL when available, and alt text for images.
+- Supports selected image/video MIME types and 50 MB maximum; hashes files for dedup/audit.
+- Asset records are marked `staged`, not public and not attached to articles.
+- Apply migration `20261121000001_claudia_media_staging.sql` after lead table migration first.
+- Next: review/approval UI, article draft builder, attach-to-story flow, and public publishing gates.
