@@ -1,0 +1,43 @@
+name: Claudia Green — public story lead discovery
+on:
+  schedule:
+    - cron: "17 */4 * * *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - scripts/claudia_discovery.py
+      - scripts/claudia_sources.json
+      - scripts/test_claudia_discovery.py
+      - .github/workflows/claudia-story-discovery.yml
+permissions:
+  contents: read
+concurrency:
+  group: claudia-public-source-discovery
+  cancel-in-progress: false
+jobs:
+  test:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m py_compile scripts/claudia_discovery.py scripts/test_claudia_discovery.py
+      - run: python -m unittest scripts.test_claudia_discovery
+  discover:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Discover leads from public sources
+        run: python scripts/claudia_discovery.py
+      - name: Upload discovery report
+        uses: actions/upload-artifact@v4
+        with:
+          name: claudia-public-leads
+          path: claudia-discovery.json
+          retention-days: 14
