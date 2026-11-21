@@ -7,6 +7,7 @@ on:
       - '.github/workflows/deploy-423-news-cloudflare.yml'
       - '.github/workflows/indexnow-validation.yml'
       - 'scripts/test_indexnow_config.py'
+      - '.github/workflows/refresh-story-sitemap.yml'
   push:
     branches: [main]
     paths:
