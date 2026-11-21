@@ -292,7 +292,8 @@ export default {
         headers: {
           "Content-Type": "application/xml; charset=utf-8",
           "Cache-Control": "public, max-age=120",
-          "X-Sitemap-Story-Feed": "temporarily-unavailable"
+          "X-Sitemap-Story-Feed": "temporarily-unavailable",
+          "X-Content-Type-Options": "nosniff"
         }
       });
     }
