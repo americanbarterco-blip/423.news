@@ -1,0 +1,47 @@
+{
+  "delay_seconds": 0.5,
+  "sources": [
+    {
+      "name": "Hamilton County Schools News",
+      "type": "web",
+      "url": "https://www.hcde.org/news",
+      "enabled": true
+    },
+    {
+      "name": "Cleveland City Schools News",
+      "type": "web",
+      "url": "https://www.clevelandcityschools.org/news",
+      "enabled": true
+    },
+    {
+      "name": "Chattanooga Times Free Press Local",
+      "type": "feed",
+      "url": "https://www.timesfreepress.com/rss/",
+      "enabled": true
+    },
+    {
+      "name": "WRCB Local",
+      "type": "feed",
+      "url": "https://www.wrcbtv.com/rss",
+      "enabled": true
+    },
+    {
+      "name": "WTVC Local",
+      "type": "feed",
+      "url": "https://newschannel9.com/news/local.rss",
+      "enabled": true
+    },
+    {
+      "name": "WATE Local",
+      "type": "feed",
+      "url": "https://www.wate.com/feed/",
+      "enabled": true
+    },
+    {
+      "name": "WBIR Local",
+      "type": "feed",
+      "url": "https://www.wbir.com/feeds/syndication/rss/news/local/",
+      "enabled": true
+    }
+  ]
+}
