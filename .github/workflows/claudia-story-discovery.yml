@@ -1,4 +1,4 @@
-name: Claudia Green — public story lead discovery
+name: Claudia public-source discovery and intake
 on:
   schedule:
     - cron: "17 */4 * * *"
@@ -8,19 +8,16 @@ on:
       - scripts/claudia_discovery.py
       - scripts/claudia_sources.json
       - scripts/test_claudia_discovery.py
-      - scripts/claudia_media.py
-      - scripts/test_claudia_media.py
-      - supabase/migrations/20261121000000_claudia_story_discovery.sql
-      - supabase/migrations/20261121000001_claudia_media_staging.sql
-      - docs/claudia-discovery-media-engine.md
+      - scripts/claudia_workloop.py
+      - scripts/test_claudia_workloop.py
       - .github/workflows/claudia-story-discovery.yml
 permissions:
   contents: read
 concurrency:
-  group: claudia-public-source-discovery
+  group: claudia-public-discovery
   cancel-in-progress: false
 jobs:
-  test:
+  tests:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -28,9 +25,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m py_compile scripts/claudia_discovery.py scripts/test_claudia_discovery.py scripts/claudia_media.py scripts/test_claudia_media.py
-      - run: python -m unittest scripts.test_claudia_discovery scripts.test_claudia_media
-  discover:
+      - run: python -m py_compile scripts/claudia_discovery.py scripts/claudia_workloop.py scripts/test_claudia_discovery.py scripts/test_claudia_workloop.py
+      - run: python -m unittest scripts.test_claudia_discovery scripts.test_claudia_workloop
+  scheduled-discovery:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -38,11 +35,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Discover leads from public sources
+      - name: Run public source discovery
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CLAUDIA_DISCOVERY_INGEST: 'true'
         run: python scripts/claudia_discovery.py
-      - name: Upload discovery report
+      - name: Queue research leads
+        if: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/claudia_workloop.py
+      - name: Save discovery artifact
         uses: actions/upload-artifact@v4
         with:
-          name: claudia-public-leads
+          name: claudia-public-discovery
           path: claudia-discovery.json
           retention-days: 14
