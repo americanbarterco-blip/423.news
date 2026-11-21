@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>Claudia Green | Editorial Review</title>
+<style>
+:root{color-scheme:dark;--bg:#07101a;--panel:#101e2c;--border:#263b4f;--text:#eaf1f7;--muted:#a3b5c7;--orange:#ff6b1a;--green:#1e7852;--red:#b72e38}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui;padding:clamp(12px,3vw,24px)}main{max-width:1120px;margin:auto}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+h1{font-size:clamp(20px,3vw,30px);margin:0}h2{font-size:19px;margin:0 0 12px}h3{font-size:17px;margin:8px 0}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+.muted,small{color:var(--muted)}.badge{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:3px 9px;font-size:12px;margin:0 6px 6px 0}
+button,input,textarea{font:inherit;color:inherit;background:#07121c;border:1px solid var(--border);border-radius:9px;padding:10px}
+button{cursor:pointer;background:var(--orange);border:0;font-weight:700;margin:4px 5px 4px 0}button.secondary{background:#2b4157}button.reject{background:var(--red)}button:disabled{opacity:.45;cursor:not-allowed}
+.tabs{display:flex;gap:8px;margin-bottom:12px}.tabs button{background:#24384c}.tabs button.active{background:var(--orange)}
+input,textarea{width:100%;margin:6px 0 10px}textarea{min-height:80px}
+.story{white-space:pre-wrap;line-height:1.55;overflow-wrap:anywhere;max-height:480px;overflow:auto;background:#091522;padding:12px;border-radius:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:12px}
+#status{color:#ffbd69;min-height:26px}.hidden{display:none!important}
+a{color:#82caff}video,img{max-width:100%;max-height:360px;border-radius:10px;margin-top:8px}
+</style></head><body><main>
+<header><h1>Claudia Green · Review Desk</h1><div><button id="reload" class="secondary">Refresh queue</button><button id="logout" class="secondary">Log out</button></div></header>
+<div class="panel"><div id="status">Private review console. Draft approval does not publish.</div><div class="tabs"><button id="draftTab" class="active">Article drafts</button><button id="mediaTab">Media review</button></div><div id="counts" class="muted"></div></div>
+<div id="login" class="panel hidden"><h2>Staff sign in</h2><input id="password" type="password" autocomplete="current-password" placeholder="423.news admin password"><button id="signIn">Sign in</button></div>
+<div id="queue"></div></main>
+<script>
+(function(){
+const FN='https://kdiwehqtezlhecxsoysj.supabase.co/functions/v1/admin';
+let token=sessionStorage.getItem('t423')||'',mode='drafts',drafts=[],media=[];
+const $=id=>document.getElementById(id);
+function status(t){$('status').textContent=t||''}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":&#39;"}[c]))}
+async function call(action,extra){try{const r=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action,token},extra||{}))});const j=await r.json();if(r.status===401){token='';sessionStorage.removeItem('t423');$('login').classList.remove('hidden');}return {ok:r.ok,j};}catch(e){return {ok:false,j:{error:'network'}}}}
+async function login(){const r=await call('login',{password:$('password').value});if(r.ok&&r.j.token){token=r.j.token;sessionStorage.setItem('t423',token);$('login').classList.add('hidden');$('password').value='';await load();}else status(r.j.error==='locked'?'Login temporarily locked. Try again later.':'Sign-in failed.')}
+async function load(){if(!token){$('login').classList.remove('hidden');return;}status('Loading private queue…');const r=await call('claudiaQueue');if(!r.ok){status('Unable to load queue. Check function deployment and permissions.');return;}drafts=r.j.drafts||[];media=r.j.media||[];render();status('Loaded review queue. Approval is editorial only; it does not publish.')}
+function switchMode(m){mode=m;$('draftTab').classList.toggle('active',m==='drafts');$('mediaTab').classList.toggle('active',m==='media');render()}
+function reviewDraft(id,s){const notes=prompt('Optional editor notes for this review:')||'';if(!confirm('Mark this draft '+s+'? This does not publish.'))return;status('Saving review…');call('claudiaDraftReview',{id,status:s,notes}).then(r=>{if(!r.ok)status('Review failed: '+(r.j.error||'unknown'));else{status('Draft marked '+s+'. Not published.');load();}})}
+function reviewMedia(id,s){if(!confirm('Mark this staged media '+s+'? This does not publish or attach it.'))return;status('Saving media review…');call('claudiaMediaReview',{id,status:s}).then(r=>{if(!r.ok)status('Review failed: '+(r.j.error||'unknown'));else{status('Media marked '+s+'. Still private.');load();}})}
+function renderDrafts(){if(!drafts.length)return '<div class="panel">No drafts in the private queue yet. Claudia’s scheduled research run will populate it when the configured credentials and sources are working.</div>';return '<div class="grid">'+drafts.map(d=>'<article class="panel"><div><span class="badge">'+esc(d.status)+'</span><span class="badge">'+esc(d.verification_status||'unverified')+'</span><span class="badge">'+esc(d.source_count||0)+' source domains</span></div><h2>'+esc(d.title)+'</h2><p>'+esc(d.summary)+'</p><details><summary>Read draft & source links</summary><div class="story">'+esc(d.body_markdown)+'</div></details><details><summary>Editor notes / risk flags</summary><div class="story">'+esc(d.editor_notes||'No notes supplied.')+'</div></details><div><button onclick="reviewDraft(\''+esc(d.id)+'\',\'approved\')">Approve for next publishing step</button><button class="reject" onclick="reviewDraft(\''+esc(d.id)+'\',\'rejected\')">Reject</button></div><small>Approval is not publication. Review accuracy, sensitive claims, source quality, media rights and corrections before publishing.</small></article>').join('')+'</div>'}
+function renderMedia(){if(!media.length)return '<div class="panel">No staged media items yet.</div>';return '<div class="grid">'+media.map(m=>'<article class="panel"><span class="badge">'+esc(m.status)+'</span><span class="badge">'+esc(m.media_type)+'</span><h3>'+esc(m.caption||'Uncaptioned media')+'</h3><p><b>Creator/credit:</b> '+esc(m.credit||'Missing')+'<br><b>Rights basis:</b> '+esc(m.rights_basis||'Missing')+'<br><b>Alt text:</b> '+esc(m.alt_text||'Missing')+'<br><b>Source:</b> '+(m.source_url?'<a href="'+esc(m.source_url)+'" target="_blank" rel="noopener">Open source</a>':'None')+'</p><p class="muted">'+esc(m.object_path)+' · '+esc(m.size_bytes||0)+' bytes</p><div><button onclick="reviewMedia(\''+esc(m.id)+'\',\'approved\')">Approve rights review</button><button class="reject" onclick="reviewMedia(\''+esc(m.id)+'\',\'rejected\')">Reject</button></div><small>Media approval does not attach or publish files.</small></article>').join('')+'</div>'}
+function render(){ $('counts').textContent='Drafts: '+drafts.length+' · Staged media: '+media.length;$('queue').innerHTML=mode==='drafts'?renderDrafts():renderMedia();}
+window.reviewDraft=reviewDraft;window.reviewMedia=reviewMedia;
+$('signIn').onclick=login;$('password').onkeydown=e=>{if(e.key==='Enter')login()};$('reload').onclick=load;$('draftTab').onclick=()=>switchMode('drafts');$('mediaTab').onclick=()=>switchMode('media');$('logout').onclick=()=>{token='';sessionStorage.removeItem('t423');$('login').classList.remove('hidden');$('queue').innerHTML='';status('Signed out.')};
+load();
+})();
+</script></body></html>
