@@ -16,6 +16,9 @@ from livekit.agents import Agent, AgentServer, AgentSession, RunContext, functio
 
 server = AgentServer()
 
+# Optional model override for evaluation. Default preserves the currently deployed model.
+CLAUDIA_LLM_MODEL = os.getenv("CLAUDIA_LLM_MODEL", "openai/gpt-4.1-mini").strip() or "openai/gpt-4.1-mini"
+
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://kdiwehqtezlhecxsoysj.supabase.co").rstrip("/")
 # This is the public anon key already used by the 423.news website. RLS remains in force.
 SUPABASE_ANON_KEY = os.getenv(
@@ -523,7 +526,7 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
 async def claudia_green(ctx: agents.JobContext):
     session = AgentSession(
         stt=inference.STT(model="deepgram/nova-3", language="multi"),
-        llm=inference.LLM(model="openai/gpt-4.1-mini"),
+        llm=inference.LLM(model=CLAUDIA_LLM_MODEL),
         tts=inference.TTS(model="inworld/inworld-tts-2", voice="Ashley"),
     )
     assistant = ClaudiaGreen()
