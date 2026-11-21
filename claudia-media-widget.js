@@ -14,7 +14,7 @@
   `;
   document.head.appendChild(style);
   var root=document.createElement('div');root.id='cg-float';
-  root.innerHTML='<button id="cg-launch" type="button" aria-label="Open Claudia Green AI voice chat"><img src="/claudia-studio.jpg" alt="Claudia Green" onerror="this.remove();this.parentElement.textContent=\'CG\';"></button>';
+  root.innerHTML='<button id="cg-launch" type="button" aria-label="Open Claudia Green AI voice chat"><img src="/claudia-avatar-v2.jpg" alt="Claudia Green" onerror="this.remove();this.parentElement.textContent=\'CG\';"></button>';
   document.body.appendChild(root);
   root.querySelector('#cg-launch').addEventListener('click',function(){
     var attempts=0;

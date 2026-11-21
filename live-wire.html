@@ -3283,9 +3283,9 @@ function template() {
   return `<div class="cg">
 <div id="cgLive" class="cg-sr" role="status" aria-live="polite"></div>
 <section class="cg-hero" aria-label="Claudia Green Live Wire">
-  <div class="cg-hero-portrait"><img src="claudia-hero.jpg" alt="Claudia Green, 423.news newsroom assistant" width="258" height="194" fetchpriority="high"><video src="claudia-onair.mp4" poster="claudia-poster.jpg" autoplay muted loop playsinline preload="auto" aria-label="Claudia Green on camera, recorded video"></video><button type="button" class="cg-snd" aria-label="Enable Claudia Green voice">Enable voice</button><span class="cg-illus">AI · recorded</span></div>
+  <div class="cg-hero-portrait"><img src="claudia-hero-v2.jpg" alt="Claudia Green, 423.news newsroom assistant" width="258" height="194" fetchpriority="high"><video src="claudia-onair.mp4" poster="claudia-poster-v2.jpg" autoplay muted loop playsinline preload="auto" aria-label="Claudia Green on camera, recorded video"></video><button type="button" class="cg-snd" aria-label="Enable Claudia Green voice">Enable voice</button><span class="cg-illus">AI · recorded</span></div>
   <div class="cg-hero-copy"><div class="cg-hero-top"><span id="cgHeroPill">${pill()}</span><span class="cg-hero-wx" id="cgWx" hidden></span></div><h1>Claudia Green <span>Live Wire</span></h1><p class="cg-hero-tag">REAL REPORTS &bull; REAL INCIDENTS &bull; REAL TIME</p>${N().personaNote ? `<p class="cg-persona">${esc(N().personaNote)}</p>` : ''}<p style="margin:4px 0 0"><a href="index.html#/tip" style="display:inline-block;background:#1479ff;color:#fff;font-weight:800;font-size:13px;padding:8px 14px;border-radius:99px;text-decoration:none">Send Claudia a tip</a></p></div>
-  <div class="cg-hero-room"><img src="claudia-room.jpg" alt="" width="350" height="166" loading="lazy">
+  <div class="cg-hero-room"><img src="claudia-room-v2.jpg" alt="" width="350" height="166" loading="lazy">
     <div class="cg-hero-brand"><p>First to the call.<br>First to you.</p><b>423<i>.</i>NEWS</b></div></div>
 </section>
 <div class="cg-warn" id="cgDemo" hidden></div>
@@ -3338,7 +3338,7 @@ function template() {
     <div class="cg-ph"><div class="cg-ph-l"><h2 id="cgStudioH">Studio &amp; the desk</h2></div><span class="cg-stamp" id="cgDeskStamp"></span></div>
     <div class="cg-studio-grid">
       <div>
-        <div class="cg-camwrap"><video id="cgCamVideo" src="claudia-onair.mp4" poster="claudia-poster.jpg" muted loop playsinline preload="metadata"></video><span class="cg-camtag">On camera</span><button type="button" class="cg-camsnd" id="cgCamSound">Sound on</button></div>
+        <div class="cg-camwrap"><video id="cgCamVideo" src="claudia-onair.mp4" poster="claudia-poster-v2.jpg" muted loop playsinline preload="metadata"></video><span class="cg-camtag">On camera</span><button type="button" class="cg-camsnd" id="cgCamSound">Sound on</button></div>
         <p class="cg-deskline" id="cgDeskLine"></p>
       </div>
       <div>

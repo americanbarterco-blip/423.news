@@ -44,7 +44,7 @@
     feedUrl: 'feed.json',   /* the same file the Live Wire page reads */
     claudiaCount: 5,
     claudiaFreshHours: 24,   /* reports older than this disappear on their own */
-    claudiaImage: 'claudia-studio.jpg',   /* still picture shown in her homepage card */
+    claudiaImage: 'claudia-home-v2.jpg',   /* still picture shown in her homepage card */
 
     /* Sports block: one big stream, three smaller ones in a row under it.
        For YouTube embeds add ?autoplay=1&mute=1 to the URL. */
