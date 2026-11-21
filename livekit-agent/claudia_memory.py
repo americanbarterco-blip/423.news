@@ -54,6 +54,15 @@ def normalize(text):
     return re.findall(r"[a-z0-9]{2,}", (text or "").lower())
 
 
+def normalize_project(project):
+    raw = (project or "423.news").strip().lower()
+    aliases = {"newsroom", "four two three dot news", "four two three dot me", "423news", "423.news"}
+    if raw in aliases:
+        return "423.news"
+    return re.sub(r"[^a-z0-9]+", "-", raw).strip("-") or "423.news"
+
+
+
 def save_memory(content, kind="fact", tags=None, importance=3, source_ref=None, project="423.news"):
     content = (content or "").strip()
     if not content or len(content) > MAX_CONTENT:
@@ -61,6 +70,7 @@ def save_memory(content, kind="fact", tags=None, importance=3, source_ref=None, 
     if kind not in KINDS:
         raise ValueError("Invalid memory type.")
     importance = max(1, min(5, int(importance)))
+    project = normalize_project(project)
     tags = list(dict.fromkeys(
         str(t).strip().lower()[:40] for t in (tags or []) if str(t).strip()
     ))[:MAX_TAGS]
@@ -130,7 +140,7 @@ def recall(query, limit=8, project=None, kind=None):
         "limit": "100",
     }
     if project:
-        params["project"] = "eq." + project
+        params["project"] = "eq." + normalize_project(project)
     if kind in KINDS:
         params["kind"] = "eq." + kind
     rows = _request("GET", TABLE + "?" + urllib.parse.urlencode(params))
