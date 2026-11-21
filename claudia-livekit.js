@@ -7,6 +7,8 @@
     #cg-livekit-launch{position:fixed;right:18px;bottom:86px;z-index:9998;border:1px solid #e8392f;border-radius:999px;background:#171b24;color:#fff;padding:12px 17px;font:700 13px system-ui;box-shadow:0 8px 28px #0008;cursor:pointer}
     #cg-livekit-panel{position:fixed;right:18px;bottom:142px;z-index:9999;width:min(340px,calc(100vw - 36px));padding:18px;border:1px solid #354052;border-radius:16px;background:#101722;color:#f3eee4;box-shadow:0 18px 50px #000a;font:14px/1.5 system-ui;display:none}
     #cg-livekit-panel h2{font:700 19px Georgia,serif;margin:0 0 6px}
+    #cg-livekit-header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    #cg-livekit-close{border:1px solid #596579;border-radius:8px;padding:6px 10px;background:#202b3a;color:#fff;font-weight:700;cursor:pointer}
     #cg-livekit-status{color:#b9c4d3;font-size:13px;min-height:38px;margin:8px 0}
     #cg-livekit-actions{display:flex;gap:8px;flex-wrap:wrap}
     #cg-livekit-actions button{border:1px solid #596579;border-radius:9px;padding:9px 12px;background:#202b3a;color:white;font-weight:700}
@@ -25,9 +27,11 @@
   var panel = document.createElement("section");
   panel.id = "cg-livekit-panel";
   panel.setAttribute("aria-label", "Talk with Claudia Green");
-  panel.innerHTML = '<h2>Claudia Green</h2><div>423.news virtual voice assistant</div><div id="cg-livekit-status" role="status">Ready when you are.</div><div id="cg-livekit-actions"><button class="primary" id="cg-livekit-start" type="button">Start voice chat</button><button id="cg-livekit-stop" type="button" disabled>End chat</button></div><div id="cg-livekit-note">Microphone access is required. Claudia is an AI assistant, not an emergency service.</div>';
+  panel.innerHTML = '<div id="cg-livekit-header"><h2>Claudia Green</h2><button id="cg-livekit-close" type="button" aria-label="Close chat">✕</button></div><div>423.news virtual voice assistant</div><div id="cg-livekit-status" role="status">Ready when you are.</div><div id="cg-livekit-actions"><button class="primary" id="cg-livekit-start" type="button">Start voice chat</button><button id="cg-livekit-stop" type="button" disabled>End chat</button></div><div id="cg-livekit-note">Microphone access is required. Claudia is an AI assistant, not an emergency service.</div>';
   document.body.appendChild(panel);
   var status = panel.querySelector("#cg-livekit-status");
+  var close = panel.querySelector("#cg-livekit-close");
+  close.addEventListener("click", function () { panel.style.display = "none"; launch.setAttribute("aria-expanded", "false"); });
   var start = panel.querySelector("#cg-livekit-start");
   var stop = panel.querySelector("#cg-livekit-stop");
   var room = null, busy = false, attachedAudio = [];
