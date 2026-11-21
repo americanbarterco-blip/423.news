@@ -5,7 +5,7 @@ Collects the lead page plus independently hosted, topic-matching pages from conf
 public source sites. It records evidence only; it does not write or publish articles.
 """
 from __future__ import annotations
-import html, ipaddress, json, os, re, socket, time, urllib.parse, urllib.request
+import html, ipaddress, json, os, re, socket, time, datetime, urllib.parse, urllib.request
 from html.parser import HTMLParser
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -166,6 +166,14 @@ def main():
         try:process(task,base,key,cfg)
         except Exception as e:
             msg=(type(e).__name__+": "+str(e))[:500]
-            request_supabase(base,key,"rest/v1/claudia_research_tasks?id=eq."+urllib.parse.quote(task["id"],safe=""),"PATCH",json.dumps({"status":"blocked","locked_at":None,"locked_by":None,"last_error":msg}).encode(),"return=minimal")
-            print(f"Task blocked: {msg}")
+            attempts=int(task.get("attempt_count",1));maximum=int(task.get("max_attempts",4))
+            if attempts<maximum:
+                delay=min(3600,300*(2**max(0,attempts-1)))
+                available=(datetime.datetime.now(datetime.timezone.utc)+datetime.timedelta(seconds=delay)).isoformat()
+                patch={"status":"queued","available_at":available,"locked_at":None,"locked_by":None,"last_error":msg}
+                print(f"Task retry scheduled in {delay}s: {msg}")
+            else:
+                patch={"status":"blocked","locked_at":None,"locked_by":None,"last_error":msg}
+                print(f"Task blocked after {attempts} attempts: {msg}")
+            request_supabase(base,key,"rest/v1/claudia_research_tasks?id=eq."+urllib.parse.quote(task["id"],safe=""),"PATCH",json.dumps(patch).encode(),"return=minimal")
 if __name__=="__main__":main()
