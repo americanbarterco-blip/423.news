@@ -54,7 +54,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
+          command: deploy --config wrangler.jsonc
       - name: Record Cloudflare deployment blocker
         if: steps.credentials.outcome != 'success' || steps.deploy.outcome != 'success'
         uses: actions/github-script@v7
