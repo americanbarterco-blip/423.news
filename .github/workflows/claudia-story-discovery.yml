@@ -3,6 +3,14 @@ on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    - master
+    paths:
+      - scripts/claudia_*.py
+      - scripts/claudia_sources.json
+      - .github/workflows/claudia-story-discovery.yml
   pull_request:
     paths:
       - scripts/claudia_discovery.py
@@ -43,7 +51,7 @@ jobs:
           path: claudia-site-coverage.json
           retention-days: 14
   scheduled-discovery:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
