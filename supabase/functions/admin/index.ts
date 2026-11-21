@@ -109,6 +109,31 @@ Deno.serve(async (req) => {
     const r = await fetch(`${URL_}/auth/v1/admin/users/${uid}`, { method: 'DELETE', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } });
     return j({ ok: r.ok }, r.ok ? 200 : 400);
   }
+  // Claudia Green private draft/media review console. Nothing in this route publishes.
+  if (a === 'claudiaQueue') {
+    const [draftsR, mediaR] = await Promise.all([
+      rest('claudia_story_drafts?select=id,lead_id,title,summary,body_markdown,status,verification_status,source_count,author_agent,editor_notes,created_at&order=created_at.desc&limit=100'),
+      rest('claudia_story_media?select=id,lead_id,object_path,media_type,size_bytes,caption,alt_text,credit,source_url,rights_basis,status,created_at&order=created_at.desc&limit=100')
+    ]);
+    if (!draftsR.ok || !mediaR.ok) return j({error:'claudia_review_read'},500);
+    return j({drafts:await draftsR.json(),media:await mediaR.json()});
+  }
+  if (a === 'claudiaDraftReview') {
+    const id=String(b.id||''), status=String(b.status||'');
+    if (!/^[0-9a-f-]{36}$/i.test(id) || !['approved','rejected'].includes(status)) return j({error:'review_input'},400);
+    const r=await rest('claudia_story_drafts?id=eq.'+encodeURIComponent(id)+'&status=eq.needs_review',{method:'PATCH',body:JSON.stringify({status,editor_notes:String(b.notes||'').slice(0,2000)}),prefer:'return=representation'});
+    if (!r.ok) return j({error:'draft_review'},400);
+    const rows=await r.json(); if(!rows.length) return j({error:'draft_not_pending'},409);
+    return j({ok:true,draft:rows[0]});
+  }
+  if (a === 'claudiaMediaReview') {
+    const id=String(b.id||''), status=String(b.status||'');
+    if (!/^[0-9a-f-]{36}$/i.test(id) || !['approved','rejected'].includes(status)) return j({error:'review_input'},400);
+    const r=await rest('claudia_story_media?id=eq.'+encodeURIComponent(id)+'&status=eq.staged',{method:'PATCH',body:JSON.stringify({status}),prefer:'return=representation'});
+    if (!r.ok) return j({error:'media_review'},400);
+    const rows=await r.json(); if(!rows.length) return j({error:'media_not_staged'},409);
+    return j({ok:true,media:rows[0]});
+  }
   // Spanish editorial workflow. Source material is read-only; only approved translations
   // are exposed to public visitors by the migration's RLS policy.
   const translationSources = ['news_posts', 'events', 'news_headlines'];
