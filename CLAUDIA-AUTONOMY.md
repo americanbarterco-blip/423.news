@@ -64,3 +64,8 @@ After PR #40 is merged, `.github/workflows/deploy-claudia-livekit.yml` is intend
 ## Cloudflare Worker deployment automation
 
 The repository now has a Cloudflare Wrangler deploy workflow that runs on approved main-branch changes to site assets, `_worker.js`, `wrangler.jsonc`, `sitemap.xml`, and `robots.txt`. It checks for repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`; if absent, it creates/updates a blocker issue rather than pretending deployment succeeded. The API token must be scoped to the relevant account and Workers Scripts edit permission. Cloudflare credentials cannot be read or configured from this chat connection.
+
+
+## LLM model configuration
+
+The LiveKit voice agent currently defaults to `openai/gpt-4.1-mini`. `livekit-agent/agent.py` now supports an optional `CLAUDIA_LLM_MODEL` environment variable so the model ID can be evaluated or changed without editing source code. Leave it unset to preserve the current default. A model name alone does **not** make inference free: LiveKit Inference is usage-billed, and open-weight models are free only when self-hosted on suitable hardware. Before changing production model selection, verify the exact model ID, provider availability, latency, tool-call quality, and current cost/quota. Do not claim a free hosted model without confirming the active pricing/quota.
