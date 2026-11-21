@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "17 * * * *"
+  push:
+    branches: [main]
+    paths:
+      - "ef61166f0435493c9aae43c3d90a25cf.txt"
+      - ".github/workflows/refresh-story-sitemap.yml"
 
 permissions:
   contents: read
