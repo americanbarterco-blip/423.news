@@ -156,6 +156,17 @@ def process(task,base,key,cfg):
     update={"status":status,"locked_at":None,"locked_by":None,"last_error":None if evidence else "No evidence retrieved","result":{"lead_url":lead_url,"evidence_count":len(evidence),"candidate_sources":candidates,"editorial_status":"needs human review; not verified","completed_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}}
     request_supabase(base,key,"rest/v1/claudia_research_tasks?id=eq."+urllib.parse.quote(task["id"],safe=""),"PATCH",json.dumps(update).encode(),"return=minimal")
     print(f"Task {task['id']}: evidence={len(evidence)}, corroborating_pages={len(candidates)}, state={status}")
+def retry_patch(task,error):
+    attempts=int(task.get("attempt_count",1));maximum=int(task.get("max_attempts",4))
+    message=(type(error).__name__+": "+str(error))[:500]
+    common={"locked_at":None,"locked_by":None,"last_error":message}
+    if attempts<maximum:
+        delay=min(3600,300*(2**max(0,attempts-1)))
+        common.update({"status":"queued","available_at":(datetime.datetime.now(datetime.timezone.utc)+datetime.timedelta(seconds=delay)).isoformat()})
+        return common,delay
+    common["status"]="blocked"
+    return common,None
+
 def main():
     base=os.environ.get("SUPABASE_URL","").strip();key=os.environ.get("SUPABASE_SERVICE_ROLE_KEY","").strip()
     if not base or not key:print("Research executor skipped: Supabase credentials missing.");return
@@ -165,15 +176,8 @@ def main():
         if not task:print("Research queue empty.");break
         try:process(task,base,key,cfg)
         except Exception as e:
-            msg=(type(e).__name__+": "+str(e))[:500]
-            attempts=int(task.get("attempt_count",1));maximum=int(task.get("max_attempts",4))
-            if attempts<maximum:
-                delay=min(3600,300*(2**max(0,attempts-1)))
-                available=(datetime.datetime.now(datetime.timezone.utc)+datetime.timedelta(seconds=delay)).isoformat()
-                patch={"status":"queued","available_at":available,"locked_at":None,"locked_by":None,"last_error":msg}
-                print(f"Task retry scheduled in {delay}s: {msg}")
-            else:
-                patch={"status":"blocked","locked_at":None,"locked_by":None,"last_error":msg}
-                print(f"Task blocked after {attempts} attempts: {msg}")
+            patch,delay=retry_patch(task,e)
+            if delay is None:print(f"Task blocked after {task.get('attempt_count',1)} attempts: {patch['last_error']}")
+            else:print(f"Task retry scheduled in {delay}s: {patch['last_error']}")
             request_supabase(base,key,"rest/v1/claudia_research_tasks?id=eq."+urllib.parse.quote(task["id"],safe=""),"PATCH",json.dumps(patch).encode(),"return=minimal")
 if __name__=="__main__":main()
