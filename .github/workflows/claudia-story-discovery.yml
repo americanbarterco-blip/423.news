@@ -10,6 +10,9 @@ on:
       - scripts/test_claudia_discovery.py
       - scripts/claudia_workloop.py
       - scripts/test_claudia_workloop.py
+      - scripts/claudia_research_executor.py
+      - scripts/test_claudia_research_executor.py
+      - supabase/migrations/20261121000003_claudia_task_claim.sql
       - scripts/claudia_media.py
       - scripts/test_claudia_media.py
       - supabase/migrations/20261121000000_claudia_story_discovery.sql
@@ -29,8 +32,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m py_compile scripts/claudia_discovery.py scripts/claudia_workloop.py scripts/test_claudia_discovery.py scripts/test_claudia_workloop.py scripts/claudia_media.py scripts/test_claudia_media.py
-      - run: python -m unittest scripts.test_claudia_discovery scripts.test_claudia_workloop scripts.test_claudia_media
+      - run: python -m py_compile scripts/claudia_discovery.py scripts/claudia_workloop.py scripts/test_claudia_discovery.py scripts/test_claudia_workloop.py scripts/claudia_media.py scripts/test_claudia_media.py scripts/claudia_research_executor.py scripts/test_claudia_research_executor.py
+      - run: python -m unittest scripts.test_claudia_discovery scripts.test_claudia_workloop scripts.test_claudia_media scripts.test_claudia_research_executor
   scheduled-discovery:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
