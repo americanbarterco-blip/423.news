@@ -87,7 +87,7 @@ class PageParser(HTMLParser):
         if self.in_title:self.title_parts.append(data)
         if data.strip():self.text.append(data.strip())
     def result(self):
-        title=" ".join(" ".join(self.title_parts).split()) if self.title_parts else self.meta.get("og:title","")
+        title=" ".join(self.title_parts).strip() if self.title_parts else self.meta.get("og:title","")
         desc=self.meta.get("og:description") or self.meta.get("description") or self.meta.get("twitter:description","")
         body=" ".join(self.text)
         body=re.sub(r"\\s+"," ",html.unescape(body))
