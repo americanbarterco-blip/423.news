@@ -1,4 +1,3 @@
-import re
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -17,7 +16,7 @@ class IndexNowDeploymentTests(unittest.TestCase):
 
     def test_cloudflare_deploy_triggers_for_text_assets(self):
         workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
-        self.assertRegex(workflow, r"(?m)^\\s+-\\s+'\\*\\*/\\*\\.txt'\\s*$")
+        self.assertIn("      - '**/*.txt'", workflow)
 
     def test_sitemap_lists_unique_clean_canonical_urls(self):
         ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
