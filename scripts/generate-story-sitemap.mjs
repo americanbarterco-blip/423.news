@@ -84,7 +84,7 @@ async function main() {
     select: "source_id",
     source_table: "eq.news_posts",
     locale: "eq.es",
-    status: "eq.approved"
+    status: "in.(approved,auto_published)"
   });
 
   const spanishIds = new Set(translations.map(row => String(row.source_id)));
@@ -96,8 +96,8 @@ async function main() {
         !/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(post.slug) ||
         !["news", "sports", "schools", "outdoors", "government"].includes(post.section)) continue;
 
-    const en = storyUrl("/story.html", post.slug);
-    const es = storyUrl("/es/historia.html", post.slug);
+    const en = storyUrl("/story", post.slug);
+    const es = storyUrl("/es/historia", post.slug);
     if (!seen.has(en)) {
       const alternates = [{ lang: "en", url: en }];
       if (spanishIds.has(String(post.id))) alternates.push({ lang: "es", url: es });
