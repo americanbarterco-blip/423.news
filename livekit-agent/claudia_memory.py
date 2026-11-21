@@ -64,41 +64,63 @@ def save_memory(content, kind="fact", tags=None, importance=3, source_ref=None, 
     tags = list(dict.fromkeys(
         str(t).strip().lower()[:40] for t in (tags or []) if str(t).strip()
     ))[:MAX_TAGS]
+
+    # Deduplicate within the target project and memory kind.
     query = urllib.parse.urlencode({
         "select": "id,content",
         "kind": "eq." + kind,
+        "project": "eq." + str(project),
         "limit": "100",
         "order": "updated_at.desc",
     })
     rows = _request("GET", TABLE + "?" + query)
-    for row in rows:
-        if row.get("content", "").strip().casefold() == content.casefold():
-            _request(
-                "PATCH",
-                TABLE + "?id=eq." + urllib.parse.quote(str(row["id"])),
-                {
-                    "tags": tags,
-                    "importance": importance,
-                    "source_ref": source_ref,
-                    "project": project,
-                    "updated_at": stamp(),
-                },
-                headers={"Prefer": "return=minimal"},
-            )
-            return {"action": "updated", "id": row["id"]}
-    data = {
-        "content": content,
-        "kind": kind,
-        "tags": tags,
-        "importance": importance,
-        "source_ref": source_ref,
-        "project": project,
-        "created_at": stamp(),
-        "updated_at": stamp(),
-    }
-    created = _request("POST", TABLE, data, headers={"Prefer": "return=representation"})
-    return {"action": "saved", "id": created[0]["id"] if created else None}
+    match = next((row for row in rows if row.get("content", "").strip().casefold() == content.casefold()), None)
+    if match:
+        result = _request(
+            "PATCH",
+            TABLE + "?id=eq." + urllib.parse.quote(str(match["id"])) + "&select=id,content,kind,project",
+            {
+                "tags": tags,
+                "importance": importance,
+                "source_ref": source_ref,
+                "project": project,
+                "updated_at": stamp(),
+            },
+            headers={"Prefer": "return=representation"},
+        )
+        if not result or not any(row.get("id") == match["id"] for row in result):
+            raise RuntimeError("Memory update was not confirmed by the database.")
+        action, memory_id = "updated", match["id"]
+    else:
+        data = {
+            "content": content,
+            "kind": kind,
+            "tags": tags,
+            "importance": importance,
+            "source_ref": source_ref,
+            "project": project,
+            "created_at": stamp(),
+            "updated_at": stamp(),
+        }
+        created = _request("POST", TABLE, data, headers={"Prefer": "return=representation"})
+        if not created or not created[0].get("id"):
+            raise RuntimeError("Memory insert was not confirmed by the database.")
+        action, memory_id = "saved", created[0]["id"]
 
+    # Read-after-write verification: confirm the exact row is persisted.
+    verify_query = urllib.parse.urlencode({
+        "select": "id,content,kind,project",
+        "id": "eq." + str(memory_id),
+        "limit": "1",
+    })
+    verified_rows = _request("GET", TABLE + "?" + verify_query)
+    verified = next((row for row in verified_rows if
+        row.get("id") == memory_id and
+        row.get("content", "").strip().casefold() == content.casefold() and
+        row.get("kind") == kind and row.get("project") == project), None)
+    if not verified:
+        raise RuntimeError("Memory write could not be verified after saving.")
+    return {"action": action, "id": memory_id, "verified": True}
 
 def recall(query, limit=8, project=None, kind=None):
     limit = max(1, min(20, int(limit)))
