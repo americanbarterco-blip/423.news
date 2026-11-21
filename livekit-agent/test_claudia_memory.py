@@ -5,6 +5,10 @@ spec=importlib.util.spec_from_file_location("claudia_memory",source)
 mem=importlib.util.module_from_spec(spec); spec.loader.exec_module(mem)
 
 class Tests(unittest.TestCase):
+ def test_project_normalization(self):
+  self.assertEqual(mem.normalize_project("newsroom"),"423.news")
+  self.assertEqual(mem.normalize_project("four two three dot me"),"423.news")
+  self.assertEqual(mem.normalize_project("423.news"),"423.news")
  def test_tokenizer(self):
   self.assertEqual(set(mem.normalize("Bradley County: road repair")),{"bradley","county","road","repair"})
  def test_allowlist(self):
