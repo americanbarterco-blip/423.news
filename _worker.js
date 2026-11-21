@@ -97,8 +97,8 @@ async function buildSitemap(staticXml, env) {
         !/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(post.slug) ||
         !INDEXABLE_SECTIONS.has(post.section)) continue;
 
-    const english = storyUrl("/story.html", post.slug);
-    const spanish = storyUrl("/es/historia.html", post.slug);
+    const english = storyUrl("/story", post.slug);
+    const spanish = storyUrl("/es/historia", post.slug);
     const hasSpanish = spanishIds.has(String(post.id));
     const englishAlternates = [{ lang: "en", url: english }];
     if (hasSpanish) englishAlternates.push({ lang: "es", url: spanish });
