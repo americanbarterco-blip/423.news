@@ -6,7 +6,7 @@ on:
   push:
     branches:
       - main
-    - master
+      - master
     paths:
       - scripts/claudia_*.py
       - scripts/claudia_sources.json
@@ -54,6 +54,17 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_CONFIGURED: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_CONFIGURED: ${{ secrets.OPENAI_API_KEY != '' }}
+      CLAUDIA_WRITER_MODEL: ${{ secrets.CLAUDIA_WRITER_MODEL }}
+      OPENAI_API_URL: ${{ secrets.OPENAI_API_URL }}
+      REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+      REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -61,39 +72,20 @@ jobs:
           python-version: '3.12'
       - name: Discover public RSS and web leads
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           CLAUDIA_DISCOVERY_INGEST: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' && 'true' || 'false' }}
         run: python scripts/claudia_discovery.py
       - name: Queue discoveries
-        if: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        if: env.SUPABASE_CONFIGURED == 'true'
         run: python scripts/claudia_workloop.py
       - name: Execute bounded research batch
-        if: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
+        if: env.SUPABASE_CONFIGURED == 'true'
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           CLAUDIA_RESEARCH_BATCH: '3'
         run: python scripts/claudia_research_executor.py
       - name: Community/video discovery (optional APIs)
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: python scripts/claudia_community_discovery.py
       - name: Generate private review-only article drafts
-        if: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' && secrets.OPENAI_API_KEY != '' }}
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          CLAUDIA_WRITER_MODEL: ${{ secrets.CLAUDIA_WRITER_MODEL }}
-          OPENAI_API_URL: ${{ secrets.OPENAI_API_URL }}
+        if: env.SUPABASE_CONFIGURED == 'true' && env.OPENAI_CONFIGURED == 'true'
         run: python scripts/claudia_draft_writer.py
       - name: Save discovery artifact
         uses: actions/upload-artifact@v4
