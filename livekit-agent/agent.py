@@ -513,8 +513,12 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
             if not rows:
                 return "No relevant private memories were found. Memory may be disabled until credentials are configured."
             return json.dumps({"memories": rows}, ensure_ascii=False)
+        except ValueError as exc:
+            return "Private memory recall rejected the input: " + str(exc)[:240]
+        except RuntimeError as exc:
+            return "Private memory recall failed: " + str(exc)[:240]
         except Exception as exc:
-            return "Private memory is unavailable (" + type(exc).__name__ + ")."
+            return "Private memory recall failed unexpectedly (" + type(exc).__name__ + ")."
 
     @function_tool()
     async def save_claudia_memory(self, context: RunContext, content: str, kind: str = "fact", tags: str = "", importance: int = 3, project: str = "423.news") -> str:
@@ -523,8 +527,12 @@ You can also explain 423.news sections: local news, sports, schools, outdoors, c
             tag_list = [t.strip() for t in (tags or "").split(",") if t.strip()]
             result = await asyncio.to_thread(memory_save, content, kind, tag_list, importance, None, project)
             return json.dumps(result, ensure_ascii=False)
+        except ValueError as exc:
+            return "Memory save rejected the input: " + str(exc)[:240]
+        except RuntimeError as exc:
+            return "Memory save failed: " + str(exc)[:240]
         except Exception as exc:
-            return "Private memory could not be saved (" + type(exc).__name__ + ")."
+            return "Memory save failed unexpectedly (" + type(exc).__name__ + ")."
 
     @function_tool()
     async def get_scanner_status(self, context: RunContext) -> str:
