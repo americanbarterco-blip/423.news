@@ -60,6 +60,9 @@ jobs:
       OPENAI_CONFIGURED: ${{ secrets.OPENAI_API_KEY != '' }}
       CLAUDIA_WRITER_MODEL: ${{ secrets.CLAUDIA_WRITER_MODEL }}
       OPENAI_API_URL: ${{ secrets.OPENAI_API_URL }}
+      CLAUDIA_THIRD_AI_API_KEY: ${{ secrets.CLAUDIA_THIRD_AI_API_KEY }}
+      CLAUDIA_THIRD_AI_MODEL: ${{ secrets.CLAUDIA_THIRD_AI_MODEL }}
+      CLAUDIA_THIRD_AI_API_URL: ${{ secrets.CLAUDIA_THIRD_AI_API_URL }}
       REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
       REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
       YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
@@ -94,9 +97,10 @@ jobs:
         continue-on-error: true
         run: python scripts/claudia_discovered_media_transcribe.py --discovery claudia-discovery.json --community claudia-community-discovery.json --out claudia-transcripts --limit 3
       - name: Gemini secondary analysis of public discoveries (private artifact)
+        if: env.OPENAI_CONFIGURED == 'true'
         run: python scripts/claudia_gemini_analyzer.py --input claudia-discovery.json --out claudia-gemini-analysis.json --limit 5
       - name: Generate private review-only article drafts
-        if: env.SUPABASE_CONFIGURED == 'true' && (env.OPENAI_CONFIGURED == 'true' || env.GEMINI_API_KEY != '')
+        if: env.SUPABASE_CONFIGURED == 'true' && (env.OPENAI_CONFIGURED == 'true' || env.GEMINI_API_KEY != '' || env.CLAUDIA_THIRD_AI_API_KEY != '')
         run: python scripts/claudia_draft_writer.py
       - name: Upload private transcript artifacts
         if: always()
