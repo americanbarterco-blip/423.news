@@ -28,7 +28,9 @@ class CommunityDiscoveryTests(unittest.TestCase):
         mock_request.return_value=(200,payload)
         rows=reddit_public_fetch()
         self.assertEqual(len(rows),1)
-        self.assertIn("Chattanooga",rows[0]["title"])\n        search_queries=[urllib.parse.parse_qs(urllib.parse.urlparse(call.args[0]).query)["q"][0] for call in mock_request.call_args_list]\n        self.assertEqual(search_queries[1],"Chattanooga police")
+        self.assertIn("Chattanooga",rows[0]["title"])
+        search_queries=[urllib.parse.parse_qs(urllib.parse.urlparse(call.args[0]).query)["q"][0] for call in mock_request.call_args_list]
+        self.assertEqual(search_queries[1],"Chattanooga police")
     def test_community_ingestion_targets_fingerprint(self):
         self.assertEqual(community_ingest_path(),"rest/v1/claudia_story_leads?on_conflict=fingerprint")
     def test_search_query_coverage(self):
