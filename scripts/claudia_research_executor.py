@@ -283,7 +283,7 @@ def process(task,base,key,cfg):
     raw,final=fetch(lead_url);p=PageParser();p.feed(raw);page=p.result()
     evidence=[evidence_record(lead_id,"source",final,result.get("source","Lead source"),page["excerpt"],"Lead page retrieved; this is not independent verification.")]
     candidates=[];candidate_map={}
-    for item in source_pages(cfg,task)+google_news_candidates(task)+tavily_candidates(task):
+    for item in source_pages(cfg,task)+google_news_candidates(task)+tavily_candidates(task)+serper_candidates(task):
         candidate_map.setdefault(item["url"],item)
     lead_host=url_domain(final)
     seen_domains={lead_host}
