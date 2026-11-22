@@ -84,7 +84,11 @@ jobs:
         run: python scripts/claudia_research_executor.py
       - name: Discover community and YouTube leads
         run: python scripts/claudia_community_discovery.py
-      - name: Transcribe discovered video and direct media leads\n        run: python scripts/claudia_discovered_media_transcribe.py --discovery claudia-discovery.json --community claudia-community-discovery.json --out claudia-transcripts --limit 3\n      - name: Gemini secondary analysis of public discoveries (private artifact)\n        run: python scripts/claudia_gemini_analyzer.py --input claudia-discovery.json --out claudia-gemini-analysis.json --limit 5\n      - name: Generate private review-only article drafts
+      - name: Transcribe discovered video and direct media leads
+        run: python scripts/claudia_discovered_media_transcribe.py --discovery claudia-discovery.json --community claudia-community-discovery.json --out claudia-transcripts --limit 3
+      - name: Gemini secondary analysis of public discoveries (private artifact)
+        run: python scripts/claudia_gemini_analyzer.py --input claudia-discovery.json --out claudia-gemini-analysis.json --limit 5
+      - name: Generate private review-only article drafts
         if: env.SUPABASE_CONFIGURED == 'true' && env.OPENAI_CONFIGURED == 'true'
         run: python scripts/claudia_draft_writer.py
       - name: Upload private transcript artifacts
@@ -101,6 +105,7 @@ jobs:
           name: claudia-discovery
           path: |
             claudia-discovery.json
-            claudia-community-discovery.json\n            claudia-gemini-analysis.json
+            claudia-community-discovery.json
+            claudia-gemini-analysis.json
           if-no-files-found: ignore
           retention-days: 14
