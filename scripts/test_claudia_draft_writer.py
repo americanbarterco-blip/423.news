@@ -59,10 +59,10 @@ class ClaudiaAutoPublisherTests(unittest.TestCase):
         self.assertFalse(verify_article("model","key",{"title":"Local report"},evidence,draft,min_confidence=0.90)["passed"])
 
     @patch("scripts.claudia_draft_writer.api")
-    def test_auto_publication_counter(self, mocked_api):
-        from scripts.claudia_draft_writer import onboarding_publications
+    def test_verification_attempt_counter(self, mocked_api):
+        from scripts.claudia_draft_writer import verification_attempts
         mocked_api.return_value=(200,json.dumps([{"id":1},{"id":2}]))
-        self.assertEqual(onboarding_publications("db","key"),2)
+        self.assertEqual(verification_attempts("db","key"),2)
 
 if __name__=="__main__":
     unittest.main()
