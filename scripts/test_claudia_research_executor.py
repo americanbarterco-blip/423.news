@@ -29,7 +29,7 @@ class ResearchExecutorTests(unittest.TestCase):
         rows=google_news_candidates(task)
         self.assertEqual(rows[0]["source_name"],"Example Local News")
         self.assertEqual(rows[0]["url"],"https://news.example/story")
-        def test_retry_backoff_and_exhaustion(self):
+    def test_retry_backoff_and_exhaustion(self):
         patch,delay=retry_patch({"attempt_count":2,"max_attempts":4},RuntimeError("temporary"))
         self.assertEqual(patch["status"],"queued")
         self.assertEqual(delay,600)
