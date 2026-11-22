@@ -47,9 +47,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_URL: https://kdiwehqtezlhecxsoysj.supabase.co
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      SUPABASE_CONFIGURED: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
+      SUPABASE_CONFIGURED: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPENAI_CONFIGURED: ${{ secrets.OPENAI_API_KEY != '' }}
       CLAUDIA_WRITER_MODEL: ${{ secrets.CLAUDIA_WRITER_MODEL }}
@@ -72,7 +72,7 @@ jobs:
           python scripts/claudia_audio_transcribe.py --inbox scripts/media-inbox --out claudia-transcripts
       - name: Discover public RSS and web leads
         env:
-          CLAUDIA_DISCOVERY_INGEST: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' && 'true' || 'false' }}
+          CLAUDIA_DISCOVERY_INGEST: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' && 'true' || 'false' }}
         run: python scripts/claudia_discovery.py
       - name: Queue discoveries
         if: env.SUPABASE_CONFIGURED == 'true'
