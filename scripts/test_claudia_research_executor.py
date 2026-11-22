@@ -28,7 +28,8 @@ class ResearchExecutorTests(unittest.TestCase):
         task={"title":"Cleveland school board meeting","result":{"summary":"budget meeting agenda","lead_url":"https://original.example/story"}}
         rows=google_news_candidates(task)
         self.assertEqual(rows[0]["source_name"],"Example Local News")
-        self.assertEqual(rows[0]["url"],"https://news.google.com/rss/articles/ABCD?oc=5")\n        self.assertEqual(rows[0]["source_url"],"https://news.example")
+        self.assertEqual(rows[0]["url"],"https://news.google.com/rss/articles/ABCD?oc=5")
+        self.assertEqual(rows[0]["source_url"],"https://news.example")
     def test_retry_backoff_and_exhaustion(self):
         patch,delay=retry_patch({"attempt_count":2,"max_attempts":4},RuntimeError("temporary"))
         self.assertEqual(patch["status"],"queued")
