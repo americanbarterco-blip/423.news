@@ -50,7 +50,7 @@ def request(url,headers=None,body=None,method="GET"):
 def reddit_public_fetch():
  rows=[]
  for query in REDDIT_PUBLIC_QUERIES:
-  q=query+" Chattanooga Cleveland Tennessee Hamilton County Bradley County"
+  q=query
   params=urllib.parse.urlencode({"q":q,"sort":"new","t":"week","limit":30})
   url="https://www.reddit.com/search.json?"+params
   try:
