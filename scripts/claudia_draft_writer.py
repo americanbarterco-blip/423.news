@@ -151,9 +151,9 @@ def verify_article(model,key,lead,evidence,draft):
     except Exception: passed=False;confidence=0
     return {"passed":passed,"confidence":confidence,"result":result}
 
-def eligible_evidence(items):
+def eligible_evidence(items, min_domains=MIN_DOMAINS):
     usable = [item for item in items if item.get("evidence_type") in ("source","corroboration") and item.get("url") and item.get("excerpt")]
-    return usable if len(distinct_domains(usable)) >= MIN_DOMAINS else []
+    return usable if len(distinct_domains(usable)) >= min_domains else []
 
 def existing_draft(base, key, lead_id):
     _, raw = api(base, key, "rest/v1/claudia_story_drafts?lead_id=eq." + urllib.parse.quote(str(lead_id), safe="") + "&select=id&limit=1")
@@ -188,7 +188,7 @@ def save_draft(base, key, lead, evidence, draft, classification, verification=No
 def process_lead(base, key, model, lead, classification):
     _, raw = api(base,key,"rest/v1/claudia_story_evidence?lead_id=eq."+urllib.parse.quote(str(lead["id"]),safe="")+
         "&select=evidence_type,url,source_name,excerpt,reliability_notes,observed_at&order=observed_at.desc")
-    evidence = eligible_evidence(json.loads(raw))
+    evidence = eligible_evidence(json.loads(raw), min_domains=1)
     if not evidence:
         print("Skipped lead %s: requires two independent source domains." % lead.get("id")); return False
     if existing_draft(base,key,lead["id"]) or existing_post(base,key,lead["id"]):
@@ -197,10 +197,11 @@ def process_lead(base, key, model, lead, classification):
     full_text=lead.get("title","")+" "+lead.get("summary","")+" "+draft["title"]+" "+draft["summary"]+" "+draft["body_markdown"]
     flags=risk_flags(full_text)
     verification=None
-    if not flags:
+    independent_sources=len(distinct_domains(evidence)) >= MIN_DOMAINS
+    if not flags and independent_sources:
         verification=verify_article(model,key,lead,evidence,draft)
     published=False
-    if not flags and verification and verification.get("passed"):
+    if independent_sources and not flags and verification and verification.get("passed"):
         publish_article(base,key,lead,evidence,draft,classification)
         published=True
     save_draft(base,key,lead,evidence,draft,classification,verification,published)
@@ -239,7 +240,7 @@ def main():
         except Exception as exc:
             print("Lead processing failed: %s: %s" % (type(exc).__name__,exc))
         time.sleep(0.25)
-    print("Writer run complete. OpenAI (%s). Processed %s leads; private drafts saved for editorial review, exceptions flagged." % (model,created))
+    print("Writer run complete. OpenAI (%s). Processed %s leads; single-source drafts remain private; publication requires independent corroboration and passed verification." % (model,created))
 
 if __name__ == "__main__":
     main()
