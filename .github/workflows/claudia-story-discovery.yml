@@ -107,12 +107,21 @@ jobs:
               try:
                   with urllib.request.urlopen(req, timeout=25) as r:
                       body=json.loads(r.read().decode('utf-8'))
-                      count=len(body.get('organic',[])) if name=='Serper' else len(body.get('results',[])) if name=='Tavily' else len(body.get('data',[])) if name=='OpenAI models' else 1
-                      results.append(f"{name}: PASS (HTTP {r.status}; {count} result(s))")
+                      if name=="Cloudflare Workers AI":
+                          choices=body.get("choices") or []
+                          content=(choices[0].get("message") or {}).get("content","") if choices else ""
+                          if not isinstance(content,str) or not content.strip():
+                              results.append(f"{name}: FAIL (HTTP {r.status}; response had no non-empty choices[0].message.content)")
+                          else:
+                              results.append(f"{name}: PASS (HTTP {r.status}; model returned {len(content.strip())} characters)")
+                      else:
+                          count=len(body.get("organic",[])) if name=="Serper" else len(body.get("results",[])) if name=="Tavily" else len(body.get("data",[])) if name=="OpenAI models" else 1
+                          results.append(f"{name}: PASS (HTTP {r.status}; {count} result(s))")
               except urllib.error.HTTPError as e:
-                  detail=e.read().decode("utf-8","replace")[:500]\n                  results.append(f"{name}: FAIL (HTTP {e.code}; detail={detail})")
+                  detail=e.read().decode("utf-8","replace")[:500]
+                  results.append(f"{name}: FAIL (HTTP {e.code}; detail={detail})")
               except Exception as e:
-                  results.append(f"{name}: FAIL ({type(e).__name__})")
+                  results.append(f"{name}: FAIL ({type(e).__name__}: {e})")
           q="Chattanooga Tennessee local news"
           k=os.getenv("SERPER_API_KEY","").strip()
           if k:
