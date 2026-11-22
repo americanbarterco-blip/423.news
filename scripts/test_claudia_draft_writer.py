@@ -1,7 +1,7 @@
 import json
 import unittest
 from unittest.mock import patch
-from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, risk_flags, source_list
+from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, risk_flags, source_list, leads_with_evidence
 
 class OpenAIOnlyDraftWriterTests(unittest.TestCase):
     def test_domain_normalizes_www(self):
@@ -28,6 +28,13 @@ class OpenAIOnlyDraftWriterTests(unittest.TestCase):
         self.assertEqual(parse_model_json(json.dumps(good))["title"],"Title")
         with self.assertRaises((ValueError, json.JSONDecodeError)):
             parse_model_json('{"title":"only"}')
+
+    @patch("scripts.claudia_draft_writer.api")
+    def test_writer_filters_to_leads_with_evidence(self,mocked_api):
+        mocked_api.return_value=(200,json.dumps([{"lead_id":"1"}]))
+        leads=[{"id":"1","title":"Has source"},{"id":"2","title":"No source"}]
+        selected=leads_with_evidence("db","key",leads)
+        self.assertEqual([row["id"] for row in selected],["1"])
 
     def test_source_links_deduplicated(self):
         links=source_list([{"url":"https://a.com","source_name":"A"},{"url":"https://a.com","source_name":"A"}])
