@@ -159,6 +159,10 @@ def existing_draft(base, key, lead_id):
     _, raw = api(base, key, "rest/v1/claudia_story_drafts?lead_id=eq." + urllib.parse.quote(str(lead_id), safe="") + "&select=id&limit=1")
     return bool(json.loads(raw))
 
+def existing_post(base,key,lead_id):
+    _,raw=api(base,key,"rest/v1/news_posts?slug=eq.claudia-"+urllib.parse.quote(str(lead_id),safe="")+"&select=id&limit=1")
+    return bool(json.loads(raw))
+
 def save_draft(base, key, lead, evidence, draft, classification, verification=None, published=False):
     full_text=lead.get("title","")+" "+lead.get("summary","")+" "+draft["title"]+" "+draft["summary"]+" "+draft["body_markdown"]
     flags=risk_flags(full_text)
@@ -184,8 +188,8 @@ def process_lead(base, key, model, lead, classification):
     evidence = eligible_evidence(json.loads(raw))
     if not evidence:
         print("Skipped lead %s: requires two independent source domains." % lead.get("id")); return False
-    if existing_draft(base,key,lead["id"]):
-        print("Skipped lead %s: draft already exists." % lead.get("id")); return False
+    if existing_draft(base,key,lead["id"]) or existing_post(base,key,lead["id"]):
+        print("Skipped lead %s: prior draft/publication exists; idempotency guard." % lead.get("id")); return False
     draft=call_openai(model,key,lead,evidence,classification)
     full_text=lead.get("title","")+" "+lead.get("summary","")+" "+draft["title"]+" "+draft["summary"]+" "+draft["body_markdown"]
     flags=risk_flags(full_text)
