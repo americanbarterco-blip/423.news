@@ -164,6 +164,9 @@ def request_supabase(base,key,path,method="GET",body=None,prefer=None):
 def claim(base,key,worker):
     _,raw=request_supabase(base,key,"rest/v1/rpc/claudia_claim_research_task","POST",json.dumps({"worker_id":worker}).encode())
     rows=json.loads(raw);return rows[0] if rows else None
+def url_domain(url):
+    return (urllib.parse.urlparse(url).hostname or "").lower().removeprefix("www.")
+
 def evidence_insert_path():
     """PostgREST upsert target for the evidence table unique key."""
     return "rest/v1/claudia_story_evidence?on_conflict=lead_id,evidence_type,url"
@@ -178,14 +181,14 @@ def process(task,base,key,cfg):
     candidates=[];candidate_map={}
     for item in source_pages(cfg,task)+google_news_candidates(task):
         candidate_map.setdefault(item["url"],item)
-    lead_host=(urllib.parse.urlparse(lead_url).hostname or "").lower().removeprefix("www.")
+    lead_host=url_domain(final)
     seen_domains={lead_host}
     ranked=sorted(candidate_map.values(),key=lambda x:x.get("score",0),reverse=True)
     for item in ranked[:MAX_CANDIDATES*3]:
         try:
             raw,url=fetch(item["url"]);parser=PageParser();parser.feed(raw);data=parser.result()
             actual_score=similarity(task.get("title","")+" "+(result.get("summary","") or ""),data["title"]+" "+data["summary"]+" "+data["excerpt"])
-            candidate_host=(urllib.parse.urlparse(url).hostname or "").lower().removeprefix("www.")
+            candidate_host=url_domain(url)
             if not candidate_host or candidate_host in seen_domains:continue
             if (data["excerpt"] or data["summary"]) and actual_score>=0.12:
                 seen_domains.add(candidate_host)
