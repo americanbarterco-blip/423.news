@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 from scripts.claudia_community_discovery import parse_reddit,parse_youtube,relevant,category,REDDIT_QUERIES,YOUTUBE_QUERIES,reddit_public_fetch,community_ingest_path
 class CommunityDiscoveryTests(unittest.TestCase):
     def test_reddit_author_not_stored_and_local_filter(self):
@@ -28,7 +29,7 @@ class CommunityDiscoveryTests(unittest.TestCase):
         rows=reddit_public_fetch()
         self.assertEqual(len(rows),1)
         self.assertIn("Chattanooga",rows[0]["title"])
-    def test_community_ingestion_targets_fingerprint(selfself):
+    def test_community_ingestion_targets_fingerprint(self):
         self.assertEqual(community_ingest_path(),"rest/v1/claudia_story_leads?on_conflict=fingerprint")
     def test_search_query_coverage(self):
         self.assertIn("shooting",REDDIT_QUERIES)
