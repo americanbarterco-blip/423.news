@@ -23,12 +23,12 @@ class ResearchExecutorTests(unittest.TestCase):
     @patch("scripts.claudia_research_executor.safe_url",side_effect=lambda url:url)
     @patch("scripts.claudia_research_executor.fetch_raw")
     def test_google_news_finds_independent_publisher(self,mock_fetch,_mock_safe):
-        xml='<rss><channel><item><title>Cleveland school board meeting update</title><link>https://news.example/story</link><description>Budget agenda at public meeting</description><source url="https://news.example">Example Local News</source></item></channel></rss>'
+        xml='<rss><channel><item><title>Cleveland school board meeting update</title><link>https://news.google.com/rss/articles/ABCD?oc=5</link><description>Budget agenda at public meeting</description><source url="https://news.example">Example Local News</source></item></channel></rss>'
         mock_fetch.return_value=(xml,"application/rss+xml","https://news.google.com/rss/search")
         task={"title":"Cleveland school board meeting","result":{"summary":"budget meeting agenda","lead_url":"https://original.example/story"}}
         rows=google_news_candidates(task)
         self.assertEqual(rows[0]["source_name"],"Example Local News")
-        self.assertEqual(rows[0]["url"],"https://news.example/story")
+        self.assertEqual(rows[0]["url"],"https://news.google.com/rss/articles/ABCD?oc=5")
     def test_retry_backoff_and_exhaustion(self):
         patch,delay=retry_patch({"attempt_count":2,"max_attempts":4},RuntimeError("temporary"))
         self.assertEqual(patch["status"],"queued")
