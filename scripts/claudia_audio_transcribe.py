@@ -38,9 +38,9 @@ def main():
         if target.exists(): print(f"Already transcribed, skipped: {path.name}");continue
         try:
             transcript=transcribe_file(path)
-            target.write_text(transcript+"\\n",encoding="utf-8")
+            target.write_text(transcript+"\n",encoding="utf-8")
             meta={"file":path.name,"model":MODEL,"transcript_file":target.name,"transcribed":True}
-            (out/(path.stem+".json")).write_text(json.dumps(meta,indent=2)+"\\n",encoding="utf-8")
+            (out/(path.stem+".json")).write_text(json.dumps(meta,indent=2)+"\n",encoding="utf-8")
             print(f"Transcribed: {path.name} -> {target.name}");ok+=1
         except Exception as exc:
             print(f"Transcription failed for {path.name}: {type(exc).__name__}: {exc}");fail+=1
