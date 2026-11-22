@@ -112,7 +112,7 @@ def main():
     base = os.getenv("SUPABASE_URL","").strip()
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY","").strip()
     openai_key = os.getenv("OPENAI_API_KEY","").strip()
-    model = os.getenv("CLAUDIA_WRITER_MODEL","gpt-5.4-mini").strip() or "gpt-5.4-mini"
+    model = "gpt-4.1-mini"  # fixed, verified OpenAI mini model; no secret override
     if not base or not key:
         print("Draft writer skipped: Supabase credentials missing."); return
     if not openai_key:
