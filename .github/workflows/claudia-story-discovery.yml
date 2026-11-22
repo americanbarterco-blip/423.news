@@ -9,6 +9,9 @@ on:
       - scripts/claudia_*.py
       - scripts/claudia_sources.json
       - .github/workflows/claudia-story-discovery.yml
+      - livekit-agent/agent.py
+      - livekit-agent/claudia_public_search.py
+      - scripts/test_claudia_public_search.py
   pull_request:
     paths:
       - scripts/claudia_*.py
@@ -17,6 +20,9 @@ on:
       - supabase/migrations/20261121000001_claudia_media_staging.sql
       - supabase/migrations/20261121000003_claudia_task_claim.sql
       - .github/workflows/claudia-story-discovery.yml
+      - livekit-agent/agent.py
+      - livekit-agent/claudia_public_search.py
+      - scripts/test_claudia_public_search.py
 permissions:
   contents: read
 concurrency:
