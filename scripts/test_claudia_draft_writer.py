@@ -47,7 +47,7 @@ class OpenAIOnlyDraftWriterTests(unittest.TestCase):
     def test_sensitive_subject_is_descriptive_not_gate_block(self, mocked):
         from scripts.claudia_draft_writer import verify_article
         mocked.return_value={"pass":True,"confidence":0.80,"unsupported_claims":[],"conflicting_claims":[],"sensitive":True,"reason":"Evidence supports facts"}
-        result=verify_article("model","key",{"title":"Local report"},{"evidence"},{"title":"Report","summary":"Summary","body_markdown":"Article"},min_confidence=0.75)
+        result=verify_article("model","key",{"title":"Local report"},[{"url":"https://src.example/article","source_name":"Source","excerpt":"evidence"}],{"title":"Report","summary":"Summary","body_markdown":"Article"},min_confidence=0.75)
         self.assertTrue(result["passed"])
 
     @patch("scripts.claudia_draft_writer.api")
