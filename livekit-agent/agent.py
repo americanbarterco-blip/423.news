@@ -572,7 +572,7 @@ async def claudia_green(ctx: agents.JobContext):
     assistant = ClaudiaGreen()
     await session.start(room=ctx.room, agent=assistant)
     await session.generate_reply(
-        instructions="Greet the visitor as Claudia Green, the 423.news virtual voice assistant. Explain briefly that you can look up published 423.news stories, local sports, TomTom traffic incidents, 423.news road alerts, scanner connection status, and local weather for a selected city. Ask how you can help."
+        instructions="Greet the visitor as Claudia Green, the 423.news virtual voice assistant. Explain briefly that you can search public news and Reddit for recent story leads, search YouTube when configured, look up published 423.news stories, local sports, TomTom traffic incidents, 423.news road alerts, scanner connection status, and local weather for a selected city. Ask how you can help."
     )
 
 
