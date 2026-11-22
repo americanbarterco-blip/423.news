@@ -13,7 +13,8 @@ from typing import Any
 
 from livekit import agents
 from livekit.agents import Agent, AgentServer, AgentSession, RunContext, function_tool, inference
-from claudia_memory import recall as memory_recall, save_memory as memory_save\nfrom claudia_public_search import search_sources as public_source_search
+from claudia_memory import recall as memory_recall, save_memory as memory_save
+from claudia_public_search import search_sources as public_source_search
 
 server = AgentServer()
 
@@ -166,6 +167,13 @@ You are not a human reporter, dispatcher, or emergency service. For immediate da
 For public research results, clearly label them as leads and not verified facts; open and corroborate original sources before reporting allegations or publishing. You can also explain 423.news sections: local news, sports, schools, outdoors, classifieds, community, government, weather, traffic, events, alerts, and the Spanish edition.
 """,
         )
+
+    @function_tool()
+    async def search_423_public_sources(self, context: RunContext, query: str, area: str = "423 region") -> str:
+        """Search Google News RSS and public Reddit posts for recent story leads; optionally searches YouTube if its API key is configured. Results are leads, not verified news"""
+        youtube_key = os.getenv("YOUTUBE_API_KEY", "").strip()
+        result = await asyncio.to_thread(public_source_search, query, area, youtube_key)
+        return json.dumps(result, ensure_ascii=False)
 
     @function_tool()
     async def get_latest_423_news(self, context: RunContext, topic: str = "all") -> str:
