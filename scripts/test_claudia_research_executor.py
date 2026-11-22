@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from scripts.claudia_research_executor import tokens, similarity, safe_url, feed_items, PageParser, retry_patch, evidence_insert_path
+from scripts.claudia_research_executor import tokens, similarity, safe_url, feed_items, PageParser, retry_patch, evidence_insert_path, google_news_candidates
 class ResearchExecutorTests(unittest.TestCase):
     def test_evidence_insert_targets_unique_constraint(self):
         self.assertEqual(evidence_insert_path(), "rest/v1/claudia_story_evidence?on_conflict=lead_id,evidence_type,url")
@@ -20,7 +20,16 @@ class ResearchExecutorTests(unittest.TestCase):
         rows=feed_items(xml,"https://county.gov/rss")
         self.assertEqual(rows[0]["url"],"https://county.gov/park")
         self.assertIn("park",rows[0]["title"])
-    def test_retry_backoff_and_exhaustion(self):
+    @patch("scripts.claudia_research_executor.safe_url",side_effect=lambda url:url)
+    @patch("scripts.claudia_research_executor.fetch_raw")
+    def test_google_news_finds_independent_publisher(self,mock_fetch,_mock_safe):
+        xml='<rss><channel><item><title>Cleveland school board meeting update</title><link>https://news.example/story</link><description>Budget agenda at public meeting</description><source url="https://news.example">Example Local News</source></item></channel></rss>'
+        mock_fetch.return_value=(xml,"application/rss+xml","https://news.google.com/rss/search")
+        task={"title":"Cleveland school board meeting","result":{"summary":"budget meeting agenda","lead_url":"https://original.example/story"}}
+        rows=google_news_candidates(task)
+        self.assertEqual(rows[0]["source_name"],"Example Local News")
+        self.assertEqual(rows[0]["url"],"https://news.example/story")
+        def test_retry_backoff_and_exhaustion(self):
         patch,delay=retry_patch({"attempt_count":2,"max_attempts":4},RuntimeError("temporary"))
         self.assertEqual(patch["status"],"queued")
         self.assertEqual(delay,600)
