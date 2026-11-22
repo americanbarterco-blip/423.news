@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""OpenAI-only evidence-gated private drafts for Claudia Green, categorized and priority-ranked."""
+"""OpenAI-only evidence-gated auto-publishing for Claudia Green, categorized and priority-ranked."""
 from __future__ import annotations
 import json, os, time, urllib.parse, urllib.request, urllib.error
 
@@ -7,7 +7,6 @@ MAX_LEADS = 8
 MIN_DOMAINS = 2
 MAX_EVIDENCE = 8
 MAX_EXCERPT = 1600
-RISK_TERMS = ("arrest","charged","homicide","death","injury","sexual","child abuse","lawsuit","fraud","suicide","missing person","school threat","fire","fatal","shooting","rape")
 
 # Match the sections used by 423.news; keep classification conservative.
 SECTION_RULES = [
@@ -82,10 +81,6 @@ def domain(url):
 def distinct_domains(items):
     return {domain(item.get("url", "")) for item in items if domain(item.get("url", ""))}
 
-def risk_flags(text):
-    lower = text.lower()
-    return sorted({term for term in RISK_TERMS if term in lower})
-
 def build_prompt(lead, evidence, classification, lessons=None):
     sources = []
     for n, item in enumerate(evidence[:MAX_EVIDENCE], 1):
@@ -152,7 +147,8 @@ def verify_article(model,key,lead,evidence,draft,min_confidence=0.90):
     except Exception: passed=False;confidence=0
     return {"passed":passed,"confidence":confidence,"result":result}
 
-def eligible_evidence(items, min_domains=MIN_DOMAINS):
+def eligible_evidence(items, min_domains=1):
+    """Return readable evidence; domain-count thresholds belong to the publishing gate."""
     usable = [item for item in items if item.get("evidence_type") in ("source","corroboration") and item.get("url") and item.get("excerpt")]
     return usable if len(distinct_domains(usable)) >= min_domains else []
 
@@ -190,7 +186,7 @@ def process_lead(base, key, model, lead, classification, lessons=None):
     if not evidence:
         print("Skipped lead %s: no retrieved source evidence." % lead.get("id")); return False
     if existing_post(base,key,lead["id"]):
-        print("Skipped lead %s: prior draft/publication exists; idempotency guard." % lead.get("id")); return False
+        print("Skipped lead %s: already auto-published; idempotency guard." % lead.get("id")); return False
     published_count=onboarding_publications(base,key)
     starter_gate=published_count < 2
     required_domains=1 if starter_gate else MIN_DOMAINS
@@ -246,7 +242,7 @@ def main():
         except Exception as exc:
             print("Lead processing failed: %s: %s" % (type(exc).__name__,exc))
         time.sleep(0.25)
-    print("Writer run complete. OpenAI (%s). Processed %s leads; publishes only clean, corroborated articles that pass strict fact-check." % (model,created))
+    print("Writer run complete. OpenAI (%s). Auto-published %s verified articles; flagged factual exceptions are held." % (model,created))
 
 if __name__ == "__main__":
     main()
