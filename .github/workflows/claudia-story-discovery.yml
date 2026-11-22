@@ -110,7 +110,7 @@ jobs:
                       count=len(body.get('organic',[])) if name=='Serper' else len(body.get('results',[])) if name=='Tavily' else len(body.get('data',[])) if name=='OpenAI models' else 1
                       results.append(f"{name}: PASS (HTTP {r.status}; {count} result(s))")
               except urllib.error.HTTPError as e:
-                  results.append(f"{name}: FAIL (HTTP {e.code})")
+                  detail=e.read().decode("utf-8","replace")[:500]\n                  results.append(f"{name}: FAIL (HTTP {e.code}; detail={detail})")
               except Exception as e:
                   results.append(f"{name}: FAIL ({type(e).__name__})")
           q="Chattanooga Tennessee local news"
@@ -124,7 +124,7 @@ jobs:
           else: results.append("Tavily: SKIP (secret missing)")
           k=os.getenv("CLOUDFLARE_API_TOKEN","").strip()
           account=os.getenv("CLOUDFLARE_ACCOUNT_ID","").strip()
-          model=os.getenv("CLAUDIA_WRITER_MODEL","@cf/meta/llama-3.1-8b-instruct").strip()
+          model=os.getenv("CLAUDIA_WRITER_MODEL","@cf/zai-org/glm-4.7-flash").strip()
           if k and account:
               payload={"model":model,"max_tokens":8,"temperature":0,"messages":[{"role":"user","content":"Reply only OK."}]}
               endpoint="https://api.cloudflare.com/client/v4/accounts/"+account+"/ai/v1/chat/completions"
