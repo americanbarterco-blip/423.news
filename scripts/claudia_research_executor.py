@@ -143,13 +143,10 @@ def google_news_candidates(task):
         print(f"Google News corroboration search skipped: {type(exc).__name__}")
         return []
     query=title+" "+summary
-    lead_host=(urllib.parse.urlparse((task.get("result") or {}).get("lead_url") or "").hostname or "").lower().removeprefix("www.")
     candidates=[]
     for item in items:
         try:safe_url(item["url"])
         except ValueError:continue
-        host=(urllib.parse.urlparse(item["url"]).hostname or "").lower().removeprefix("www.")
-        if not host or host==lead_host:continue
         score=similarity(query,item["title"]+" "+item.get("summary",""))
         if score>=0.12:
             candidates.append({"url":item["url"],"source_name":item.get("source_name") or "Google News result","source_url":item.get("publisher_url") or final,"score":round(score,3)})
