@@ -14,6 +14,7 @@ from typing import Any
 from livekit import agents
 from livekit.agents import Agent, AgentServer, AgentSession, RunContext, function_tool, inference
 from claudia_memory import recall as memory_recall, save_memory as memory_save
+from claudia_public_search import search_sources as public_source_search
 
 server = AgentServer()
 
@@ -163,9 +164,16 @@ Weather comes from Open-Meteo and active alerts from the National Weather Servic
 Sports data comes from 423.news scores database; distinguish scheduled, in-progress, and final status as returned.
 Only read public/published information. Never reveal credentials, private tips, drafts, unpublished stories, user records, or staff-only data. You may create code-maintenance PRs through the restricted tool, but never merge, deploy, edit live content, publish stories, or delete production data.
 You are not a human reporter, dispatcher, or emergency service. For immediate danger, tell the visitor to call 911.
-You can also explain 423.news sections: local news, sports, schools, outdoors, classifieds, community, government, weather, traffic, events, alerts, and the Spanish edition.
+For public research results, clearly label them as leads and not verified facts; open and corroborate original sources before reporting allegations or publishing. You can also explain 423.news sections: local news, sports, schools, outdoors, classifieds, community, government, weather, traffic, events, alerts, and the Spanish edition.
 """,
         )
+
+    @function_tool()
+    async def search_423_public_sources(self, context: RunContext, query: str, area: str = "423 region") -> str:
+        """Search Google News RSS and public Reddit posts for recent story leads; optionally searches YouTube if its API key is configured. Results are leads, not verified news"""
+        youtube_key = os.getenv("YOUTUBE_API_KEY", "").strip()
+        result = await asyncio.to_thread(public_source_search, query, area, youtube_key)
+        return json.dumps(result, ensure_ascii=False)
 
     @function_tool()
     async def get_latest_423_news(self, context: RunContext, topic: str = "all") -> str:
@@ -564,7 +572,7 @@ async def claudia_green(ctx: agents.JobContext):
     assistant = ClaudiaGreen()
     await session.start(room=ctx.room, agent=assistant)
     await session.generate_reply(
-        instructions="Greet the visitor as Claudia Green, the 423.news virtual voice assistant. Explain briefly that you can look up published 423.news stories, local sports, TomTom traffic incidents, 423.news road alerts, scanner connection status, and local weather for a selected city. Ask how you can help."
+        instructions="Greet the visitor as Claudia Green, the 423.news virtual voice assistant. Explain briefly that you can search public news and Reddit for recent story leads, search YouTube when configured, look up published 423.news stories, local sports, TomTom traffic incidents, 423.news road alerts, scanner connection status, and local weather for a selected city. Ask how you can help."
     )
 
 
