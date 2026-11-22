@@ -148,29 +148,43 @@ def source_pages(cfg,lead):
     return sorted(unique.values(),key=lambda x:x["score"],reverse=True)[:MAX_CANDIDATES]
 
 def google_news_candidates(task):
-    """Search Google News RSS for independent articles matching a queued lead."""
+    """Find candidate corroborating articles through several Google News RSS searches."""
     title=(task.get("title") or "").strip()
     summary=((task.get("result") or {}).get("summary") or "").strip()
     if not title:return []
-    q=(title+" "+summary[:140]+" Tennessee").strip()[:240]
-    url="https://news.google.com/rss/search?"+urllib.parse.urlencode({"q":q,"hl":"en-US","gl":"US","ceid":"US:en"})
-    try:
-        raw,ctype,final=fetch_raw(url)
-        items=feed_items(raw,final)
-    except Exception as exc:
-        print(f"Google News corroboration search skipped: {type(exc).__name__}")
-        return []
-    query=title+" "+summary
+    # Keep queries focused on the event; broad summaries often dilute matching.
+    queries=[title, (title+" Tennessee")[:240]]
+    summary_tokens=sorted(tokens(summary))
+    if summary_tokens:
+        # A short keyword query helps when publishers use different headline wording.
+        keywords=" ".join(summary_tokens[:8])
+        queries.append((keywords+" Tennessee")[:240])
     candidates=[]
-    for item in items:
-        try:safe_url(item["url"])
-        except ValueError:continue
-        score=similarity(query,item["title"]+" "+item.get("summary",""))
-        if score>=0.12:
-            candidates.append({"url":item["url"],"source_name":item.get("source_name") or "Google News result","source_url":item.get("publisher_url") or final,"score":round(score,3)})
-    unique={}
-    for item in candidates:unique.setdefault(item["url"],item)
-    return sorted(unique.values(),key=lambda item:item["score"],reverse=True)[:5]
+    seen_urls=set()
+    for q in queries:
+        rss="https://news.google.com/rss/search?"+urllib.parse.urlencode({"q":q,"hl":"en-US","gl":"US","ceid":"US:en"})
+        try:
+            raw,ctype,final=fetch_raw(rss)
+            items=feed_items(raw,final)
+        except Exception as exc:
+            print(f"Google News query skipped ({q[:80]}): {type(exc).__name__}")
+            continue
+        lead_tokens=tokens(title+" "+summary)
+        for item in items:
+            url=item.get("url","")
+            try:safe_url(url)
+            except ValueError:continue
+            if url in seen_urls:continue
+            candidate_tokens=tokens(item.get("title","")+" "+item.get("summary",""))
+            if not lead_tokens or not candidate_tokens:continue
+            overlap=len(lead_tokens & candidate_tokens)
+            # Coverage-first matching tolerates publisher headline variations.
+            score=max(overlap/len(lead_tokens), similarity(title,item.get("title","")))
+            if score>=0.18:
+                seen_urls.add(url)
+                candidates.append({"url":url,"source_name":item.get("source_name") or "Google News result",
+                    "source_url":item.get("publisher_url") or final,"score":round(score,3)})
+    return sorted(candidates,key=lambda item:item["score"],reverse=True)[:8]
 
 
 def request_supabase(base,key,path,method="GET",body=None,prefer=None):
