@@ -1,30 +1,34 @@
+import json
 import unittest
-from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, risk_flags, source_list, select_writer, provider_chain
-class DraftWriterTests(unittest.TestCase):
-    def test_writer_fallback_prefers_openai_when_configured(self):
-        self.assertEqual(select_writer("openai-key","gpt-model","gemini-key","gemini-model"),("openai","gpt-model","openai-key"))
-    def test_writer_uses_gemini_when_openai_unconfigured(self):
-        self.assertEqual(select_writer("","", "gemini-key","gemini-model"),("gemini","gemini-model","gemini-key"))
-    def test_writer_skips_when_no_provider(self):
-        self.assertEqual(select_writer("","","",""),(None,None,None))
-    def test_domains_normalize_www(self):
-        self.assertEqual(domain("https://www.example.com/path"),"example.com")
-    def test_requires_two_domains(self):
-        one=[{"evidence_type":"source","url":"https://a.com/x","excerpt":"a"}]
+from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, risk_flags, source_list
+
+class OpenAIOnlyDraftWriterTests(unittest.TestCase):
+    def test_domain_normalizes_www(self):
+        self.assertEqual(domain("https://www.example.com/path"), "example.com")
+
+    def test_evidence_requires_two_independent_domains(self):
+        one=[{"evidence_type":"source","url":"https://a.com/x","excerpt":"x"}]
         self.assertEqual(eligible_evidence(one),[])
-        two=one+[{"evidence_type":"corroboration","url":"https://b.org/y","excerpt":"b"}]
+        two=one+[{"evidence_type":"corroboration","url":"https://b.org/y","excerpt":"y"}]
         self.assertEqual(len(eligible_evidence(two)),2)
-    def test_rejects_non_article_evidence(self):
-        data=[{"evidence_type":"media","url":"https://a.com","excerpt":"photo"},{"evidence_type":"source","url":"https://b.org","excerpt":"story"}]
-        self.assertEqual(eligible_evidence(data),[])
+        self.assertEqual(len(distinct_domains(two)),2)
+
+    def test_rejects_ineligible_evidence_types(self):
+        items=[{"evidence_type":"media","url":"https://a.com","excerpt":"image"},{"evidence_type":"source","url":"https://b.com","excerpt":"text"}]
+        self.assertEqual(eligible_evidence(items),[])
+
     def test_model_json_validation(self):
-        import json
-        good={"title":"Title","summary":"Summary","body_markdown":"Body","editor_notes":"Review"}
+        good={"title":"Title","summary":"Summary","body_markdown":"Body","editor_notes":"Check"}
         self.assertEqual(parse_model_json(json.dumps(good))["title"],"Title")
-        with self.assertRaises(ValueError):parse_model_json('{"title":"x"}')
-    def test_source_links_are_appended(self):
-        result=source_list([{"url":"https://a.com","source_name":"A"},{"url":"https://a.com","source_name":"A"}])
-        self.assertEqual(result.count("https://a.com"),1)
+        with self.assertRaises((ValueError, json.JSONDecodeError)):
+            parse_model_json('{"title":"only"}')
+
+    def test_source_links_deduplicated(self):
+        links=source_list([{"url":"https://a.com","source_name":"A"},{"url":"https://a.com","source_name":"A"}])
+        self.assertEqual(links.count("https://a.com"),1)
+
     def test_sensitive_story_flags(self):
         self.assertIn("shooting",risk_flags("Reported shooting investigation"))
-if __name__=="__main__":unittest.main()
+
+if __name__=="__main__":
+    unittest.main()
