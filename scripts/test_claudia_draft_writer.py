@@ -28,6 +28,14 @@ class ClaudiaAutoPublisherTests(unittest.TestCase):
         with self.assertRaises((ValueError,json.JSONDecodeError)):
             parse_model_json('{"title":"only"}')
 
+    def test_prompt_contains_newsroom_quality_standards(self):
+        from scripts.claudia_draft_writer import build_prompt
+        lead={"title":"Council approves project","summary":"Council voted."}
+        evidence=[{"source_name":"Official source","url":"https://city.example/page","excerpt":"Council voted 4-1."}]
+        prompt=build_prompt(lead,evidence,{"section":"government","topic":"government"},["Attribute claims clearly"])
+        for phrase in ("verified connection to the 423 coverage area","accurate, specific headline","fact-first","Synthesize evidence across sources","Do not invent quotes","topic-neutral","FLAG-FEEDBACK LESSONS"):
+            self.assertIn(phrase,prompt)
+
     @patch("scripts.claudia_draft_writer.api")
     def test_writer_filters_to_leads_with_evidence(self,mocked_api):
         mocked_api.return_value=(200,json.dumps([{"lead_id":"1"}]))
