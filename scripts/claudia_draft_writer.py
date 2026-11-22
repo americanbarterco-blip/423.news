@@ -225,7 +225,7 @@ def main():
     # Cloudflare Workers AI provides a documented daily allocation on its Free plan.
     account_id=os.getenv("CLOUDFLARE_ACCOUNT_ID","").strip()
     ai_key=os.getenv("CLOUDFLARE_API_TOKEN","").strip()
-    model=os.getenv("CLAUDIA_WRITER_MODEL","@cf/meta/llama-3.1-8b-instruct").strip()
+    model=os.getenv("CLAUDIA_WRITER_MODEL","@cf/zai-org/glm-4.7-flash").strip()
     ai_base_url=os.getenv("CLAUDIA_AI_BASE_URL","").strip()
     if not ai_base_url and account_id:
         ai_base_url="https://api.cloudflare.com/client/v4/accounts/"+account_id+"/ai/v1"
