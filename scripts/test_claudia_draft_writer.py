@@ -1,5 +1,5 @@
 import unittest
-from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, risk_flags, source_list, select_writer
+from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, risk_flags, source_list, select_writer, provider_chain
 class DraftWriterTests(unittest.TestCase):
     def test_writer_fallback_prefers_openai_when_configured(self):
         self.assertEqual(select_writer("openai-key","gpt-model","gemini-key","gemini-model"),("openai","gpt-model","openai-key"))
