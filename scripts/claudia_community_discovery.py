@@ -92,8 +92,10 @@ def main():
  except Exception as e:print("YouTube discovery error:",type(e).__name__)
  unique={}
  for item in leads:unique.setdefault(item["fingerprint"],item)
- leads=list(unique.values());base=os.environ.get("SUPABASE_URL","").strip();key=os.environ.get("SUPABASE_SERVICE_ROLE_KEY","").strip()
- print(f"Social/video leads found: {len(leads)}")
+ leads=list(unique.values());
+ payload={"generated_at":datetime.now(timezone.utc).isoformat(),"lead_count":len(leads),"leads":leads};
+ Path(os.environ.get("CLAUDIA_COMMUNITY_OUT","claudia-community-discovery.json")).write_text(json.dumps(payload,indent=2,ensure_ascii=False)+"\n",encoding="utf-8");
+ base=os.environ.get("SUPABASE_URL","").strip();key=os.environ.get("SUPABASE_SERVICE_ROLE_KEY","").strip(); print(f"Social/video leads found: {len(leads)}")
  if leads and base and key:
   try:print(f"Social/video leads ingested: {ingest(base,key,leads)}")
   except Exception as e:print("Social/video ingestion failed:",type(e).__name__)
