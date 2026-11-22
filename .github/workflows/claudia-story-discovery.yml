@@ -31,7 +31,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   tests:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
