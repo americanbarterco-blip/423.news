@@ -8,7 +8,7 @@ from __future__ import annotations
 import argparse, json, os, sys, time, urllib.error, urllib.request
 from pathlib import Path
 
-MODEL = os.getenv("CLAUDIA_GEMINI_ANALYSIS_MODEL", "gemini-2.5-flash")
+MODEL = os.getenv("CLAUDIA_GEMINI_ANALYSIS_MODEL", "gemini-3.8-flash")
 MAX_LEADS = 5
 MAX_TEXT = 1800
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
