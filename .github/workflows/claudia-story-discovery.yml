@@ -93,7 +93,7 @@ jobs:
       - name: Transcribe discovered video and direct media leads
         continue-on-error: true
         run: python scripts/claudia_discovered_media_transcribe.py --discovery claudia-discovery.json --community claudia-community-discovery.json --out claudia-transcripts --limit 3
-      - name: Generate, fact-check, auto-publish qualified stories, and flag exceptions
+      - name: Generate, fact-check, save private drafts, and flag exceptions
         if: env.SUPABASE_CONFIGURED == 'true' && env.OPENAI_CONFIGURED == 'true'
         run: python scripts/claudia_draft_writer.py
       - name: Upload private transcript artifacts
