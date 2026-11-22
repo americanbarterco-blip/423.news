@@ -187,6 +187,37 @@ def google_news_candidates(task):
     return sorted(candidates,key=lambda item:item["score"],reverse=True)[:8]
 
 
+def tavily_candidates(task):
+    """Use Tavily Search as an optional discovery fallback; it never publishes."""
+    api_key=os.environ.get("TAVILY_API_KEY","").strip()
+    title=(task.get("title") or "").strip()
+    summary=((task.get("result") or {}).get("summary") or "").strip()
+    if not api_key or not title:
+        return []
+    query=(title+" "+summary+" Tennessee").strip()[:400]
+    payload={"query":query,"search_depth":"basic","max_results":6,"include_raw_content":False}
+    req=urllib.request.Request("https://api.tavily.com/search",data=json.dumps(payload).encode(),
+        headers={"Authorization":"Bearer "+api_key,"Content-Type":"application/json"},method="POST")
+    try:
+        with urllib.request.urlopen(req,timeout=25) as response:
+            data=json.loads(response.read().decode("utf-8"))
+        rows=[]
+        lead_tokens=tokens(title+" "+summary)
+        for item in data.get("results",[]):
+            url=item.get("url","")
+            try:safe_url(url)
+            except ValueError:continue
+            title_text=item.get("title","")
+            snippet=item.get("content","")
+            overlap=similarity(title+" "+summary,title_text+" "+snippet)
+            if url and overlap>=0.08:
+                rows.append({"url":url,"source_name":"Tavily Search: "+(title_text[:160] or url_domain(url)),
+                    "source_url":"https://tavily.com/","score":round(overlap,3)})
+        return sorted(rows,key=lambda row:row["score"],reverse=True)[:8]
+    except Exception as exc:
+        print("Tavily search unavailable (%s): %s"%(type(exc).__name__,str(exc)[:220]))
+        return []
+
 def request_supabase(base,key,path,method="GET",body=None,prefer=None):
     headers={"apikey":key,"Authorization":"Bearer "+key}
     if body is not None:headers["Content-Type"]="application/json"
@@ -211,7 +242,7 @@ def process(task,base,key,cfg):
     raw,final=fetch(lead_url);p=PageParser();p.feed(raw);page=p.result()
     evidence=[evidence_record(lead_id,"source",final,result.get("source","Lead source"),page["excerpt"],"Lead page retrieved; this is not independent verification.")]
     candidates=[];candidate_map={}
-    for item in source_pages(cfg,task)+google_news_candidates(task):
+    for item in source_pages(cfg,task)+google_news_candidates(task)+tavily_candidates(task):
         candidate_map.setdefault(item["url"],item)
     lead_host=url_domain(final)
     seen_domains={lead_host}
