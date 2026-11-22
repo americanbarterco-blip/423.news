@@ -64,6 +64,38 @@ def call_model(api_url,key,model,lead,evidence):
     with urllib.request.urlopen(req,timeout=75) as res:response=json.loads(res.read().decode("utf-8"))
     content=response["choices"][0]["message"]["content"]
     return parse_model_json(content)
+def select_writer(openai_key,openai_model,gemini_key,gemini_model):
+    """Prefer configured OpenAI writer; otherwise use the available Gemini key."""
+    if openai_key and openai_model:
+        return ("openai",openai_model,openai_key)
+    if gemini_key:
+        return ("gemini",gemini_model or "gemini-2.5-flash",gemini_key)
+    return (None,None,None)
+
+def call_gemini(model,key,lead,evidence,retries=1):
+    prompt=build_prompt(lead,evidence)
+    endpoint=f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    body={"contents":[{"parts":[{"text":prompt}]}],"generationConfig":{"responseMimeType":"application/json","temperature":0.2}}
+    req=urllib.request.Request(endpoint,data=json.dumps(body).encode(),headers={"Content-Type":"application/json","x-goog-api-key":key},method="POST")
+    for attempt in range(retries+1):
+        try:
+            with urllib.request.urlopen(req,timeout=75) as res: response=json.loads(res.read().decode("utf-8"))
+            parts=response.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+            text="".join(part.get("text","") for part in parts if isinstance(part,dict))
+            if not text.strip():raise ValueError("Gemini returned an empty draft")
+            return parse_model_json(text)
+        except urllib.error.HTTPError as exc:
+            try: detail=exc.read().decode("utf-8","replace")[:900]
+            except Exception: detail="(response body unavailable)"
+            print(f"Gemini draft HTTP {exc.code}: {detail}")
+            if exc.code not in (429,500,502,503,504) or attempt>=retries:raise
+            time.sleep(2**attempt)
+        except (urllib.error.URLError,TimeoutError) as exc:
+            print(f"Gemini draft network error: {type(exc).__name__}: {exc}")
+            if attempt>=retries:raise
+            time.sleep(2**attempt)
+    raise RuntimeError("Gemini draft retry exhausted")
+
 def eligible_evidence(evidence):
     usable=[item for item in evidence if item.get("evidence_type") in ("source","corroboration") and item.get("url") and item.get("excerpt")]
     # Prefer independent domains; limit the model context to a small set.
@@ -80,30 +112,33 @@ def save_draft(base,key,lead,evidence,draft):
     row={"lead_id":lead["id"],"title":draft["title"],"body_markdown":body,"summary":draft["summary"],"status":"needs_review","verification_status":"unverified","source_count":len(distinct_domains(evidence)),"author_agent":"Claudia Green","editor_notes":notes}
     _,raw=api(base,key,"rest/v1/claudia_story_drafts","POST",json.dumps(row).encode(),"return=representation")
     return raw
-def run_one(base,key,api_url,model,lead):
+def run_one(base,key,api_url,model,lead,provider="openai",provider_key=None):
     _,raw=api(base,key,"rest/v1/claudia_story_evidence?lead_id=eq."+urllib.parse.quote(lead["id"],safe="")+"&select=evidence_type,url,source_name,excerpt,reliability_notes,observed_at&order=observed_at.desc")
     evidence=eligible_evidence(json.loads(raw))
     if not evidence:
         print(f"Draft skipped {lead['id']}: needs at least 2 source domains.");return False
     if existing_draft(base,key,lead["id"]):
         print(f"Draft skipped {lead['id']}: draft already exists.");return False
-    draft=call_model(api_url,key,model,lead,evidence)
+    draft=call_gemini(model,provider_key,lead,evidence) if provider=="gemini" else call_model(api_url,provider_key or key,model,lead,evidence)
     save_draft(base,key,lead,evidence,draft)
     print(f"Draft created for review: {draft['title']}")
     return True
 def main():
     base=os.environ.get("SUPABASE_URL","").strip();service_key=os.environ.get("SUPABASE_SERVICE_ROLE_KEY","").strip()
-    ai_key=os.environ.get("OPENAI_API_KEY","").strip();model=os.environ.get("CLAUDIA_WRITER_MODEL","").strip()
+    ai_key=os.environ.get("OPENAI_API_KEY","").strip();openai_model=os.environ.get("CLAUDIA_WRITER_MODEL","").strip()
+    gemini_key=os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_GEMINI_API_KEY","")
+    gemini_model=os.environ.get("CLAUDIA_GEMINI_DRAFT_MODEL","gemini-2.5-flash").strip()
+    provider,model,provider_key=select_writer(ai_key,openai_model,gemini_key,gemini_model)
     if not base or not service_key:print("Draft writer skipped: Supabase credentials missing.");return
-    if not ai_key or not model:print("Draft writer skipped: OPENAI_API_KEY and CLAUDIA_WRITER_MODEL are required.");return
+    if not provider:print("Draft writer skipped: configure OPENAI_API_KEY + CLAUDIA_WRITER_MODEL or GEMINI_API_KEY.");return
     api_url=os.environ.get("OPENAI_API_URL","https://api.openai.com/v1/chat/completions").strip()
     _,raw=api(base,service_key,"rest/v1/claudia_story_leads?status=in.(new,researching)&select=id,title,summary,url,source_name&order=discovered_at.desc&limit=30")
     count=0
     for lead in json.loads(raw):
         if count>=MAX_LEADS:break
         try:
-            if run_one(base,service_key,api_url,model,lead):count+=1
+            if run_one(base,service_key,api_url,model,lead,provider,provider_key):count+=1
             time.sleep(0.3)
         except Exception as e:print(f"Draft failed for {lead.get('id','?')}: {type(e).__name__}")
-    print(f"Writer finished. {count} private drafts created; nothing published.")
+    print(f"Writer finished using {provider} ({model}). {count} private drafts created; nothing published.")
 if __name__=="__main__":main()
