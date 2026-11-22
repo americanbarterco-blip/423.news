@@ -86,7 +86,7 @@ jobs:
       - name: Execute bounded research batch
         if: env.SUPABASE_CONFIGURED == 'true'
         env:
-          CLAUDIA_RESEARCH_BATCH: '3'
+          CLAUDIA_RESEARCH_BATCH: '5'
         run: python scripts/claudia_research_executor.py
       - name: Discover community and YouTube leads
         run: python scripts/claudia_community_discovery.py
