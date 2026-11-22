@@ -163,6 +163,20 @@ def existing_post(base,key,lead_id):
     _,raw=api(base,key,"rest/v1/news_posts?slug=eq.claudia-"+urllib.parse.quote(str(lead_id),safe="")+"&select=id&limit=1")
     return bool(json.loads(raw))
 
+def leads_with_evidence(base,key,leads):
+    """Restrict writer selection to leads that already have stored evidence."""
+    ids=[str(lead.get("id")) for lead in leads if lead.get("id")]
+    evidenced=set()
+    for start in range(0,len(ids),100):
+        batch=ids[start:start+100]
+        if not batch:continue
+        path="rest/v1/claudia_story_evidence?select=lead_id&lead_id=in.("+",".join(batch)+")"
+        _,raw=api(base,key,path)
+        evidenced.update(row.get("lead_id") for row in json.loads(raw) if row.get("lead_id"))
+    return [lead for lead in leads if lead.get("id") in evidenced]
+
+
+
 def publish_article(base,key,lead,evidence,draft,classification):
     slug="claudia-"+str(lead["id"])
     body=(draft["body_markdown"]+source_list(evidence))[:20000]
@@ -217,8 +231,9 @@ def main():
         print("Draft writer skipped: Supabase credentials missing."); return
     if not openai_key:
         print("Draft writer skipped: OPENAI_API_KEY missing; leads remain queued."); return
-    _, raw = api(base,key,"rest/v1/claudia_story_leads?status=in.(new,researching)&select=id,title,summary,url,source_name&order=discovered_at.desc&limit=50")
-    leads=json.loads(raw)
+    _, raw = api(base,key,"rest/v1/claudia_story_leads?status=in.(new,researching)&select=id,title,summary,url,source_name,discovered_at&order=discovered_at.desc&limit=50")
+    leads=leads_with_evidence(base,key,json.loads(raw))
+    print("Writer evidence-backed lead selection: %s" % len(leads))
     classified=[(classify_content(lead),lead) for lead in leads]
     # Highest editorial priority first, then distribute the batch across sections when possible.
     classified.sort(key=lambda pair:(pair[0]["priority_score"],pair[1].get("discovered_at","")),reverse=True)
