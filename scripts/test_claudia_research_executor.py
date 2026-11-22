@@ -1,10 +1,12 @@
 import unittest
 from unittest.mock import patch
-from scripts.claudia_research_executor import tokens, similarity, safe_url, feed_items, PageParser, retry_patch, evidence_insert_path, google_news_candidates
+from scripts.claudia_research_executor import tokens, similarity, safe_url, feed_items, PageParser, retry_patch, evidence_insert_path, google_news_candidates, url_domain
 class ResearchExecutorTests(unittest.TestCase):
     def test_evidence_insert_targets_unique_constraint(self):
         self.assertEqual(evidence_insert_path(), "rest/v1/claudia_story_evidence?on_conflict=lead_id,evidence_type,url")
 
+    def test_domain_uses_final_publisher_host(self):
+        self.assertEqual(url_domain("https://www.news.example/article"),"news.example")
     def test_overlap_scoring(self):
         self.assertGreater(similarity("Cleveland schools announce winter event","Cleveland schools winter event"),0.4)
     def test_unrelated_topic_low(self):
