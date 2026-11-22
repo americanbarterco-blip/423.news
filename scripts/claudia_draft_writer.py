@@ -89,7 +89,7 @@ def risk_flags(text):
 def build_prompt(lead, evidence, classification):
     sources = []
     for n, item in enumerate(evidence[:MAX_EVIDENCE], 1):
-        sources.append("SOURCE %d | %s | %s\\nExcerpt: %s\\nNotes: %s" % (
+        sources.append("SOURCE %d | %s | %s\nExcerpt: %s\\nNotes: %s" % (
             n, item.get("source_name", "Unknown"), item.get("url", ""),
             item.get("excerpt", "")[:MAX_EXCERPT], item.get("reliability_notes", "")))
     section=classification["section"];topic=classification["topic"]
@@ -165,8 +165,7 @@ def save_draft(base, key, lead, evidence, draft, classification):
             "source_count":len(distinct_domains(evidence)),"author_agent":"Claudia Green","editor_notes":notes}
     return api(base,key,"rest/v1/claudia_story_drafts","POST",json.dumps(row).encode(),"return=representation")
 
-def process_lead(base, key, model, lead):
-    classification=classify_content(lead)
+def process_lead(base, key, model, lead, classification):
     _, raw = api(base,key,"rest/v1/claudia_story_evidence?lead_id=eq."+urllib.parse.quote(str(lead["id"]),safe="")+
         "&select=evidence_type,url,source_name,excerpt,reliability_notes,observed_at&order=observed_at.desc")
     evidence = eligible_evidence(json.loads(raw))
