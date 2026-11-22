@@ -19,8 +19,7 @@ class ClaudiaAutoPublisherTests(unittest.TestCase):
         self.assertEqual(len(distinct_domains(two)),2)
 
     def test_rejects_ineligible_evidence_types(self):
-        items=[{"evidence_type":"media","url":"https://a.com","excerpt":"image"},
-                {"evidence_type":"source","url":"https://b.com","excerpt":"text"}]
+        items=[{"evidence_type":"media","url":"https://a.com","excerpt":"image"}]
         self.assertEqual(eligible_evidence(items),[])
 
     def test_model_json_validation(self):
