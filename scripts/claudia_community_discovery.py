@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Scheduled public community/video lead discovery for Claudia; no auto-publishing."""
 from __future__ import annotations
-import hashlib,json,os,time,urllib.parse,urllib.request,base64
+import hashlib,json,os,time,urllib.parse,urllib.request,urllib.error,base64
 from pathlib import Path
 from datetime import datetime,timezone,timedelta
 
@@ -10,6 +10,7 @@ SUBREDDITS=("Chattanooga","Tennessee","ClevelandTN","UTC")
 LOCAL_TERMS=("423","chattanooga","cleveland tn","cleveland, tn","hamilton county","bradley county","soddy-daisy","east ridge","dayton tn","polk county tn","rhea county","ooltewah","hixson","signal mountain","sweetwater","meigs county","sequatchie county")
 CRIME_TERMS=("shooting","shots fired","police","arrest","robbery","homicide","assault","missing","crash","wreck","fire","rescue","pursuit","burglary","theft","investigation","sheriff","crime","incident","emergency","breaking")
 REDDIT_QUERIES=("shooting","police","arrest","crime","fire","crash","missing person","breaking news","incident","robbery","pursuit","rescue")
+REDDIT_PUBLIC_QUERIES=("Chattanooga Cleveland Tennessee","Chattanooga police","Cleveland Tennessee police","Hamilton County schools","Bradley County schools","local event","road closure","missing person Tennessee")
 YOUTUBE_QUERIES=("Chattanooga Tennessee breaking police crime shooting arrest","Hamilton County Tennessee police incident breaking","Cleveland Tennessee Bradley County crime police arrest","423 Tennessee fire crash rescue emergency","Soddy Daisy East Ridge Hixson police incident")
 def fingerprint(url):return hashlib.sha256(url.strip().encode("utf-8")).hexdigest()
 def category(text):
@@ -46,9 +47,24 @@ def parse_youtube(payload):
 def request(url,headers=None,body=None,method="GET"):
  req=urllib.request.Request(url,data=body,headers=headers or {"User-Agent":UA},method=method)
  with urllib.request.urlopen(req,timeout=20) as res:return res.status,json.loads(res.read().decode("utf-8"))
+def reddit_public_fetch():
+ rows=[]
+ for query in REDDIT_PUBLIC_QUERIES:
+  q=query+" Chattanooga Cleveland Tennessee Hamilton County Bradley County"
+  params=urllib.parse.urlencode({"q":q,"sort":"new","t":"week","limit":30})
+  url="https://www.reddit.com/search.json?"+params
+  try:
+   _,payload=request(url,{"User-Agent":UA,"Accept":"application/json"})
+   rows.extend(parse_reddit(payload))
+  except Exception as e:print("Public Reddit search skipped",query,type(e).__name__)
+  time.sleep(0.2)
+ unique={}
+ for row in rows:unique.setdefault(row["fingerprint"],row)
+ return list(unique.values())
+
 def reddit_fetch():
  client=os.environ.get("REDDIT_CLIENT_ID","").strip();secret=os.environ.get("REDDIT_CLIENT_SECRET","").strip()
- if not client or not secret:print("Reddit discovery skipped: OAuth credentials missing.");return []
+ if not client or not secret:print("Reddit OAuth unavailable; using public Reddit search.");return reddit_public_fetch()
  auth=base64.b64encode((client+":"+secret).encode()).decode()
  _,token=request("https://www.reddit.com/api/v1/access_token",{"Authorization":"Basic "+auth,"User-Agent":UA,"Content-Type":"application/x-www-form-urlencoded"},b"grant_type=client_credentials","POST")
  access=token.get("access_token")
@@ -77,17 +93,32 @@ def youtube_fetch():
  unique={}
  for row in rows:unique.setdefault(row["fingerprint"],row)
  return list(unique.values())
+def community_ingest_path():
+ return "rest/v1/claudia_story_leads?on_conflict=fingerprint"
+
 def ingest(base,key,leads):
- headers={"apikey":key,"Authorization":"Bearer "+key,"Content-Type":"application/json","Prefer":"resolution=ignore-duplicates,return=minimal"};accepted=0
+ headers={"apikey":key,"Authorization":"Bearer "+key,"Content-Type":"application/json","Prefer":"resolution=ignore-duplicates,return=minimal"};accepted=0;failed=0
  for lead in leads:
-  req=urllib.request.Request(base.rstrip("/")+"/rest/v1/claudia_story_leads",data=json.dumps(lead).encode(),headers=headers,method="POST")
-  with urllib.request.urlopen(req,timeout=20) as res:
-   if res.status in (200,201,204):accepted+=1
+  req=urllib.request.Request(base.rstrip("/")+"/"+community_ingest_path(),data=json.dumps(lead).encode(),headers=headers,method="POST")
+  try:
+   with urllib.request.urlopen(req,timeout=20) as res:
+    if res.status in (200,201,204):accepted+=1
+  except urllib.error.HTTPError as exc:
+   failed+=1
+   try:detail=exc.read().decode("utf-8","replace")[:240]
+   except Exception:detail="(response body unavailable)"
+   print(f"Community lead insert failed HTTP {exc.code}: {detail}")
+  except Exception as exc:
+   failed+=1;print(f"Community lead insert failed: {type(exc).__name__}: {str(exc)[:240]}")
+ print(f"Community ingestion: {accepted} accepted, {failed} failed; remaining records still attempted.")
  return accepted
 def main():
  leads=[]
  try:leads.extend(reddit_fetch())
- except Exception as e:print("Reddit discovery error:",type(e).__name__)
+ except Exception as e:
+  print("Reddit OAuth discovery failed; attempting public fallback:",type(e).__name__)
+  try:leads.extend(reddit_public_fetch())
+  except Exception as fallback_error:print("Public Reddit fallback failed:",type(fallback_error).__name__)
  try:leads.extend(youtube_fetch())
  except Exception as e:print("YouTube discovery error:",type(e).__name__)
  unique={}
