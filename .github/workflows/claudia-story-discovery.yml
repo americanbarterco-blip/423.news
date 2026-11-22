@@ -59,10 +59,11 @@ jobs:
       TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
       SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
       SUPABASE_CONFIGURED: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      OPENAI_CONFIGURED: ${{ secrets.OPENAI_API_KEY != '' }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLAUDIA_WRITER_MODEL: ${{ secrets.CLAUDIA_WRITER_MODEL }}
-      OPENAI_API_URL: ${{ secrets.OPENAI_API_URL }}
+      CLAUDIA_AI_BASE_URL: ${{ secrets.CLAUDIA_AI_BASE_URL }}
+      CLAUDIA_AI_CONFIGURED: ${{ secrets.CLOUDFLARE_ACCOUNT_ID != '' && secrets.CLOUDFLARE_API_TOKEN != '' }}
       REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
       REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
       YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
@@ -142,7 +143,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
       - name: Generate, verify, automatically publish, and flag factual exceptions
-        if: env.SUPABASE_CONFIGURED == 'true' && env.OPENAI_CONFIGURED == 'true'
+        if: env.SUPABASE_CONFIGURED == 'true'
         run: python scripts/claudia_draft_writer.py
       - name: Upload private transcript artifacts
         if: always()
