@@ -43,34 +43,18 @@ class OpenAIOnlyDraftWriterTests(unittest.TestCase):
     def test_sensitive_story_flags(self):
         self.assertIn("shooting",risk_flags("Reported shooting investigation"))
 
-    @patch("scripts.claudia_draft_writer.api")
-    def test_save_draft_always_private(self, mocked_api):
-        from scripts.claudia_draft_writer import save_draft
-        mocked_api.return_value=(201,"{}")
-        lead={"id":123,"title":"Local update","summary":"Summary"}
-        evidence=[{"url":"https://one.example/a","source_name":"One"},{"url":"https://two.example/b","source_name":"Two"}]
-        draft={"title":"Draft","summary":"Short summary","body_markdown":"Body","editor_notes":"Review"}
-        classification={"section":"news","topic":"general","priority_score":50,"priority_reason":"baseline"}
-        verification={"passed":True,"confidence":0.95,"result":{"reason":"supported"}}
-        save_draft("https://db.example","key",lead,evidence,draft,classification,verification)
-        payload=json.loads(mocked_api.call_args.args[4].decode())
-        self.assertEqual(payload["status"],"needs_review")
-        self.assertEqual(payload["verification_status"],"verified")
-        self.assertIsNone(payload["published_at"])
+    @patch("scripts.claudia_draft_writer.openai_json")
+    def test_sensitive_subject_is_descriptive_not_gate_block(self, mocked):
+        from scripts.claudia_draft_writer import verify_article
+        mocked.return_value={"pass":True,"confidence":0.80,"unsupported_claims":[],"conflicting_claims":[],"sensitive":True,"reason":"Evidence supports facts"}
+        result=verify_article("model","key",{"title":"Local report"},{"evidence"},{"title":"Report","summary":"Summary","body_markdown":"Article"},min_confidence=0.75)
+        self.assertTrue(result["passed"])
 
     @patch("scripts.claudia_draft_writer.api")
-    def test_unverified_draft_is_still_private(self, mocked_api):
-        from scripts.claudia_draft_writer import save_draft
-        mocked_api.return_value=(201,"{}")
-        lead={"id":124,"title":"Local update","summary":"Summary"}
-        evidence=[{"url":"https://one.example/a","source_name":"One"},{"url":"https://two.example/b","source_name":"Two"}]
-        draft={"title":"Draft","summary":"Short summary","body_markdown":"Body","editor_notes":"Review"}
-        classification={"section":"news","topic":"general","priority_score":50,"priority_reason":"baseline"}
-        save_draft("https://db.example","key",lead,evidence,draft,classification,None)
-        payload=json.loads(mocked_api.call_args.args[4].decode())
-        self.assertEqual(payload["status"],"needs_review")
-        self.assertEqual(payload["verification_status"],"unverified")
-        self.assertIsNone(payload["published_at"])
+    def test_first_two_auto_publications_counter(self, mocked_api):
+        from scripts.claudia_draft_writer import onboarding_publications
+        mocked_api.return_value=(200,json.dumps([{"id":1},{"id":2}]))
+        self.assertEqual(onboarding_publications("db","key"),2)
 
 if __name__=="__main__":
     unittest.main()
