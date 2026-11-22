@@ -69,7 +69,7 @@ def select_writer(openai_key,openai_model,gemini_key,gemini_model):
     if openai_key and openai_model:
         return ("openai",openai_model,openai_key)
     if gemini_key:
-        return ("gemini",gemini_model or "gemini-2.5-flash",gemini_key)
+        return ("gemini",gemini_model or "gemini-3.8-flash",gemini_key)
     return (None,None,None)
 
 def call_gemini(model,key,lead,evidence,retries=1):
@@ -127,7 +127,7 @@ def main():
     base=os.environ.get("SUPABASE_URL","").strip();service_key=os.environ.get("SUPABASE_SERVICE_ROLE_KEY","").strip()
     ai_key=os.environ.get("OPENAI_API_KEY","").strip();openai_model=os.environ.get("CLAUDIA_WRITER_MODEL","").strip()
     gemini_key=os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_GEMINI_API_KEY","")
-    gemini_model=os.environ.get("CLAUDIA_GEMINI_DRAFT_MODEL","gemini-2.5-flash").strip()
+    gemini_model=os.environ.get("CLAUDIA_GEMINI_DRAFT_MODEL","gemini-3.8-flash").strip()
     provider,model,provider_key=select_writer(ai_key,openai_model,gemini_key,gemini_model)
     if not base or not service_key:print("Draft writer skipped: Supabase credentials missing.");return
     if not provider:print("Draft writer skipped: configure OPENAI_API_KEY + CLAUDIA_WRITER_MODEL or GEMINI_API_KEY.");return
