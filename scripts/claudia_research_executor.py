@@ -135,6 +135,10 @@ def request_supabase(base,key,path,method="GET",body=None,prefer=None):
 def claim(base,key,worker):
     _,raw=request_supabase(base,key,"rest/v1/rpc/claudia_claim_research_task","POST",json.dumps({"worker_id":worker}).encode())
     rows=json.loads(raw);return rows[0] if rows else None
+def evidence_insert_path():
+    """PostgREST upsert target for the evidence table unique key."""
+    return "rest/v1/claudia_story_evidence?on_conflict=lead_id,evidence_type,url"
+
 def evidence_record(lead_id,kind,url,source_name,excerpt,notes):
     return {"lead_id":lead_id,"evidence_type":kind,"url":url,"source_name":source_name,"excerpt":excerpt[:2000],"reliability_notes":notes[:500]}
 def process(task,base,key,cfg):
@@ -151,7 +155,7 @@ def process(task,base,key,cfg):
                 evidence.append(evidence_record(lead_id,"corroboration",url,item["source_name"],data["excerpt"] or data["summary"],f"Fetched page relevance {actual_score:.3f}; not fact verification."))
                 candidates.append({"url":url,"source_name":item["source_name"],"topic_overlap":round(actual_score,3),"title":data["title"]})
         except Exception as e:print(f"Candidate skipped: {type(e).__name__}")
-    for rec in evidence:request_supabase(base,key,"rest/v1/claudia_story_evidence","POST",json.dumps(rec).encode(),"resolution=ignore-duplicates,return=minimal")
+    for rec in evidence:request_supabase(base,key,evidence_insert_path(),"POST",json.dumps(rec).encode(),"resolution=ignore-duplicates,return=minimal")
     status="completed" if evidence else "blocked"
     update={"status":status,"locked_at":None,"locked_by":None,"last_error":None if evidence else "No evidence retrieved","result":{"lead_url":lead_url,"evidence_count":len(evidence),"candidate_sources":candidates,"editorial_status":"needs human review; not verified","completed_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}}
     request_supabase(base,key,"rest/v1/claudia_research_tasks?id=eq."+urllib.parse.quote(task["id"],safe=""),"PATCH",json.dumps(update).encode(),"return=minimal")
