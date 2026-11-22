@@ -236,7 +236,7 @@ def process(task,base,key,cfg):
     for rec in evidence:request_supabase(base,key,evidence_insert_path(),"POST",json.dumps(rec).encode(),"resolution=ignore-duplicates,return=minimal")
     update={"status":"completed","locked_at":None,"locked_by":None,"last_error":None,"result":{"lead_url":lead_url,"evidence_count":len(evidence),"corroboration_count":len(corroborating),"candidate_sources":candidates,"editorial_status":"corroboration retrieved; automated factual review still required","completed_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}}
     request_supabase(base,key,"rest/v1/claudia_research_tasks?id=eq."+urllib.parse.quote(task["id"],safe=""),"PATCH",json.dumps(update).encode(),"return=minimal")
-    print(f"Task {task['id']}: evidence={len(evidence)}, corroborating_pages={len(candidates)}, state={status}")
+    print(f"Task {task['id']}: evidence={len(evidence)}, corroborating_pages={len(candidates)}, state=completed")
 
 def retry_patch(task,error):
     attempts=int(task.get("attempt_count",1));maximum=int(task.get("max_attempts",4))
