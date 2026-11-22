@@ -63,7 +63,7 @@ def analyze(lead, api_key, model=MODEL, opener=urllib.request.urlopen, retries=2
             try: detail=exc.read().decode("utf-8","replace")[:1000]
             except Exception: detail="(error body unavailable)"
             print(f"Gemini HTTP {exc.code}: {detail}",file=sys.stderr)
-            if exc.code not in RETRYABLE_STATUS or attempt >= retries:
+            if exc.code == 429 or exc.code not in RETRYABLE_STATUS or attempt >= retries:
                 raise
             time.sleep(2 ** attempt)
         except (urllib.error.URLError, TimeoutError) as exc:
