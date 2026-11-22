@@ -1,20 +1,20 @@
 import json
 import unittest
 from unittest.mock import patch
-from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, risk_flags, source_list, leads_with_evidence
+from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, source_list, leads_with_evidence
 
 class OpenAIOnlyDraftWriterTests(unittest.TestCase):
     def test_domain_normalizes_www(self):
         self.assertEqual(domain("https://www.example.com/path"), "example.com")
 
-    def test_evidence_requires_two_independent_domains(self):
+    def test_evidence_filter_does_not_enforce_post_onboarding_domain_threshold(self):
         one=[{"evidence_type":"source","url":"https://a.com/x","excerpt":"x"}]
-        self.assertEqual(eligible_evidence(one),[])
+        self.assertEqual(len(eligible_evidence(one)),1)
         two=one+[{"evidence_type":"corroboration","url":"https://b.org/y","excerpt":"y"}]
         self.assertEqual(len(eligible_evidence(two)),2)
         self.assertEqual(len(distinct_domains(two)),2)
 
-    def test_primary_source_can_support_private_draft_only(self):
+    def test_single_source_is_available_for_first_two_publications(self):
         one=[{"evidence_type":"source","url":"https://primary.example/story","excerpt":"confirmed article text"}]
         self.assertEqual(eligible_evidence(one),[])
         self.assertEqual(len(eligible_evidence(one,min_domains=1)),1)
