@@ -93,10 +93,19 @@ def ingest(payload):
     if not url or not key: raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for database ingestion")
     headers={"apikey":key,"Authorization":"Bearer "+key,"Content-Type":"application/json","Prefer":"resolution=ignore-duplicates,return=minimal"}
     accepted=0
+    failed=0
+    endpoint=url+"/rest/v1/claudia_story_leads?on_conflict=fingerprint"
     for lead in payload["leads"]:
-        req=urllib.request.Request(url+"/rest/v1/claudia_story_leads",data=json.dumps(lead).encode(),headers=headers,method="POST")
-        with urllib.request.urlopen(req,timeout=20) as res:
-            if res.status in (200,201,204): accepted+=1
+        req=urllib.request.Request(endpoint,data=json.dumps(lead).encode(),headers=headers,method="POST")
+        try:
+            with urllib.request.urlopen(req,timeout=20) as res:
+                if res.status in (200,201,204): accepted+=1
+        except urllib.error.HTTPError as exc:
+            failed+=1
+            try: detail=exc.read().decode("utf-8","replace")[:500]
+            except Exception: detail="(error body unavailable)"
+            print(f"Supabase ingest failed for {lead.get('url','unknown URL')}: HTTP {exc.code}: {detail}",file=sys.stderr)
+    print(f"Database ingestion: {accepted} accepted/processed, {failed} failed records.")
     return accepted
 
 def main():
