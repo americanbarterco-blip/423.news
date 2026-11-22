@@ -31,5 +31,34 @@ class OpenAIOnlyDraftWriterTests(unittest.TestCase):
     def test_sensitive_story_flags(self):
         self.assertIn("shooting",risk_flags("Reported shooting investigation"))
 
+    @patch("scripts.claudia_draft_writer.api")
+    def test_save_draft_always_private(self, mocked_api):
+        from scripts.claudia_draft_writer import save_draft
+        mocked_api.return_value=(201,"{}")
+        lead={"id":123,"title":"Local update","summary":"Summary"}
+        evidence=[{"url":"https://one.example/a","source_name":"One"},{"url":"https://two.example/b","source_name":"Two"}]
+        draft={"title":"Draft","summary":"Short summary","body_markdown":"Body","editor_notes":"Review"}
+        classification={"section":"news","topic":"general","priority_score":50,"priority_reason":"baseline"}
+        verification={"passed":True,"confidence":0.95,"result":{"reason":"supported"}}
+        save_draft("https://db.example","key",lead,evidence,draft,classification,verification)
+        payload=json.loads(mocked_api.call_args.args[4].decode())
+        self.assertEqual(payload["status"],"needs_review")
+        self.assertEqual(payload["verification_status"],"verified")
+        self.assertIsNone(payload["published_at"])
+
+    @patch("scripts.claudia_draft_writer.api")
+    def test_unverified_draft_is_still_private(self, mocked_api):
+        from scripts.claudia_draft_writer import save_draft
+        mocked_api.return_value=(201,"{}")
+        lead={"id":124,"title":"Local update","summary":"Summary"}
+        evidence=[{"url":"https://one.example/a","source_name":"One"},{"url":"https://two.example/b","source_name":"Two"}]
+        draft={"title":"Draft","summary":"Short summary","body_markdown":"Body","editor_notes":"Review"}
+        classification={"section":"news","topic":"general","priority_score":50,"priority_reason":"baseline"}
+        save_draft("https://db.example","key",lead,evidence,draft,classification,None)
+        payload=json.loads(mocked_api.call_args.args[4].decode())
+        self.assertEqual(payload["status"],"needs_review")
+        self.assertEqual(payload["verification_status"],"unverified")
+        self.assertIsNone(payload["published_at"])
+
 if __name__=="__main__":
     unittest.main()
