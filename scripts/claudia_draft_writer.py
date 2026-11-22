@@ -156,10 +156,19 @@ def existing_post(base,key,lead_id):
     _,raw=api(base,key,"rest/v1/news_posts?slug=eq.claudia-auto-"+urllib.parse.quote(str(lead_id),safe="")+"&select=id&limit=1")
     return bool(json.loads(raw))
 
-def onboarding_publications(base,key):
-    """Count this pipeline's marked auto-publications to persist the starter phase."""
-    _,raw=api(base,key,"rest/v1/news_posts?slug=like.claudia-auto-*&select=id&limit=3)
+def verification_attempts(base,key):
+    """Count persisted story fact-check attempts, capped at two."""
+    _,raw=api(base,key,"rest/v1/claudia_memories?project=eq.423.news&kind=eq.verification_attempt&select=id&limit=2")
     return len(json.loads(raw))
+
+def save_verification_attempt(base,key,lead,verification,starter_gate):
+    source_ref="claudia_verification:"+str(lead.get("id"))
+    path="rest/v1/claudia_memories?project=eq.423.news&kind=eq.verification_attempt&source_ref=eq."+urllib.parse.quote(source_ref,safe="")+"&select=id&limit=1"
+    _,raw=api(base,key,path)
+    if json.loads(raw):return
+    result=verification.get("result") or {}
+    record={"project":"423.news","kind":"verification_attempt","content":"Verification lead="+str(lead.get("id"))+"; title="+str(lead.get("title",""))+"; starter="+str(starter_gate)+"; passed="+str(verification.get("passed"))+"; confidence="+str(verification.get("confidence"))+"; reason="+str(result.get("reason","")),"tags":["verification_attempt","starter_gate" if starter_gate else "standard_gate"],"importance":2,"source_ref":source_ref}
+    api(base,key,"rest/v1/claudia_memories","POST",json.dumps(record).encode(),"return=minimal")
 
 def leads_with_evidence(base,key,leads):
     """Restrict writer selection to leads that already have stored evidence."""
@@ -187,14 +196,15 @@ def process_lead(base, key, model, lead, classification, lessons=None):
         print("Skipped lead %s: no retrieved source evidence." % lead.get("id")); return False
     if existing_post(base,key,lead["id"]):
         print("Skipped lead %s: already auto-published; idempotency guard." % lead.get("id")); return False
-    published_count=onboarding_publications(base,key)
-    starter_gate=published_count < 2
+    attempt_count=verification_attempts(base,key)
+    starter_gate=attempt_count < 2
     required_domains=1 if starter_gate else MIN_DOMAINS
     if len(distinct_domains(evidence)) < required_domains:
         print("HELD factual verification exception: requires %s independent source(s); found %s."%(required_domains,len(distinct_domains(evidence))))
         return False
     draft=call_openai(model,key,lead,evidence,classification,lessons)
     verification=verify_article(model,key,lead,evidence,draft,min_confidence=0.75 if starter_gate else 0.90)
+    save_verification_attempt(base,key,lead,verification,starter_gate)
     # News topics never block coverage. Only factual support/conflict checks can hold.
     if not verification or not verification.get("passed"):
         print("HELD factual verification exception (not a topic exclusion): confidence=%s, details=%s, title=%s"%(verification and verification.get("confidence"),verification and verification.get("result"),draft["title"]))
