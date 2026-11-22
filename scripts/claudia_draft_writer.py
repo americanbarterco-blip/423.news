@@ -93,7 +93,7 @@ def build_prompt(lead, evidence, classification, lessons=None):
             n, item.get("source_name", "Unknown"), item.get("url", ""),
             item.get("excerpt", "")[:MAX_EXCERPT], item.get("reliability_notes", "")))
     section=classification["section"];topic=classification["topic"]
-    lessons_text = "\\n".join("- " + str(item)[:1800] for item in (lessons or [])) or "No flag-feedback lessons stored."
+    lessons_text = "\n".join("- " + str(item)[:1800] for item in (lessons or [])) or "No flag-feedback lessons stored."
     return ("You write factual, neutral local-news drafts for 423.news in Tennessee's 423 region. "
             "The editorial section is "+section+"; topic is "+str(topic)+". "
             +section_guidance(section,topic)+" "
