@@ -280,13 +280,21 @@ def evidence_record(lead_id,kind,url,source_name,excerpt,notes):
 def process(task,base,key,cfg):
     result=task.get("result") or {};lead_url=result.get("lead_url");lead_id=task.get("lead_id")
     if not lead_url or not lead_id:raise ValueError("task missing lead URL or lead ID")
-    raw,final=fetch(lead_url);p=PageParser();p.feed(raw);page=p.result()
-    evidence=[evidence_record(lead_id,"source",final,result.get("source","Lead source"),page["excerpt"],"Lead page retrieved; this is not independent verification.")]
+    evidence=[];primary_available=False;lead_host=""
+    try:
+        raw,final=fetch(lead_url);p=PageParser();p.feed(raw);page=p.result()
+        lead_host=url_domain(final)
+        if page["excerpt"] or page["summary"]:
+            evidence.append(evidence_record(lead_id,"source",final,result.get("source","Lead source"),page["excerpt"] or page["summary"],"Lead page retrieved; this is not independent verification."))
+            primary_available=True
+        else:
+            print(f"Lead page returned no readable text: {lead_url}")
+    except Exception as e:
+        print(f"Lead page unavailable; attempting alternative sources ({type(e).__name__}): {lead_url}")
     candidates=[];candidate_map={}
     for item in source_pages(cfg,task)+google_news_candidates(task)+tavily_candidates(task)+serper_candidates(task):
         candidate_map.setdefault(item["url"],item)
-    lead_host=url_domain(final)
-    seen_domains={lead_host}
+    seen_domains={lead_host} if lead_host else set()
     ranked=sorted(candidate_map.values(),key=lambda x:x.get("score",0),reverse=True)
     for item in ranked[:MAX_CANDIDATES*3]:
         try:
@@ -298,7 +306,8 @@ def process(task,base,key,cfg):
             if not candidate_host or candidate_host in seen_domains:continue
             if (data["excerpt"] or data["summary"]) and actual_score>=0.12:
                 seen_domains.add(candidate_host)
-                evidence.append(evidence_record(lead_id,"corroboration",final_url,data["title"] or item["source_name"],data["excerpt"] or data["summary"],f"Fetched publisher page {candidate_host}; relevance {actual_score:.3f}; not fact verification."))
+                evidence_type="source" if not primary_available and not any(e.get("evidence_type")=="source" for e in evidence) else "corroboration"
+                evidence.append(evidence_record(lead_id,evidence_type,final_url,data["title"] or item["source_name"],data["excerpt"] or data["summary"],f"Fetched publisher page {candidate_host}; relevance {actual_score:.3f}; not fact verification."))
                 candidates.append({"url":final_url,"source_name":data["title"] or item["source_name"],"topic_overlap":round(actual_score,3),"title":data["title"]})
         except Exception as e:
             candidate_url=item.get("url","")
@@ -308,7 +317,9 @@ def process(task,base,key,cfg):
     # Persist useful primary-source research even when independent corroboration is
     # unavailable. This is a terminal limited-research state, not a retry loop.
     for rec in evidence:request_supabase(base,key,evidence_insert_path(),"POST",json.dumps(rec).encode(),"resolution=ignore-duplicates,return=minimal")
-    editorial_status="corroboration retrieved; automated factual review still required" if corroborating else "research_limited; primary source retained; corroboration unavailable"
+    editorial_status="corroboration retrieved; automated factual review still required" if corroborating else "research_limited; readable source retained; corroboration unavailable"
+    if not evidence:
+        editorial_status="research_limited; lead and alternate pages unavailable; task closed to avoid retrying one failing publisher indefinitely"
     update={"status":"completed","locked_at":None,"locked_by":None,"last_error":None,"result":{"lead_url":lead_url,"evidence_count":len(evidence),"corroboration_count":len(corroborating),"candidate_sources":candidates,"editorial_status":editorial_status,"completed_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}}
     request_supabase(base,key,"rest/v1/claudia_research_tasks?id=eq."+urllib.parse.quote(task["id"],safe=""),"PATCH",json.dumps(update).encode(),"return=minimal")
     print(f"Task {task['id']}: evidence={len(evidence)}, corroborating_pages={len(candidates)}, state=completed")
