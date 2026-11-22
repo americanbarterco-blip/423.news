@@ -218,6 +218,47 @@ def tavily_candidates(task):
         print("Tavily search unavailable (%s): %s"%(type(exc).__name__,str(exc)[:220]))
         return []
 
+def serper_candidates(task):
+    """Use Serper as an optional Google Search fallback; it never publishes."""
+    api_key = os.environ.get("SERPER_API_KEY", "").strip()
+    title = (task.get("title") or "").strip()
+    summary = ((task.get("result") or {}).get("summary") or "").strip()
+    if not api_key or not title:
+        return []
+    query = (title + " " + summary + " Tennessee").strip()[:400]
+    payload = {"q": query, "num": 8}
+    req = urllib.request.Request(
+        "https://google.serper.dev/search",
+        data=json.dumps(payload).encode(),
+        headers={"X-API-KEY": api_key, "Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=25) as response:
+            data = json.loads(response.read().decode("utf-8"))
+        rows = []
+        lead_tokens = tokens(title + " " + summary)
+        for item in data.get("organic", []):
+            url = item.get("link", "")
+            try:
+                safe_url(url)
+            except ValueError:
+                continue
+            title_text = item.get("title", "")
+            snippet = item.get("snippet", "")
+            score = similarity(title + " " + summary, title_text + " " + snippet)
+            if url and score >= 0.08:
+                rows.append({
+                    "url": url,
+                    "source_name": "Serper Search: " + (title_text[:160] or url_domain(url)),
+                    "source_url": "https://serper.dev/",
+                    "score": round(score, 3),
+                })
+        return sorted(rows, key=lambda row:row["score"], reverse=True)[:8]
+    except Exception as exc:
+        print("Serper search unavailable (%s): %s" % (type(exc).__name__, str(exc)[:220]))
+        return []
+
 def request_supabase(base,key,path,method="GET",body=None,prefer=None):
     headers={"apikey":key,"Authorization":"Bearer "+key}
     if body is not None:headers["Content-Type"]="application/json"
