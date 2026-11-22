@@ -1,6 +1,12 @@
 import unittest
-from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, risk_flags, source_list
+from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, risk_flags, source_list, select_writer
 class DraftWriterTests(unittest.TestCase):
+    def test_writer_fallback_prefers_openai_when_configured(self):
+        self.assertEqual(select_writer("openai-key","gpt-model","gemini-key","gemini-model"),("openai","gpt-model","openai-key"))
+    def test_writer_uses_gemini_when_openai_unconfigured(self):
+        self.assertEqual(select_writer("","", "gemini-key","gemini-model"),("gemini","gemini-model","gemini-key"))
+    def test_writer_skips_when_no_provider(self):
+        self.assertEqual(select_writer("","","",""),(None,None,None))
     def test_domains_normalize_www(self):
         self.assertEqual(domain("https://www.example.com/path"),"example.com")
     def test_requires_two_domains(self):
