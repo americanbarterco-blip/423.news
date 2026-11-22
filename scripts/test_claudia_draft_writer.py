@@ -1,5 +1,6 @@
 import json
 import unittest
+from unittest.mock import patch
 from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, risk_flags, source_list
 
 class OpenAIOnlyDraftWriterTests(unittest.TestCase):
