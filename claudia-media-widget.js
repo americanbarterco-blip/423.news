@@ -36,3 +36,36 @@
     openVoicePanel();
   });
 })();
+
+/* Replace the old on-air video/photo with the current Claudia video (muted, no audio) on every page this script loads on.
+   Works even if a page's own HTML is older: the video comes from claudia-speak-video.js. */
+(function () {
+  var data = null, loading = false, queue = [];
+  function withData(cb) {
+    if (data || window.CG_SPEAK_VIDEO) { data = window.CG_SPEAK_VIDEO; return cb(data); }
+    queue.push(cb);
+    if (loading) return; loading = true;
+    var sc = document.createElement('script'); sc.src = '/claudia-speak-video.js';
+    sc.onload = function () { data = window.CG_SPEAK_VIDEO; if (data) queue.splice(0).forEach(function (f) { f(data); }); };
+    document.head.appendChild(sc);
+  }
+  function patch() {
+    var vids = [].slice.call(document.querySelectorAll('video[src*="claudia-onair"]:not([data-cg-onair])'));
+    var imgs = [].slice.call(document.querySelectorAll('.cg-hero-portrait img:not([data-cg-onair])'));
+    if (!vids.length && !imgs.length) return;
+    vids.forEach(function (v) { v.setAttribute('data-cg-onair', '1'); });
+    imgs.forEach(function (i) { i.setAttribute('data-cg-onair', '1'); });
+    withData(function (d) {
+      imgs.forEach(function (i) { i.src = d.poster; i.style.objectFit = 'cover'; i.style.objectPosition = '50% 20%'; });
+      vids.forEach(function (v) {
+        v.poster = d.poster; v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true;
+        v.style.objectFit = 'cover'; v.style.objectPosition = '50% 14%'; v.style.background = '#e9eaec';
+        v.src = d.video; v.load();
+        var p = v.play(); if (p && p.catch) p.catch(function () {});
+      });
+    });
+  }
+  document.addEventListener('DOMContentLoaded', patch);
+  new MutationObserver(patch).observe(document.documentElement, { childList: true, subtree: true });
+  patch();
+})();

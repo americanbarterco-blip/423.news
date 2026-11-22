@@ -74,7 +74,7 @@
     return t.trim().slice(0, 460);
   }
 
-  function vids() { return [].slice.call(document.querySelectorAll('video[src*="claudia-onair"]')); }
+  function vids() { return [].slice.call(document.querySelectorAll('video[src*="claudia-onair"],video[data-cg-onair]')); }
   function playVideo() { vids().forEach(function (v) { v.muted = true; v.loop = true; var p = v.play(); if (p && p.catch) p.catch(function () {}); }); }
   function setTag(on) {
     document.querySelectorAll('.cg-cam .cg-tag').forEach(function (t) {
