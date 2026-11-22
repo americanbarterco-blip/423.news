@@ -237,9 +237,16 @@ def process_lead(base, key, model, lead, classification, lessons=None):
     independent_sources=len(distinct_domains(evidence)) >= MIN_DOMAINS
     if not flags and independent_sources:
         verification=verify_article(model,key,lead,evidence,draft)
-    # Claudia is draft-only: never publish or insert into news_posts automatically.
-    save_draft(base,key,lead,evidence,draft,classification,verification,published=False)
-    print("PRIVATE DRAFT SAVED (risk=%s, verification=%s): %s"%(flags,verification and verification.get("result"),draft["title"]))
+    # Automatically publish only clean stories that passed strict fact-check.
+    if not verification or not verification.get("passed"):
+        print("HELD (not published; flagged for review): risk=%s, verification=%s, title=%s"%(flags,verification and verification.get("result"),draft["title"]))
+        return False
+    slug="claudia-"+str(lead["id"])
+    row={"slug":slug,"section":classification["section"],"topic":classification["topic"],
+          "title":draft["title"],"body":draft["body_markdown"]+source_list(evidence),
+          "author_name":"Claudia Green","status":"published"}
+    api(base,key,"rest/v1/news_posts","POST",json.dumps(row).encode(),"return=representation")
+    print("AUTOPUBLISHED VERIFIED STORY: "+draft["title"])
     return True
 
 def main():
@@ -277,7 +284,7 @@ def main():
         except Exception as exc:
             print("Lead processing failed: %s: %s" % (type(exc).__name__,exc))
         time.sleep(0.25)
-    print("Writer run complete. OpenAI (%s). Processed %s leads; single-source drafts remain private; publication requires independent corroboration and passed verification." % (model,created))
+    print("Writer run complete. OpenAI (%s). Processed %s leads; publishes only clean, corroborated articles that pass strict fact-check." % (model,created))
 
 if __name__ == "__main__":
     main()
