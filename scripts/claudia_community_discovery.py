@@ -50,12 +50,16 @@ def request(url,headers=None,body=None,method="GET"):
 def reddit_public_fetch():
  rows=[]
  for query in REDDIT_PUBLIC_QUERIES:
-  q=query+" Chattanooga Cleveland Tennessee Hamilton County Bradley County"
+  q=query
   params=urllib.parse.urlencode({"q":q,"sort":"new","t":"week","limit":30})
   url="https://www.reddit.com/search.json?"+params
   try:
    _,payload=request(url,{"User-Agent":UA,"Accept":"application/json"})
    rows.extend(parse_reddit(payload))
+  except urllib.error.HTTPError as e:
+   try:detail=e.read().decode("utf-8","replace")[:200]
+   except Exception:detail=""
+   print(f"Public Reddit search skipped {query}: HTTP {e.code} {e.reason} {detail}")
   except Exception as e:print("Public Reddit search skipped",query,type(e).__name__)
   time.sleep(0.2)
  unique={}

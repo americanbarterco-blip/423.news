@@ -1,4 +1,4 @@
-import unittest
+import unittest,urllib.parse
 from unittest.mock import patch
 from scripts.claudia_community_discovery import parse_reddit,parse_youtube,relevant,category,REDDIT_QUERIES,YOUTUBE_QUERIES,reddit_public_fetch,community_ingest_path
 class CommunityDiscoveryTests(unittest.TestCase):
@@ -29,6 +29,8 @@ class CommunityDiscoveryTests(unittest.TestCase):
         rows=reddit_public_fetch()
         self.assertEqual(len(rows),1)
         self.assertIn("Chattanooga",rows[0]["title"])
+        search_queries=[urllib.parse.parse_qs(urllib.parse.urlparse(call.args[0]).query)["q"][0] for call in mock_request.call_args_list]
+        self.assertEqual(search_queries[1],"Chattanooga police")
     def test_community_ingestion_targets_fingerprint(self):
         self.assertEqual(community_ingest_path(),"rest/v1/claudia_story_leads?on_conflict=fingerprint")
     def test_search_query_coverage(self):
