@@ -10,7 +10,7 @@ class ResearchExecutorTests(unittest.TestCase):
     def test_retryable_http_statuses(self):
         self.assertTrue(retryable_http_status(429))
         self.assertTrue(retryable_http_status(503))
-        self.assertFalse(retryable_http_status(404)
+        self.assertFalse(retryable_http_status(404))
         self.assertFalse(retryable_http_status(401))
     def test_overlap_scoring(self):
         self.assertGreater(similarity("Cleveland schools announce winter event","Cleveland schools winter event"),0.4)
