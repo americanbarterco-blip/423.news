@@ -43,14 +43,32 @@ class SafeRedirect(urllib.request.HTTPRedirectHandler):
         safe_url(newurl)
         return super().redirect_request(req,fp,code,msg,headers,newurl)
 
+RETRYABLE_HTTP={429,502,503,504}
+def retryable_http_status(status):
+    return status in RETRYABLE_HTTP
+
 def fetch_raw(url,accept="text/html,application/xhtml+xml,application/rss+xml,application/atom+xml,application/xml"):
     safe_url(url)
     opener=urllib.request.build_opener(SafeRedirect())
     req=urllib.request.Request(url,headers={"User-Agent":UA,"Accept":accept})
-    with opener.open(req,timeout=TIMEOUT) as r:
-        data=r.read(MAX_BYTES+1)
-        if len(data)>MAX_BYTES: raise ValueError("page exceeds size cap")
-        return data.decode("utf-8","replace"),r.headers.get("Content-Type","").lower(),r.geturl()
+    for attempt in range(3):
+        try:
+            with opener.open(req,timeout=TIMEOUT) as r:
+                data=r.read(MAX_BYTES+1)
+                if len(data)>MAX_BYTES: raise ValueError("page exceeds size cap")
+                return data.decode("utf-8","replace"),r.headers.get("Content-Type","").lower(),r.geturl()
+        except urllib.error.HTTPError as exc:
+            if not retryable_http_status(exc.code) or attempt==2:
+                raise RuntimeError(f"Fetch failed HTTP {exc.code} for {url}") from exc
+            delay=min(8,max(1,int(exc.headers.get("Retry-After","0")))) if exc.headers else 2**attempt
+            print(f"Retrying HTTP {exc.code} for {urllib.parse.urlparse(url).netloc} in {delay}s")
+            time.sleep(delay)
+        except (urllib.error.URLError,TimeoutError) as exc:
+            if attempt==2:raise RuntimeError(f"Fetch network failure for {url}: {type(exc).__name__}") from exc
+            delay=2**attempt
+            print(f"Retrying network error for {urllib.parse.urlparse(url).netloc} in {delay}s")
+            time.sleep(delay)
+    raise RuntimeError("Fetch retries exhausted")
 def fetch(url):
     body,ctype,final=fetch_raw(url)
     if "html" not in ctype: raise ValueError("not an HTML response")
@@ -194,7 +212,7 @@ def process(task,base,key,cfg):
                 seen_domains.add(candidate_host)
                 evidence.append(evidence_record(lead_id,"corroboration",url,item["source_name"],data["excerpt"] or data["summary"],f"Fetched page relevance {actual_score:.3f}; not fact verification."))
                 candidates.append({"url":url,"source_name":item["source_name"],"topic_overlap":round(actual_score,3),"title":data["title"]})
-        except Exception as e:print(f"Candidate skipped: {type(e).__name__}")
+        except Exception as e:print(f"Candidate skipped {item.get(\"url\",\"\")}: {type(e).__name__}: {str(e)[:180]}")
         if len(candidates)>=MAX_CANDIDATES:break
     for rec in evidence:request_supabase(base,key,evidence_insert_path(),"POST",json.dumps(rec).encode(),"resolution=ignore-duplicates,return=minimal")
     status="completed" if evidence else "blocked"
