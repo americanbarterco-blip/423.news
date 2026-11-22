@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Scheduled public community/video lead discovery for Claudia; no auto-publishing."""
 from __future__ import annotations
-import hashlib,json,os,time,urllib.parse,urllib.request,base64
+import hashlib,json,os,time,urllib.parse,urllib.request,base64\nfrom pathlib import Path
 from datetime import datetime,timezone,timedelta
 
 UA="423.news-Claudia-CommunityResearch/2.0 (+https://423.news/)"
