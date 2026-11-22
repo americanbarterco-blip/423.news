@@ -177,16 +177,6 @@ def leads_with_evidence(base,key,leads):
 
 
 
-def publish_article(base,key,lead,evidence,draft,classification):
-    slug="claudia-"+str(lead["id"])
-    body=(draft["body_markdown"]+source_list(evidence))[:20000]
-    row={"slug":slug,"section":classification["section"],"topic":str(classification["topic"] or "general")[:40],
-          "title":draft["title"][:200],"body":body,"author_name":"Claudia Green","status":"published"}
-    _,raw=api(base,key,"rest/v1/news_posts","POST",json.dumps(row).encode(),"return=representation")
-    posted=json.loads(raw)
-    print("AUTO-PUBLISHED article: %s | post=%s"%(draft["title"],posted[0].get("id") if posted else "created"))
-    return posted
-
 def save_draft(base, key, lead, evidence, draft, classification, verification=None, published=False):
     full_text = (
         lead.get("title", "") + " " + lead.get("summary", "") + " "
@@ -242,12 +232,9 @@ def process_lead(base, key, model, lead, classification):
     independent_sources=len(distinct_domains(evidence)) >= MIN_DOMAINS
     if not flags and independent_sources:
         verification=verify_article(model,key,lead,evidence,draft)
-    published=False
-    if independent_sources and not flags and verification and verification.get("passed"):
-        publish_article(base,key,lead,evidence,draft,classification)
-        published=True
-    save_draft(base,key,lead,evidence,draft,classification,verification,published)
-    print("%s (risk=%s, verification=%s): %s"%( "PUBLISHED" if published else "FLAGGED FOR REVIEW",flags,verification and verification.get("result"),draft["title"]))
+    # Claudia is draft-only: never publish or insert into news_posts automatically.
+    save_draft(base,key,lead,evidence,draft,classification,verification,published=False)
+    print("PRIVATE DRAFT SAVED (risk=%s, verification=%s): %s"%(flags,verification and verification.get("result"),draft["title"]))
     return True
 
 def main():
@@ -259,7 +246,7 @@ def main():
         print("Draft writer skipped: Supabase credentials missing."); return
     if not openai_key:
         print("Draft writer skipped: OPENAI_API_KEY missing; leads remain queued."); return
-    _, raw = api(base,key,"rest/v1/claudia_story_leads?status=in.(new,researching)&select=id,title,summary,url,source_name,discovered_at&order=discovered_at.desc&limit=50")
+    _, raw = api(base,key,"rest/v1/claudia_story_leads?status=in.(new,researching)&select=id,title,summary,url,source_name,discovered_at&order=discovered_at.desc&limit=1000")
     leads=leads_with_evidence(base,key,json.loads(raw))
     print("Writer evidence-backed lead selection: %s" % len(leads))
     classified=[(classify_content(lead),lead) for lead in leads]
