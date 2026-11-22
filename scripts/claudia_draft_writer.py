@@ -224,7 +224,7 @@ def save_draft(base, key, lead, evidence, draft, classification, verification=No
 )
 
 def load_flag_lessons(base,key):
-    _,raw=api(base,key,"rest/v1/claudia_memories?project=eq.423.news&kind=eq.lesson&select=content&order=updated_at.desc&limit=80)
+    _,raw=api(base,key,"rest/v1/claudia_memories?project=eq.423.news&kind=eq.lesson&select=content&order=updated_at.desc&limit=80")
     return [row.get("content","") for row in json.loads(raw) if row.get("content")]
 
 def process_lead(base, key, model, lead, classification, lessons=None):
