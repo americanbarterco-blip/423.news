@@ -14,7 +14,7 @@ CONFIG=Path(__file__).resolve().parent/"claudia_sources.json"
 UA="423.news-Claudia-Research/1.0 (+https://423.news/)"
 MAX_BYTES=1_200_000
 TIMEOUT=12
-MAX_CANDIDATES=2
+MAX_CANDIDATES=4
 STOP=set("the a an and or to in on for of with from by is are was were be this that local news story article city county school today".split())
 
 def safe_url(url):
@@ -59,14 +59,17 @@ def feed_items(xml,base):
     root=ET.fromstring(xml); rows=[]
     for node in root.iter():
         if node.tag.rsplit("}",1)[-1].lower() not in {"item","entry"}:continue
-        title="";summary="";url=""
+        title="";summary="";url="";source_name="";publisher_url=""
         for child in node:
             name=child.tag.rsplit("}",1)[-1].lower()
             if name=="title" and child.text:title=child.text.strip()
             if name in ("summary","description","content") and child.text:summary=child.text.strip()
             if name=="link":url=child.attrib.get("href") or (child.text.strip() if child.text else "")
+            if name=="source":
+                source_name=child.text.strip() if child.text else ""
+                publisher_url=child.attrib.get("url","")
         url=urllib.parse.urljoin(base,url)
-        if title and url.startswith(("http://","https://")):rows.append({"title":title,"summary":summary,"url":url})
+        if title and url.startswith(("http://","https://")):rows.append({"title":title,"summary":summary,"url":url,"source_name":source_name,"publisher_url":publisher_url})
     return rows
 
 class PageParser(HTMLParser):
@@ -126,6 +129,35 @@ def source_pages(cfg,lead):
     for item in results:unique.setdefault(item["url"],item)
     return sorted(unique.values(),key=lambda x:x["score"],reverse=True)[:MAX_CANDIDATES]
 
+def google_news_candidates(task):
+    """Search Google News RSS for independent articles matching a queued lead."""
+    title=(task.get("title") or "").strip()
+    summary=((task.get("result") or {}).get("summary") or "").strip()
+    if not title:return []
+    q=(title+" "+summary[:140]+" Tennessee").strip()[:240]
+    url="https://news.google.com/rss/search?"+urllib.parse.urlencode({"q":q,"hl":"en-US","gl":"US","ceid":"US:en"})
+    try:
+        raw,ctype,final=fetch_raw(url)
+        items=feed_items(raw,final)
+    except Exception as exc:
+        print(f"Google News corroboration search skipped: {type(exc).__name__}")
+        return []
+    query=title+" "+summary
+    lead_host=(urllib.parse.urlparse((task.get("result") or {}).get("lead_url") or "").hostname or "").lower().removeprefix("www.")
+    candidates=[]
+    for item in items:
+        try:safe_url(item["url"])
+        except ValueError:continue
+        host=(urllib.parse.urlparse(item["url"]).hostname or "").lower().removeprefix("www.")
+        if not host or host==lead_host:continue
+        score=similarity(query,item["title"]+" "+item.get("summary",""))
+        if score>=0.12:
+            candidates.append({"url":item["url"],"source_name":item.get("source_name") or "Google News result","source_url":item.get("publisher_url") or final,"score":round(score,3)})
+    unique={}
+    for item in candidates:unique.setdefault(item["url"],item)
+    return sorted(unique.values(),key=lambda item:item["score"],reverse=True)[:5]
+
+
 def request_supabase(base,key,path,method="GET",body=None,prefer=None):
     headers={"apikey":key,"Authorization":"Bearer "+key}
     if body is not None:headers["Content-Type"]="application/json"
@@ -146,20 +178,30 @@ def process(task,base,key,cfg):
     if not lead_url or not lead_id:raise ValueError("task missing lead URL or lead ID")
     raw,final=fetch(lead_url);p=PageParser();p.feed(raw);page=p.result()
     evidence=[evidence_record(lead_id,"source",final,result.get("source","Lead source"),page["excerpt"],"Lead page retrieved; this is not independent verification.")]
-    candidates=[]
-    for item in source_pages(cfg,task):
+    candidates=[];candidate_map={}
+    for item in source_pages(cfg,task)+google_news_candidates(task):
+        candidate_map.setdefault(item["url"],item)
+    lead_host=(urllib.parse.urlparse(lead_url).hostname or "").lower().removeprefix("www.")
+    seen_domains={lead_host}
+    ranked=sorted(candidate_map.values(),key=lambda x:x.get("score",0),reverse=True)
+    for item in ranked[:MAX_CANDIDATES*3]:
         try:
             raw,url=fetch(item["url"]);parser=PageParser();parser.feed(raw);data=parser.result()
             actual_score=similarity(task.get("title","")+" "+(result.get("summary","") or ""),data["title"]+" "+data["summary"]+" "+data["excerpt"])
+            candidate_host=(urllib.parse.urlparse(url).hostname or "").lower().removeprefix("www.")
+            if not candidate_host or candidate_host in seen_domains:continue
             if (data["excerpt"] or data["summary"]) and actual_score>=0.12:
+                seen_domains.add(candidate_host)
                 evidence.append(evidence_record(lead_id,"corroboration",url,item["source_name"],data["excerpt"] or data["summary"],f"Fetched page relevance {actual_score:.3f}; not fact verification."))
                 candidates.append({"url":url,"source_name":item["source_name"],"topic_overlap":round(actual_score,3),"title":data["title"]})
         except Exception as e:print(f"Candidate skipped: {type(e).__name__}")
+        if len(candidates)>=MAX_CANDIDATES:break
     for rec in evidence:request_supabase(base,key,evidence_insert_path(),"POST",json.dumps(rec).encode(),"resolution=ignore-duplicates,return=minimal")
     status="completed" if evidence else "blocked"
     update={"status":status,"locked_at":None,"locked_by":None,"last_error":None if evidence else "No evidence retrieved","result":{"lead_url":lead_url,"evidence_count":len(evidence),"candidate_sources":candidates,"editorial_status":"needs human review; not verified","completed_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}}
     request_supabase(base,key,"rest/v1/claudia_research_tasks?id=eq."+urllib.parse.quote(task["id"],safe=""),"PATCH",json.dumps(update).encode(),"return=minimal")
     print(f"Task {task['id']}: evidence={len(evidence)}, corroborating_pages={len(candidates)}, state={status}")
+
 def retry_patch(task,error):
     attempts=int(task.get("attempt_count",1));maximum=int(task.get("max_attempts",4))
     message=(type(error).__name__+": "+str(error))[:500]
