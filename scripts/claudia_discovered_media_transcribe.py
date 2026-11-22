@@ -20,7 +20,7 @@ def load_leads(paths):
         if not p.exists(): continue
         try: data = json.loads(p.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError): continue
-        rows.extend(data.get("leads", data if isinstance(data, list) else []))
+        rows.extend(data if isinstance(data, list) else data.get("leads", []))
     unique = {}
     for lead in rows:
         url = lead.get("url", "")
