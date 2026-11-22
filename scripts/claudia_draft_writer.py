@@ -188,7 +188,7 @@ def load_flag_lessons(base,key):
     _,raw=api(base,key,"rest/v1/claudia_memories?project=eq.423.news&kind=eq.lesson&select=content&order=updated_at.desc&limit=80")
     return [row.get("content","") for row in json.loads(raw) if row.get("content")]
 
-def process_lead(base, key, model, lead, classification, lessons=None):
+def process_lead(base, key, openai_key, model, lead, classification, lessons=None):
     _, raw = api(base,key,"rest/v1/claudia_story_evidence?lead_id=eq."+urllib.parse.quote(str(lead["id"]),safe="")+
         "&select=evidence_type,url,source_name,excerpt,reliability_notes,observed_at&order=observed_at.desc")
     evidence = eligible_evidence(json.loads(raw), min_domains=1)
@@ -202,8 +202,8 @@ def process_lead(base, key, model, lead, classification, lessons=None):
     if len(distinct_domains(evidence)) < required_domains:
         print("HELD factual verification exception: requires %s independent source(s); found %s."%(required_domains,len(distinct_domains(evidence))))
         return False
-    draft=call_openai(model,key,lead,evidence,classification,lessons)
-    verification=verify_article(model,key,lead,evidence,draft,min_confidence=0.75 if starter_gate else 0.90)
+    draft=call_openai(model,openai_key,lead,evidence,classification,lessons)
+    verification=verify_article(model,openai_key,lead,evidence,draft,min_confidence=0.75 if starter_gate else 0.90)
     save_verification_attempt(base,key,lead,verification,starter_gate)
     # News topics never block coverage. Only factual support/conflict checks can hold.
     if not verification or not verification.get("passed"):
@@ -243,7 +243,7 @@ def main():
     created = 0
     for classification,lead in selected:
         try:
-            if process_lead(base,key,model,lead,classification,lessons): created += 1
+            if process_lead(base,key,openai_key,model,lead,classification,lessons): created += 1
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8","replace")[:500]
             print("OpenAI/Supabase HTTP %s: %s" % (exc.code,detail))
