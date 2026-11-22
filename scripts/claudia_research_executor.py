@@ -233,10 +233,11 @@ def process(task,base,key,cfg):
             print(f"Candidate fetch failed {candidate_url}: {type(e).__name__}: {str(e)[:240]}")
         if len(candidates)>=MAX_CANDIDATES:break
     corroborating=[rec for rec in evidence if rec["evidence_type"]=="corroboration"]
-    if not corroborating:
-        raise RuntimeError("No independent corroborating publisher page retrieved; retry instead of marking research complete")
+    # Persist useful primary-source research even when independent corroboration is
+    # unavailable. This is a terminal limited-research state, not a retry loop.
     for rec in evidence:request_supabase(base,key,evidence_insert_path(),"POST",json.dumps(rec).encode(),"resolution=ignore-duplicates,return=minimal")
-    update={"status":"completed","locked_at":None,"locked_by":None,"last_error":None,"result":{"lead_url":lead_url,"evidence_count":len(evidence),"corroboration_count":len(corroborating),"candidate_sources":candidates,"editorial_status":"corroboration retrieved; automated factual review still required","completed_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}}
+    editorial_status="corroboration retrieved; automated factual review still required" if corroborating else "research_limited; primary source retained; corroboration unavailable"
+    update={"status":"completed","locked_at":None,"locked_by":None,"last_error":None,"result":{"lead_url":lead_url,"evidence_count":len(evidence),"corroboration_count":len(corroborating),"candidate_sources":candidates,"editorial_status":editorial_status,"completed_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}}
     request_supabase(base,key,"rest/v1/claudia_research_tasks?id=eq."+urllib.parse.quote(task["id"],safe=""),"PATCH",json.dumps(update).encode(),"return=minimal")
     print(f"Task {task['id']}: evidence={len(evidence)}, corroborating_pages={len(candidates)}, state=completed")
 
