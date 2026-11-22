@@ -99,6 +99,14 @@ ul.pts.unk li::before { background:transparent; border:2px solid var(--warn); }
 .more a:hover { border-color:#3a566e; }
 .state { text-align:center; padding:60px 10px; color:var(--muted); }
 #toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:#f4f4f5; color:#09090b; padding:10px 18px; border-radius:12px; font-weight:600; display:none; z-index:20; max-width:92vw; }
+
+.cg-pop{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(86px,calc(env(safe-area-inset-bottom) + 76px));width:128px;aspect-ratio:9/16;border-radius:16px;overflow:hidden;background:#e9eaec;border:2px solid #35d1eb;box-shadow:0 12px 32px #000a;z-index:60;opacity:0;transform:translateY(14px) scale(.96);pointer-events:none;transition:opacity .25s,transform .25s}
+.cg-pop.on{opacity:1;transform:none;pointer-events:auto}
+.cg-pop video,.cg-pop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.cg-pop .cg-pop-tag{position:absolute;left:6px;bottom:6px;background:#020c18d9;color:#fff;font:700 11px system-ui;padding:3px 7px;border-radius:8px}
+.cg-pop button{position:absolute;top:5px;right:5px;width:30px;height:30px;border:0;border-radius:50%;background:#020c18d9;color:#fff;font:700 16px/30px system-ui;cursor:pointer;padding:0}
+.cg-pop button:focus-visible{outline:3px solid #f5c451;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.cg-pop{transition:none}}
 </style>
 <script src="translate.js" defer></script></head>
 <body>
@@ -192,6 +200,36 @@ function injectStructuredData(r, canonUrl) {
   document.head.appendChild(s);
 }
 
+/* Small popup: Claudia's muted video (no audio) while the report is read aloud */
+var CGPop = (function () {
+  var box = null, vid = null, wanted = false, dismissed = false, loading = false;
+  function build(d) {
+    box = document.createElement('div'); box.className = 'cg-pop'; box.setAttribute('role', 'complementary'); box.setAttribute('aria-label', 'Claudia Green video while the report is read');
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { box.innerHTML = '<img alt="" src="' + d.poster + '">'; }
+    else {
+      vid = document.createElement('video'); vid.muted = true; vid.defaultMuted = true; vid.loop = true; vid.playsInline = true; vid.setAttribute('playsinline', ''); vid.setAttribute('aria-hidden', 'true'); vid.disablePictureInPicture = true; vid.poster = d.poster; vid.src = d.video; box.appendChild(vid);
+    }
+    var tag = document.createElement('span'); tag.className = 'cg-pop-tag'; tag.textContent = 'Claudia Green'; box.appendChild(tag);
+    var x = document.createElement('button'); x.type = 'button'; x.setAttribute('aria-label', 'Close Claudia video'); x.textContent = '\u00d7';
+    x.onclick = function () { dismissed = true; sync(); }; box.appendChild(x);
+    document.body.appendChild(box); sync();
+  }
+  function load() {
+    if (box || loading) return; loading = true;
+    if (window.CG_SPEAK_VIDEO) { build(window.CG_SPEAK_VIDEO); return; }
+    var sc = document.createElement('script'); sc.src = 'claudia-speak-video.js'; sc.onload = function () { if (window.CG_SPEAK_VIDEO) build(window.CG_SPEAK_VIDEO); }; sc.onerror = function () { loading = false; }; document.head.appendChild(sc);
+  }
+  function sync() {
+    if (!box) return;
+    var show = wanted && !dismissed; box.classList.toggle('on', show);
+    if (vid) { if (show) { var p = vid.play(); if (p && p.catch) p.catch(function () {}); } else { vid.pause(); } }
+  }
+  return {
+    set: function (on) { if (on === wanted) return; wanted = on; if (on) { dismissed = false; load(); } sync(); }
+  };
+})();
+
 function voice(r, card) {
   var synth = window.speechSynthesis;
   var parts = [r.headline].concat(String(r.summary || '').split(/(?<=[.!?])\s+/));
@@ -211,6 +249,7 @@ function voice(r, card) {
     el.play.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
     el.play.setAttribute('aria-label', playing ? 'Pause Claudia\'s report' : 'Play Claudia\'s report');
     card.classList.toggle('live', playing);
+    CGPop.set(playing);
     el.bar.style.width = Math.min(100, Math.round(idx / parts.length * 100)) + '%';
     el.sub.textContent = playing ? 'Reading now' : (idx > 0 && idx < parts.length ? 'Paused' : 'About ' + mins() + ' min · read aloud');
   }
