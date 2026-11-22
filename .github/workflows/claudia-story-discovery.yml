@@ -40,9 +40,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Compile newsroom scripts
-        run: python -m py_compile scripts/claudia_discovery.py scripts/claudia_workloop.py scripts/claudia_research_executor.py scripts/claudia_draft_writer.py scripts/claudia_community_discovery.py scripts/claudia_site_coverage_audit.py scripts/test_claudia_discovery.py scripts/test_claudia_workloop.py scripts/test_claudia_research_executor.py scripts/test_claudia_draft_writer.py scripts/test_claudia_community_discovery.py scripts/test_claudia_site_coverage_audit.py scripts/claudia_media.py scripts/claudia_media_review.py scripts/claudia_audio_transcribe.py
+        run: python -m py_compile scripts/claudia_discovery.py scripts/claudia_workloop.py scripts/claudia_research_executor.py scripts/claudia_draft_writer.py scripts/claudia_community_discovery.py scripts/claudia_site_coverage_audit.py scripts/test_claudia_discovery.py scripts/test_claudia_workloop.py scripts/test_claudia_research_executor.py scripts/test_claudia_draft_writer.py scripts/test_claudia_community_discovery.py scripts/test_claudia_site_coverage_audit.py scripts/test_claudia_audio_transcribe.py scripts/claudia_media.py scripts/claudia_media_review.py scripts/claudia_audio_transcribe.py
       - name: Run unit tests
-        run: python -m unittest scripts.test_claudia_discovery scripts.test_claudia_workloop scripts.test_claudia_research_executor scripts.test_claudia_draft_writer scripts.test_claudia_community_discovery scripts.test_claudia_site_coverage_audit scripts.test_claudia_media
+        run: python -m unittest scripts.test_claudia_discovery scripts.test_claudia_workloop scripts.test_claudia_research_executor scripts.test_claudia_draft_writer scripts.test_claudia_community_discovery scripts.test_claudia_site_coverage_audit scripts.test_claudia_media scripts.test_claudia_audio_transcribe
       - name: Run static coverage audit
         run: python scripts/claudia_site_coverage_audit.py --root . --json-out claudia-site-coverage.json
       - uses: actions/upload-artifact@v4
