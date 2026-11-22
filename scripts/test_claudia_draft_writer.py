@@ -14,6 +14,11 @@ class OpenAIOnlyDraftWriterTests(unittest.TestCase):
         self.assertEqual(len(eligible_evidence(two)),2)
         self.assertEqual(len(distinct_domains(two)),2)
 
+    def test_primary_source_can_support_private_draft_only(self):
+        one=[{"evidence_type":"source","url":"https://primary.example/story","excerpt":"confirmed article text"}]
+        self.assertEqual(eligible_evidence(one),[])
+        self.assertEqual(len(eligible_evidence(one,min_domains=1)),1)
+
     def test_rejects_ineligible_evidence_types(self):
         items=[{"evidence_type":"media","url":"https://a.com","excerpt":"image"},{"evidence_type":"source","url":"https://b.com","excerpt":"text"}]
         self.assertEqual(eligible_evidence(items),[])
