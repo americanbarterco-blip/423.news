@@ -291,6 +291,9 @@ def main():
             detail = exc.read().decode("utf-8","replace")[:500]
             print("AI/Supabase HTTP %s: %s" % (exc.code,detail))
             if exc.code in (402,403,429): print("AI provider unavailable or quota exhausted; stopping this run. No paid fallback.")
+            if exc.code >= 500:
+                print("AI provider returned a server-side failure; stopping this writer batch to avoid repeating a failing request across leads.")
+                break
             if exc.code in (402,403,429): break
         except Exception as exc:
             print("Lead processing failed: %s: %s" % (type(exc).__name__,exc))
