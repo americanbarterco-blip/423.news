@@ -230,9 +230,11 @@ def process(task,base,key,cfg):
             candidate_url=item.get("url","")
             print(f"Candidate skipped {candidate_url}: {type(e).__name__}: {str(e)[:180]}")
         if len(candidates)>=MAX_CANDIDATES:break
+    corroborating=[rec for rec in evidence if rec["evidence_type"]=="corroboration"]
+    if not corroborating:
+        raise RuntimeError("No independent corroborating publisher page retrieved; retry instead of marking research complete")
     for rec in evidence:request_supabase(base,key,evidence_insert_path(),"POST",json.dumps(rec).encode(),"resolution=ignore-duplicates,return=minimal")
-    status="completed" if evidence else "blocked"
-    update={"status":status,"locked_at":None,"locked_by":None,"last_error":None if evidence else "No evidence retrieved","result":{"lead_url":lead_url,"evidence_count":len(evidence),"candidate_sources":candidates,"editorial_status":"needs human review; not verified","completed_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}}
+    update={"status":"completed","locked_at":None,"locked_by":None,"last_error":None,"result":{"lead_url":lead_url,"evidence_count":len(evidence),"corroboration_count":len(corroborating),"candidate_sources":candidates,"editorial_status":"corroboration retrieved; automated factual review still required","completed_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}}
     request_supabase(base,key,"rest/v1/claudia_research_tasks?id=eq."+urllib.parse.quote(task["id"],safe=""),"PATCH",json.dumps(update).encode(),"return=minimal")
     print(f"Task {task['id']}: evidence={len(evidence)}, corroborating_pages={len(candidates)}, state={status}")
 
