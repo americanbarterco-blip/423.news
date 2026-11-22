@@ -202,7 +202,7 @@ def main():
     created = 0
     for classification,lead in selected:
         try:
-            if process_lead(base,key,model,lead): created += 1
+            if process_lead(base,key,model,lead,classification): created += 1
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8","replace")[:500]
             print("OpenAI/Supabase HTTP %s: %s" % (exc.code,detail))
