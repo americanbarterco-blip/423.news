@@ -122,11 +122,14 @@ jobs:
           if k:
               check("Tavily",urllib.request.Request("https://api.tavily.com/search",data=json.dumps({"query":q,"max_results":3,"search_depth":"basic"}).encode(),headers={"Authorization":"Bearer "+k,"Content-Type":"application/json"},method="POST"))
           else: results.append("Tavily: SKIP (secret missing)")
-          k=os.getenv("OPENAI_API_KEY","").strip()
-          if k:
-              payload={"model":"gpt-4.1-mini","max_tokens":5,"temperature":0,"messages":[{"role":"user","content":"Reply only OK."}]}
-              check("OpenAI GPT-4.1-mini",urllib.request.Request("https://api.openai.com/v1/chat/completions",data=json.dumps(payload).encode(),headers={"Authorization":"Bearer "+k,"Content-Type":"application/json"},method="POST"))
-          else: results.append("OpenAI: SKIP (secret missing)")
+          k=os.getenv("CLOUDFLARE_API_TOKEN","").strip()
+          account=os.getenv("CLOUDFLARE_ACCOUNT_ID","").strip()
+          model=os.getenv("CLAUDIA_WRITER_MODEL","@cf/meta/llama-3.1-8b-instruct").strip()
+          if k and account:
+              payload={"model":model,"max_tokens":8,"temperature":0,"messages":[{"role":"user","content":"Reply only OK."}]}
+              endpoint="https://api.cloudflare.com/client/v4/accounts/"+account+"/ai/v1/chat/completions"
+              check("Cloudflare Workers AI",urllib.request.Request(endpoint,data=json.dumps(payload).encode(),headers={"Authorization":"Bearer "+k,"Content-Type":"application/json"},method="POST"))
+          else: results.append("Cloudflare Workers AI: SKIP (account ID or API token secret missing)")
           summary="\n".join(results)
           print(summary)
           with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as f:
