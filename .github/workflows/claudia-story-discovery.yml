@@ -95,6 +95,52 @@ jobs:
       - name: Transcribe discovered video and direct media leads
         continue-on-error: true
         run: python scripts/claudia_discovered_media_transcribe.py --discovery claudia-discovery.json --community claudia-community-discovery.json --out claudia-transcripts --limit 3
+      - name: API credential smoke test (non-scheduled runs only)
+        if: github.event_name != 'schedule'
+        continue-on-error: true
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request, urllib.error
+          results=[]
+          def check(name, req):
+              try:
+                  with urllib.request.urlopen(req, timeout=25) as r:
+                      body=json.loads(r.read().decode('utf-8'))
+                      count=len(body.get('organic',[])) if name=='Serper' else len(body.get('results',[])) if name=='Tavily' else len(body.get('data',[])) if name=='OpenAI models' else 1
+                      results.append(f"{name}: PASS (HTTP {r.status}; {count} result(s))")
+              except urllib.error.HTTPError as e:
+                  results.append(f"{name}: FAIL (HTTP {e.code})")
+              except Exception as e:
+                  results.append(f"{name}: FAIL ({type(e).__name__})")
+          q="Chattanooga Tennessee local news"
+          k=os.getenv("SERPER_API_KEY","").strip()
+          if k:
+              check("Serper",urllib.request.Request("https://google.serper.dev/search",data=json.dumps({"q":q,"num":3}).encode(),headers={"X-API-KEY":k,"Content-Type":"application/json"},method="POST"))
+          else: results.append("Serper: SKIP (secret missing)")
+          k=os.getenv("TAVILY_API_KEY","").strip()
+          if k:
+              check("Tavily",urllib.request.Request("https://api.tavily.com/search",data=json.dumps({"query":q,"max_results":3,"search_depth":"basic"}).encode(),headers={"Authorization":"Bearer "+k,"Content-Type":"application/json"},method="POST"))
+          else: results.append("Tavily: SKIP (secret missing)")
+          k=os.getenv("OPENAI_API_KEY","").strip()
+          if k:
+              payload={"model":"gpt-4.1-mini","max_tokens":5,"temperature":0,"messages":[{"role":"user","content":"Reply only OK."}]}
+              check("OpenAI GPT-4.1-mini",urllib.request.Request("https://api.openai.com/v1/chat/completions",data=json.dumps(payload).encode(),headers={"Authorization":"Bearer "+k,"Content-Type":"application/json"},method="POST"))
+          else: results.append("OpenAI: SKIP (secret missing)")
+          summary="\n".join(results)
+          print(summary)
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as f:
+              f.write("## Claudia API smoke test\n\n"+summary+"\n")
+          with open("claudia-api-smoke.txt","w",encoding="utf-8") as f:
+              f.write(summary+"\n")
+          PY
+      - name: Upload API smoke test results
+        if: github.event_name != 'schedule' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claudia-api-smoke
+          path: claudia-api-smoke.txt
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Generate, fact-check, save private drafts, and flag exceptions
         if: env.SUPABASE_CONFIGURED == 'true' && env.OPENAI_CONFIGURED == 'true'
         run: python scripts/claudia_draft_writer.py
