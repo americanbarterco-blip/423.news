@@ -213,7 +213,7 @@ def process(task,base,key,cfg):
                 evidence.append(evidence_record(lead_id,"corroboration",url,item["source_name"],data["excerpt"] or data["summary"],f"Fetched page relevance {actual_score:.3f}; not fact verification."))
                 candidates.append({"url":url,"source_name":item["source_name"],"topic_overlap":round(actual_score,3),"title":data["title"]})
         except Exception as e:
-            candidate_url=item.get("url","")
+            candidate_url=item.get("url",""))
             print(f"Candidate skipped {candidate_url}: {type(e).__name__}: {str(e)[:180]}")
         if len(candidates)>=MAX_CANDIDATES:break
     for rec in evidence:request_supabase(base,key,evidence_insert_path(),"POST",json.dumps(rec).encode(),"resolution=ignore-duplicates,return=minimal")
