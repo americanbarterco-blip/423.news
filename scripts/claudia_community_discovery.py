@@ -56,7 +56,7 @@ def reddit_public_fetch():
   try:
    _,payload=request(url,{"User-Agent":UA,"Accept":"application/json"})
    rows.extend(parse_reddit(payload))
-  except Exception as e:print("Public Reddit search skipped",query,type(e).__name__)
+  except urllib.error.HTTPError as e:\n   try:detail=e.read().decode("utf-8","replace")[:200]\n   except Exception:detail=""\n   print(f"Public Reddit search skipped {query}: HTTP {e.code} {e.reason} {detail}")\n  except Exception as e:print("Public Reddit search skipped",query,type(e).__name__)
   time.sleep(0.2)
  unique={}
  for row in rows:unique.setdefault(row["fingerprint"],row)
