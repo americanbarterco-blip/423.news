@@ -166,7 +166,7 @@ def existing_post(base,key,lead_id):
 
 def onboarding_publications(base,key):
     """Count this pipeline's marked auto-publications to persist the starter phase."""
-    _,raw=api(base,key,"rest/v1/news_posts?slug=like.claudia-auto-%26select=id%26limit=3".replace("%26","&"))
+    _,raw=api(base,key,"rest/v1/news_posts?slug=like.claudia-auto-*&select=id&limit=3)
     return len(json.loads(raw))
 
 def leads_with_evidence(base,key,leads):
