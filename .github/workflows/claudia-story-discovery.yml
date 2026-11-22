@@ -4,23 +4,15 @@ on:
     - cron: "*/15 * * * *"
   workflow_dispatch:
   push:
-    branches:
-      - main
-      - master
+    branches: [main, master]
     paths:
       - scripts/claudia_*.py
       - scripts/claudia_sources.json
       - .github/workflows/claudia-story-discovery.yml
   pull_request:
     paths:
-      - scripts/claudia_discovery.py
+      - scripts/claudia_*.py
       - scripts/claudia_sources.json
-      - scripts/claudia_workloop.py
-      - scripts/claudia_research_executor.py
-      - scripts/claudia_draft_writer.py
-      - scripts/claudia_community_discovery.py
-      - scripts/claudia_site_coverage_audit.py
-      - scripts/test_claudia_*.py
       - supabase/migrations/20261121000000_claudia_story_discovery.sql
       - supabase/migrations/20261121000001_claudia_media_staging.sql
       - supabase/migrations/20261121000003_claudia_task_claim.sql
@@ -40,9 +32,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Compile newsroom scripts
-        run: python -m py_compile scripts/claudia_discovery.py scripts/claudia_workloop.py scripts/claudia_research_executor.py scripts/claudia_draft_writer.py scripts/claudia_community_discovery.py scripts/claudia_site_coverage_audit.py scripts/test_claudia_discovery.py scripts/test_claudia_workloop.py scripts/test_claudia_research_executor.py scripts/test_claudia_draft_writer.py scripts/test_claudia_community_discovery.py scripts/test_claudia_site_coverage_audit.py scripts/test_claudia_audio_transcribe.py scripts/claudia_media.py scripts/claudia_media_review.py scripts/claudia_audio_transcribe.py
+        run: python -m py_compile scripts/claudia_discovery.py scripts/claudia_workloop.py scripts/claudia_research_executor.py scripts/claudia_draft_writer.py scripts/claudia_community_discovery.py scripts/claudia_site_coverage_audit.py scripts/claudia_audio_transcribe.py scripts/claudia_discovered_media_transcribe.py scripts/claudia_media.py scripts/claudia_media_review.py
       - name: Run unit tests
-        run: python -m unittest scripts.test_claudia_discovery scripts.test_claudia_workloop scripts.test_claudia_research_executor scripts.test_claudia_draft_writer scripts.test_claudia_community_discovery scripts.test_claudia_site_coverage_audit scripts.test_claudia_media scripts.test_claudia_audio_transcribe
+        run: python -m unittest scripts.test_claudia_discovery scripts.test_claudia_workloop scripts.test_claudia_research_executor scripts.test_claudia_draft_writer scripts.test_claudia_community_discovery scripts.test_claudia_site_coverage_audit scripts.test_claudia_audio_transcribe
       - name: Run static coverage audit
         run: python scripts/claudia_site_coverage_audit.py --root . --json-out claudia-site-coverage.json
       - uses: actions/upload-artifact@v4
@@ -72,7 +64,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install Gemini transcription SDK (optional audio workflow)\n        run: python -m pip install --upgrade google-genai\n      - name: Transcribe authorized media inbox files (optional)\n        run: |\n          mkdir -p scripts/media-inbox claudia-transcripts\n          python scripts/claudia_audio_transcribe.py --inbox scripts/media-inbox --out claudia-transcripts\n      - name: Upload private transcript artifacts\n        if: always()\n        uses: actions/upload-artifact@v4\n        with:\n          name: claudia-audio-transcripts\n          path: claudia-transcripts/\n          if-no-files-found: ignore\n          retention-days: 14\n      - name: Discover public RSS and web leads
+      - name: Install optional transcription tools
+        run: python -m pip install --upgrade google-genai yt-dlp
+      - name: Transcribe manually staged media inbox (optional)
+        run: |
+          mkdir -p scripts/media-inbox claudia-transcripts
+          python scripts/claudia_audio_transcribe.py --inbox scripts/media-inbox --out claudia-transcripts
+      - name: Discover public RSS and web leads
         env:
           CLAUDIA_DISCOVERY_INGEST: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' && 'true' || 'false' }}
         run: python scripts/claudia_discovery.py
@@ -84,14 +82,27 @@ jobs:
         env:
           CLAUDIA_RESEARCH_BATCH: '3'
         run: python scripts/claudia_research_executor.py
-      - name: Community/video discovery (optional APIs)
+      - name: Discover community and YouTube leads
         run: python scripts/claudia_community_discovery.py
+      - name: Transcribe discovered video and direct media leads
+        run: python scripts/claudia_discovered_media_transcribe.py --discovery claudia-discovery.json --community claudia-community-discovery.json --out claudia-transcripts --limit 3
       - name: Generate private review-only article drafts
         if: env.SUPABASE_CONFIGURED == 'true' && env.OPENAI_CONFIGURED == 'true'
         run: python scripts/claudia_draft_writer.py
-      - name: Save discovery artifact
+      - name: Upload private transcript artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claudia-transcripts
+          path: claudia-transcripts/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Save discovery artifacts
         uses: actions/upload-artifact@v4
         with:
           name: claudia-discovery
-          path: claudia-discovery.json
+          path: |
+            claudia-discovery.json
+            claudia-community-discovery.json
+          if-no-files-found: ignore
           retention-days: 14
