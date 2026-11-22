@@ -218,17 +218,19 @@ def process(task,base,key,cfg):
     ranked=sorted(candidate_map.values(),key=lambda x:x.get("score",0),reverse=True)
     for item in ranked[:MAX_CANDIDATES*3]:
         try:
-            raw,url=fetch(item["url"]);parser=PageParser();parser.feed(raw);data=parser.result()
+            raw,final_url=fetch(item["url"]);parser=PageParser();parser.feed(raw);data=parser.result()
             actual_score=similarity(task.get("title","")+" "+(result.get("summary","") or ""),data["title"]+" "+data["summary"]+" "+data["excerpt"])
-            candidate_host=url_domain(url)
+            candidate_host=url_domain(final_url)
+            # Google News RSS frequently wraps publisher articles. Use the resolved final
+            # publisher URL for domain independence and evidence storage, never the wrapper.
             if not candidate_host or candidate_host in seen_domains:continue
             if (data["excerpt"] or data["summary"]) and actual_score>=0.12:
                 seen_domains.add(candidate_host)
-                evidence.append(evidence_record(lead_id,"corroboration",url,item["source_name"],data["excerpt"] or data["summary"],f"Fetched page relevance {actual_score:.3f}; not fact verification."))
-                candidates.append({"url":url,"source_name":item["source_name"],"topic_overlap":round(actual_score,3),"title":data["title"]})
+                evidence.append(evidence_record(lead_id,"corroboration",final_url,data["title"] or item["source_name"],data["excerpt"] or data["summary"],f"Fetched publisher page {candidate_host}; relevance {actual_score:.3f}; not fact verification."))
+                candidates.append({"url":final_url,"source_name":data["title"] or item["source_name"],"topic_overlap":round(actual_score,3),"title":data["title"]})
         except Exception as e:
             candidate_url=item.get("url","")
-            print(f"Candidate skipped {candidate_url}: {type(e).__name__}: {str(e)[:180]}")
+            print(f"Candidate fetch failed {candidate_url}: {type(e).__name__}: {str(e)[:240]}")
         if len(candidates)>=MAX_CANDIDATES:break
     corroborating=[rec for rec in evidence if rec["evidence_type"]=="corroboration"]
     if not corroborating:
