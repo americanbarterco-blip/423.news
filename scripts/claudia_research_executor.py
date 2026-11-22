@@ -135,7 +135,11 @@ def request_supabase(base,key,path,method="GET",body=None,prefer=None):
 def claim(base,key,worker):
     _,raw=request_supabase(base,key,"rest/v1/rpc/claudia_claim_research_task","POST",json.dumps({"worker_id":worker}).encode())
     rows=json.loads(raw);return rows[0] if rows else None
-def evidence_insert_path():\n    """PostgREST upsert target for the evidence table unique key."""\n    return "rest/v1/claudia_story_evidence?on_conflict=lead_id,evidence_type,url"\n\ndef evidence_record(lead_id,kind,url,source_name,excerpt,notes):
+def evidence_insert_path():
+    """PostgREST upsert target for the evidence table unique key."""
+    return "rest/v1/claudia_story_evidence?on_conflict=lead_id,evidence_type,url"
+
+def evidence_record(lead_id,kind,url,source_name,excerpt,notes):
     return {"lead_id":lead_id,"evidence_type":kind,"url":url,"source_name":source_name,"excerpt":excerpt[:2000],"reliability_notes":notes[:500]}
 def process(task,base,key,cfg):
     result=task.get("result") or {};lead_url=result.get("lead_url");lead_id=task.get("lead_id")
