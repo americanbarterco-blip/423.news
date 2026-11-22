@@ -171,16 +171,9 @@ def save_draft(base, key, lead, evidence, draft, classification, verification=No
     if verification: notes+=" Fact-check: "+str(verification.get("result",{}).get("reason",""))+"; confidence="+str(verification.get("confidence",0))
     notes+=" Category: %s/%s. Priority %s/100 (%s)."%(classification["section"],classification["topic"],classification["priority_score"],classification["priority_reason"])
     state="published" if published else "needs_review"
-    verified="verified" if published else "unverified"
-    row={"lead_id":lead["id"],"title":draft["title"],"body_markdown":draft["body_markdown"]+source_list(evidence),"summary":draft["summary"],"section":classification["section"],"topic":classification["topic"],"priority_score":classification["priority_score"],"priority_reason":classification["priority_reason],"status":state,"verification_status":verified,"source_count":len(distinct_domains(evidence)),"author_agent":"Claudia Green","editor_notes":notes,"published_at":"now()" if published else None}
-    if row["published_at"]=="now()": row["published_at"]=time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())
+    verified="verified" if verification and verification.get("passed") else "unverified"
+    row={"lead_id":lead["id"],"title":draft["title"],"body_markdown":draft["body_markdown"]+source_list(evidence),"summary":draft["summary"],"section":classification["section"],"topic":classification["topic"],"priority_score":classification["priority_score"],"priority_reason":classification["priority_reason],"status":state,"verification_status":verified,"source_count":len(distinct_domains(evidence)),"author_agent":"Claudia Green","editor_notes":notes,"published_at":None}
     return api(base,key,"rest/v1/claudia_story_drafts","POST",json.dumps(row).encode(),"return=representation")
-
-def publish_article(base,key,lead,draft,classification,evidence):
-    slug=urllib.parse.quote("claudia-"+str(lead["id"]),safe="")
-    # Idempotent check: a unique lead-based slug prevents repeat publications.
-    post={"slug":"claudia-"+str(lead["id"]),"section":classification["section"],"topic":classification["topic"],"title":draft["title"][:200],"body":draft["body_markdown"]+source_list(evidence),"author_name":"Claudia Green","status":"published"}
-    return api(base,key,"rest/v1/news_posts","POST",json.dumps(post).encode(),"return=representation")
 
 def process_lead(base, key, model, lead, classification):
     _, raw = api(base,key,"rest/v1/claudia_story_evidence?lead_id=eq."+urllib.parse.quote(str(lead["id"]),safe="")+
@@ -194,17 +187,10 @@ def process_lead(base, key, model, lead, classification):
     full_text=lead.get("title","")+" "+lead.get("summary","")+" "+draft["title"]+" "+draft["summary"]+" "+draft["body_markdown"]
     flags=risk_flags(full_text)
     verification=None
-    publish_ok=False
     if not flags:
         verification=verify_article(model,key,lead,evidence,draft)
-        publish_ok=verification["passed"]
-    if publish_ok:
-        publish_article(base,key,lead,draft,classification,evidence)
-        save_draft(base,key,lead,evidence,draft,classification,verification,True)
-        print("AUTO-PUBLISHED [%s/%s, priority %s, confidence %.2f]: %s"%(classification["section"],classification["topic"],classification["priority_score"],verification["confidence"],draft["title"]))
-    else:
-        save_draft(base,key,lead,evidence,draft,classification,verification,False)
-        print("FLAGGED for review (risk=%s, verification=%s): %s"%(flags,verification and verification.get("result"),draft["title"]))
+    save_draft(base,key,lead,evidence,draft,classification,verification)
+    print("PRIVATE DRAFT saved for review (risk=%s, verification=%s): %s"%(flags,verification and verification.get("result"),draft["title"]))
     return True
 
 def main():
@@ -239,7 +225,7 @@ def main():
         except Exception as exc:
             print("Lead processing failed: %s: %s" % (type(exc).__name__,exc))
         time.sleep(0.25)
-    print("Writer run complete. OpenAI (%s). Processed %s leads; verified articles auto-published, exceptions flagged." % (model,created))
+    print("Writer run complete. OpenAI (%s). Processed %s leads; private drafts saved for editorial review, exceptions flagged." % (model,created))
 
 if __name__ == "__main__":
     main()
