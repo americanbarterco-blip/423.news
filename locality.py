@@ -97,9 +97,17 @@ def check_report(r: dict) -> tuple[bool, list[str]]:
     if not is_english(body):
         reasons.append("not English")
 
-    # The dateline is a label, not evidence: the place must show up in the story itself.
-    strong = [p for p in local_places(body) if p not in WEAK]
-    weak = [p for p in local_places(body) if p in WEAK]
+    # The dateline and publisher byline are labels, not evidence. Strip common
+    # source-location attributions before testing whether the story itself is local.
+    locality_summary = re.sub(
+        r"\b(?:a\s+)?(?:syndicated\s+)?(?:publisher|reporter|journalist|news organization|news outlet|media outlet)\s+(?:based|located)\s+in\s+[^,.;]+",
+        "", summ, flags=re.I)
+    locality_summary = re.sub(
+        r"\b(?:filed|reported|originated)\s+(?:this report\s+)?(?:from|out of)\s+[^,.;]+",
+        "", locality_summary, flags=re.I)
+    locality_body = f"{head} {locality_summary}"
+    strong = [p for p in local_places(locality_body) if p not in WEAK]
+    weak = [p for p in local_places(locality_body) if p in WEAK]
     if not strong and not weak:
         reasons.append("no 423-area place named in headline or summary")
     elif not strong:
