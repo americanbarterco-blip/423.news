@@ -41,7 +41,9 @@ async function fetchRows(table, query, offset, env) {
   for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value);
   url.searchParams.set("limit", String(PAGE_SIZE));
   url.searchParams.set("offset", String(offset));
+  // Bound upstream wait time so the Worker can fall back to the static sitemap.
   const response = await fetch(url.toString(), {
+    signal: AbortSignal.timeout(4000),
     headers: {
       apikey: env.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY,
       Authorization: "Bearer " + (env.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY)
