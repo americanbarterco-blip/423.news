@@ -78,6 +78,54 @@
       "type": "feed",
       "url": "https://news.google.com/rss/search?q=%28Chattanooga+OR+Cleveland+TN+OR+Bradley+County%29+%28missing+person+OR+endangered+OR+amber+alert+OR+rescue%29&hl=en-US&gl=US&ceid=US%3Aen",
       "enabled": true
+    },
+    {
+      "name": "Chattanoogan",
+      "type": "web",
+      "url": "https://www.chattanoogan.com",
+      "enabled": true
+    },
+    {
+      "name": "423.news Community and newsroom",
+      "type": "web",
+      "url": "https://423.news",
+      "enabled": true
+    },
+    {
+      "name": "Google News Chattanooga general feed",
+      "type": "feed",
+      "url": "https://news.google.com/rss/search?q=Chattanooga+Tennessee+local+news&hl=en-US&gl=US&ceid=US%3Aen",
+      "enabled": true
+    },
+    {
+      "name": "Cleveland Daily Banner",
+      "type": "web",
+      "url": "https://www.clevelandbanner.com",
+      "enabled": true
+    },
+    {
+      "name": "Polk County News",
+      "type": "web",
+      "url": "https://www.polkcountynews.net",
+      "enabled": true
+    },
+    {
+      "name": "Daily Post Athenian",
+      "type": "web",
+      "url": "https://www.dailypostathenian.com",
+      "enabled": true
+    },
+    {
+      "name": "Polk County Schools News",
+      "type": "web",
+      "url": "https://www.polkcountyschools.org/news",
+      "enabled": true
+    },
+    {
+      "name": "Athens City Schools News",
+      "type": "web",
+      "url": "https://www.athenscityschools.net",
+      "enabled": true
     }
   ]
 }
