@@ -11,10 +11,10 @@ main{max-width:1100px;margin:auto;padding:20px}nav{display:flex;flex-wrap:wrap;g
 button,.card{border:1px solid var(--line);background:var(--panel);color:inherit;border-radius:12px;padding:14px;cursor:pointer}button:hover,.card:hover{border-color:var(--accent);transform:translateY(-1px)}button.active{border-color:var(--accent);color:var(--accent)}
 .card h3{margin:0 0 6px}.card p{margin:0;color:#a9bad0;font-size:.9rem}.card button{margin-top:12px;width:100%}
 #playerWrap{margin-top:18px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#05080d}#playerHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;background:#111b2a}#gameTitle{font-weight:700;color:var(--gold)}#player{width:100%;height:min(75vh,850px);border:0;background:#000}#empty{padding:48px 20px;text-align:center;color:#a9bad0}
-@media(max-width:600px){main{padding:12px}#player{height:72vh}header{padding:18px 10px}}
+@media(max-width:600px){main{padding:12px}#player{height:72vh}header{padding:18px 10px}#playerHead{align-items:flex-start;flex-direction:column}}
 </style></head>
 <body>
-<header><h1>423 ARCADE</h1><p>Original games • Play free • Local fun</p></header>
+<header><h1>423 ARCADE</h1><p>Original games • Play free • Hosted on 423.news</p></header>
 <main><nav><button id="homeBtn" class="active" onclick="showHome()">Game Library</button><button onclick="launch('mrgreen')">Play Mr. Green</button></nav>
 <section class="games" id="library">
 <div class="card"><h3>Mr. Green</h3><p>Coin-pusher arcade action</p><button onclick="launch('mrgreen')">Play Game</button></div>
@@ -23,12 +23,37 @@ button,.card{border:1px solid var(--line);background:var(--panel);color:inherit;
 <div class="card"><h3>ATV Deer Dodge</h3><p>Ride and dodge through the outdoors</p><button onclick="launch('atv')">Play Game</button></div>
 <div class="card"><h3>Apex Society Deer Hunt</h3><p>Hunting game adventure</p><button onclick="launch('apex')">Play Game</button></div>
 </section>
-<div id="playerWrap" hidden><div id="playerHead"><span id="gameTitle">Game</span><div><button onclick="fullscreenGame()">Fullscreen</button><button onclick="showHome()">Back to Library</button></div></div><iframe id="player" title="423 Arcade game" allow="fullscreen; autoplay; gamepad" allowfullscreen></iframe></div>
+<div id="playerWrap" hidden><div id="playerHead"><span id="gameTitle">Game</span><div><button onclick="fullscreenGame()">Fullscreen</button><button onclick="showHome()">Back to Library</button></div></div><iframe id="player" title="423 Arcade game" allow="fullscreen; autoplay; gamepad" allowfullscreen loading="eager"></iframe></div>
 <div id="empty">Choose a game above to launch it.</div>
 </main>
 <script>
-const games={mrgreen:{title:"Mr. Green",url:"https://bigdfleamarket.online/game-mr-green.html"},trumps:{title:"Trump's Quarters",url:"https://bigdfleamarket.online/game-trumps-quarters.html"},shoveler:{title:"Quarter Shoveler",url:"https://bigdfleamarket.online/game-quarter-shoveler.html"},atv:{title:"ATV Deer Dodge",url:"https://bigdfleamarket.online/game-atv-deer-dodge.html"},apex:{title:"Apex Society Deer Hunt",url:"https://bigdfleamarket.online/game-apex-society-hunt.html"}};
-function launch(key){const g=games[key];if(!g)return;document.getElementById('player').src=g.url;document.getElementById('gameTitle').textContent=g.title;document.getElementById('playerWrap').hidden=false;document.getElementById('empty').hidden=true;document.getElementById('library').hidden=true;document.getElementById('homeBtn').classList.remove('active');document.getElementById('playerWrap').scrollIntoView({behavior:'smooth'});}
-function showHome(){document.getElementById('player').src='about:blank';document.getElementById('playerWrap').hidden=true;document.getElementById('empty').hidden=false;document.getElementById('library').hidden=false;document.getElementById('homeBtn').classList.add('active');}
-function fullscreenGame(){const f=document.getElementById('player');if(f.requestFullscreen)f.requestFullscreen();}
+const games={
+  mrgreen:{title:"Mr. Green",url:"/arcade/games/game-mr-green.html"},
+  trumps:{title:"Trump's Quarters",url:"/arcade/games/game-trumps-quarters.html"},
+  shoveler:{title:"Quarter Shoveler",url:"/arcade/games/game-quarter-shoveler.html"},
+  atv:{title:"ATV Deer Dodge",url:"/arcade/games/game-atv-deer-dodge.html"},
+  apex:{title:"Apex Society Deer Hunt",url:"/arcade/games/game-apex-society-hunt.html"}
+};
+function launch(key){
+  const g=games[key];if(!g)return;
+  const player=document.getElementById('player');
+  player.src=g.url;
+  document.getElementById('gameTitle').textContent=g.title;
+  document.getElementById('playerWrap').hidden=false;
+  document.getElementById('empty').hidden=true;
+  document.getElementById('library').hidden=true;
+  document.getElementById('homeBtn').classList.remove('active');
+  document.getElementById('playerWrap').scrollIntoView({behavior:'smooth'});
+}
+function showHome(){
+  document.getElementById('player').src='about:blank';
+  document.getElementById('playerWrap').hidden=true;
+  document.getElementById('empty').hidden=false;
+  document.getElementById('library').hidden=false;
+  document.getElementById('homeBtn').classList.add('active');
+}
+function fullscreenGame(){
+  const f=document.getElementById('player');
+  if(f.requestFullscreen)f.requestFullscreen();
+}
 </script></body></html>
