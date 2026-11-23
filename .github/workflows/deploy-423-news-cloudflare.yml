@@ -48,6 +48,27 @@ jobs:
             echo "::error::Cloudflare secrets are missing. Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in repository secrets."
             exit 1
           fi
+      - name: Stage exact original Arcade games
+        if: steps.credentials.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p arcade/games
+          download_game() {
+            local filename="$1"
+            local expected_sha="$2"
+            local destination="arcade/games/$filename"
+            curl --fail --location --silent --show-error \
+              --retry 3 --retry-all-errors --connect-timeout 20 --max-time 600 \
+              "https://bigdfleamarket.online/$filename" -o "$destination"
+            printf '%s  %s\n' "$expected_sha" "$destination" | sha256sum --check
+            test -s "$destination"
+          }
+          download_game "game-mr-green.html" "3b68e1e0b9153b1cae40976e84f807ee068c0227d7119527439903a096e5be29"
+          download_game "game-trumps-quarters.html" "7f22e4a47e8dea95bb42114cdf44f0af008d68ce93934e8fb34e121c86bd4e47"
+          download_game "game-quarter-shoveler.html" "0eec745c118f700d3641d90cc264b7d05dd40551c96b7818beda1b9e95b8e0c7"
+          download_game "game-atv-deer-dodge.html" "b7d67b0564e3b32410cf232312149cc227b5d6bfb6b479286c295bad330d6373"
+          download_game "game-apex-society-hunt.html" "681f0806428e516f961fe5f36817557fc62d7aa731e510163b515b8d383537e2"
       - name: Deploy with Wrangler
         id: deploy
         if: steps.credentials.outcome == 'success'
