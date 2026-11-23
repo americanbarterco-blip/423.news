@@ -37,6 +37,7 @@ h1{font-size:1.5rem;margin:.2rem 0 .6rem}
 .safety{border-left:3px solid var(--accent);padding:8px 12px;margin:16px 0;background:var(--panel);border-radius:0 8px 8px 0;font-size:.9rem}
 .cnav a{color:var(--muted);font-size:14px;font-weight:600;margin-left:18px}
 .accpin{font-size:22px;line-height:24px;text-align:center;filter:drop-shadow(0 1px 2px #000)}
+.dui-summary{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--amb);border-radius:12px;padding:14px;margin:12px 0 16px}.dui-summary h2{font-size:1.05rem;margin:0 0 6px}.dui-summary p{margin:4px 0;font-size:.9rem}.dui-summary strong{color:var(--amb)}.dui-summary .mut{font-size:.8rem}
 </style>
 <script src="translate.js" defer></script></head>
 <body>
@@ -48,6 +49,13 @@ h1{font-size:1.5rem;margin:.2rem 0 .6rem}
   <h1>Checkpoints, Accidents &amp; Roadblocks</h1>
   <p class="note">Publicly announced DUI/sobriety checkpoints and roadblocks, plus live accidents and road closures in the 423 area. Checkpoint entries expire automatically. Always follow posted signs and officer instructions.</p>
   <div id="alert" role="alert" aria-live="assertive"></div>
+  <section class="dui-summary" aria-labelledby="dui-heading">
+    <h2 id="dui-heading">DUI / Sobriety Checkpoint Awareness</h2>
+    <p id="dui-summary-count"><strong>Loading official checkpoint bulletin summary…</strong></p>
+    <p class="mut">Official statewide bulletin summary only. No checkpoint schedules or locations are listed here. Never drive impaired; plan a sober ride.</p>
+    <p class="mut" id="dui-source"></p>
+  </section>
+
   <div class="cbar">
     <button id="trackBtn">📍 Start driving alerts</button>
     <button class="sec" id="stopBtn" style="display:none">Stop</button>
@@ -301,6 +309,16 @@ h1{font-size:1.5rem;margin:.2rem 0 .6rem}
   loadCheckpoints().then(function(){render();return loadAccidents(map.getCenter().lat,map.getCenter().lng)});
   schedule();
   window.__cp={onPos:onPos,state:function(){return {heading:heading,accidents:accidents,tracking:tracking}}};  // test hook
+})();
+</script>
+<script>
+(function(){
+  var summaryEl=document.getElementById('dui-summary-count'), sourceEl=document.getElementById('dui-source');
+  fetch('dui-checkpoint-awareness.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('summary unavailable');return r.json()}).then(function(data){
+    var months=Array.isArray(data.months)?data.months:[], total=months.reduce(function(n,m){return n+(Number(m.announced_count)||0)},0);
+    summaryEl.textContent=months.length?'Bulletins processed: '+months.length+' month(s) · '+total+' sobriety-checkpoint entries counted statewide.':'No statewide summary is available yet.';
+    sourceEl.textContent='Source: '+(data.source||'Tennessee Highway Patrol')+' · '+(data.updated?'Updated '+new Date(data.updated).toLocaleString():'');
+  }).catch(function(){summaryEl.textContent='Official checkpoint summary temporarily unavailable.';});
 })();
 </script>
 <script src="ads.js"></script>
