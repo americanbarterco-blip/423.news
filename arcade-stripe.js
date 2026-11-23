@@ -9,7 +9,7 @@ const ALLOWED_ORIGINS = new Set(["https://423.news", "https://www.423.news"]);
 function json(data, status = 200, request = null) {
   return new Response(JSON.stringify(data), { status, headers: {
     "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"
+    "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...(request ? cors(request) : {})
   }});
 }
 
