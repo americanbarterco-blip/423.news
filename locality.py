@@ -28,10 +28,10 @@ PLACES = [
     # Chattanooga region
     "chattanooga", "hamilton county", "red bank", "soddy-daisy", "signal mountain", "collegedale",
     "east ridge", "lookout mountain", "ooltewah", "harrison", "cleveland", "bradley county",
-    "athens", "mcminn county", "etowah", "dayton", "rhea county", "dunlap", "sequatchie",
+    "athens", "mcminn county", "etowah", "dayton", "rhea county", "spring city", "graysville", "dunlap", "sequatchie",
     "marion county", "jasper", "south pittsburg", "ringgold", "dalton", "catoosa", "walker county",
-    "polk county", "benton", "copperhill", "sweetwater", "monroe county", "madisonville",
-    "meigs county", "decatur", "bledsoe county", "pikeville", "grundy county", "tracy city",
+    "polk county", "benton", "copperhill", "copper hill", "ducktown", "copper basin", "sweetwater", "monroe county", "madisonville",
+    "meigs county", "decatur", "bledsoe county", "pikeville", "grundy county", "tracy city", "altamont", "coalmont", "palmer",
     # Tri-Cities / Northeast Tennessee
     "tri-cities", "kingsport", "johnson city", "bristol", "sullivan county", "washington county",
     "carter county", "elizabethton", "unicoi", "erwin", "greene county", "greeneville",
