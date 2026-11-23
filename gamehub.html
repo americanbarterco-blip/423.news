@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>423 Arcade — Game Hub</title>
+<meta name="description" content="Play the 423 Arcade Game Hub. Free arcade games, challenges, achievements, rewards and local sponsors.">
+<meta name="theme-color" content="#07110d">
+<link rel="canonical" href="https://423.news/gamehub.html">
+<meta property="og:title" content="423 Arcade — Game Hub">
+<meta property="og:description" content="Play free games, take on challenges and explore the 423 Arcade.">
+<meta property="og:url" content="https://423.news/gamehub.html">
+<style>
+:root{color-scheme:dark;--bg:#07110d;--panel:#0e1c15;--panel2:#12241a;--line:#263c2d;--text:#f1f7f0;--muted:#a6b9aa;--green:#73e79a;--gold:#ffd26b;--accent:#31b86b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#173424 0,#07110d 48%,#050a07 100%);color:var(--text);font:16px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+a{color:inherit}button,input{font:inherit}button{cursor:pointer}
+.shell{width:min(1160px,calc(100% - 28px));margin:auto}
+header{border-bottom:1px solid #243b2c;background:#06100bde;position:sticky;top:0;z-index:10;backdrop-filter:blur(12px)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0}
+.brand{display:flex;gap:10px;align-items:center;text-decoration:none;font-weight:900;letter-spacing:.02em}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(145deg,#a7f5b5,#23834a);display:grid;place-items:center;color:#06210e;font-size:20px;box-shadow:0 0 22px #33b86b44}
+.brand small{display:block;color:#92a99a;font-weight:600;font-size:10px;letter-spacing:.16em}
+.toplinks{display:flex;gap:8px;align-items:center}.toplinks a,.btn{border:1px solid var(--line);background:#102018;border-radius:10px;padding:9px 12px;text-decoration:none;font-weight:700;font-size:13px}.toplinks .admin{border-color:#54745a;color:#c7f2d2}
+main{padding:22px 0 60px}
+.hero{border:1px solid #30543b;border-radius:24px;background:linear-gradient(120deg,#142b1c,#0b1710 64%,#1b301e);padding:clamp(20px,4vw,42px);position:relative;overflow:hidden}
+.hero:after{content:"423";font-weight:1000;font-size:clamp(100px,22vw,280px);line-height:1;position:absolute;right:-20px;bottom:-60px;color:#8bffad0a;pointer-events:none}
+.eyebrow{font-size:12px;letter-spacing:.17em;color:var(--green);font-weight:800}.hero h1{font-size:clamp(32px,6vw,66px);line-height:1.02;margin:10px 0;letter-spacing:-.045em}.hero p{color:#bfcebf;max-width:650px;line-height:1.6;margin:0 0 18px}.heroactions{display:flex;flex-wrap:wrap;gap:10px}
+.primary{background:linear-gradient(135deg,#9ef2b0,#47c77b);border:0;color:#06220e;border-radius:11px;padding:11px 15px;font-weight:900;text-decoration:none}
+.secondary{background:#0a170f;border:1px solid #385440;color:#e5f4e8;border-radius:11px;padding:11px 15px;font-weight:800;text-decoration:none}
+.section{margin-top:26px}.sectionhead{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}.sectionhead h2{font-size:21px;margin:0}.sectionhead p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.search{flex:1;min-width:200px;border:1px solid var(--line);background:#09140d;border-radius:12px;padding:11px 13px;color:var(--text)}
+.filters{display:flex;gap:7px;overflow:auto;padding:2px 0 10px}.filter{white-space:nowrap;background:#0c1a11;border:1px solid #2a4030;border-radius:999px;color:#b9cbbd;padding:8px 12px;font-size:13px;font-weight:700}.filter.active{background:#19462a;color:#d9ffe4;border-color:#4d9b60}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.gamecard{border:1px solid var(--line);background:linear-gradient(155deg,#14251a,#0b160f);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;min-height:310px}
+.gameart{height:155px;display:grid;place-items:center;position:relative;background:radial-gradient(circle at 50% 35%,#2b653b,#0b1b11 68%);overflow:hidden}.artbadge{border:1px solid #6dbb7b66;background:#11281b;padding:18px 23px;border-radius:20px;color:#b7ffc7;font-weight:1000;font-size:32px;text-shadow:0 0 20px #5ff58a4c;transform:rotate(-3deg);box-shadow:0 15px 35px #0006}.gamebody{padding:15px;display:flex;flex-direction:column;gap:8px;flex:1}.gamebody h3{margin:0;font-size:18px}.gamebody p{color:var(--muted);margin:0;font-size:13px;line-height:1.5}.tags{display:flex;gap:6px;flex-wrap:wrap}.tag{font-size:11px;color:#b7d5be;background:#17291d;border:1px solid #2c4532;border-radius:6px;padding:4px 7px}.gamefoot{margin-top:auto;padding-top:7px;display:flex;justify-content:space-between;align-items:center;gap:8px}.status{color:#f1d994;font-size:12px;font-weight:800}.playbtn{border:1px solid #425b47;border-radius:9px;background:#17271c;color:#c3d8c7;padding:9px 11px;font-weight:800}.playbtn:disabled{opacity:.6;cursor:not-allowed}
+.empty{display:none;border:1px dashed #34503a;border-radius:14px;padding:24px;color:var(--muted);text-align:center}
+.split{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
+.box{border:1px solid var(--line);background:var(--panel);border-radius:18px;padding:17px}
+.box h3{margin:0 0 8px}.box p{margin:0;color:var(--muted);line-height:1.55;font-size:14px}.sponsor{background:linear-gradient(110deg,#1a281c,#111b13);border-color:#4d5b32}.sponsor .eyebrow{color:var(--gold)}.sponsorbtn{display:inline-block;margin-top:12px;background:#1c2817;border:1px solid #6c6038;color:#ffe4a3;border-radius:9px;padding:9px 12px;font-weight:800;text-decoration:none}
+.perks{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.perk{background:#0a170f;border:1px solid #243a2a;border-radius:12px;padding:12px}.perk strong{display:block;font-size:14px}.perk span{font-size:12px;color:var(--muted)}
+footer{border-top:1px solid var(--line);padding:20px 0;color:var(--muted);font-size:12px}
+.notice{margin-top:12px;border:1px solid #5a5031;background:#201d12;color:#f2dfa6;border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.5}
+dialog{border:1px solid #426047;background:#0c1a11;color:var(--text);border-radius:16px;max-width:420px;padding:22px;box-shadow:0 25px 90px #000a}dialog::backdrop{background:#0009;backdrop-filter:blur(3px)}dialog h3{margin:0 0 9px}dialog p{color:var(--muted);line-height:1.5}.dialogclose{background:#203527;border:1px solid #3b5741;border-radius:9px;color:#e4f5e7;padding:9px 12px}
+@media(max-width:780px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.split{grid-template-columns:1fr}.perks{grid-template-columns:1fr 1fr}.top{align-items:flex-start}.toplinks{flex-wrap:wrap;justify-content:end}}
+@media(max-width:520px){.shell{width:min(100% - 20px,1160px)}.grid{grid-template-columns:1fr}.gamecard{min-height:285px}.hero{border-radius:18px}.toplinks a{padding:8px 10px}.brand small{letter-spacing:.1em}}
+</style>
+</head>
+<body>
+<header><div class="shell top">
+<a class="brand" href="/"><span class="logo">423</span><span>423 ARCADE<small>GAME HUB • FREE TO PLAY</small></span></a>
+<div class="toplinks"><a href="/">← 423.news</a><a class="admin" href="/admin.html">Admin</a></div>
+</div></header>
+<main class="shell">
+<section class="hero">
+<div class="eyebrow">WELCOME TO THE 423 ARCADE</div>
+<h1>PLAY. CHALLENGE.<br><span style="color:var(--green)">LEVEL UP.</span></h1>
+<p>A growing collection of free games from 423.news. Play for fun, chase high scores, take on challenges, and earn achievements. Optional arcade perks and sponsor experiences are planned across the hub.</p>
+<div class="heroactions"><a class="primary" href="#games">Explore games ↓</a><button class="secondary" id="perksBtn">Arcade Club perks</button></div>
+</section>
+<section class="section" id="games">
+<div class="sectionhead"><div><h2>Game Library</h2><p>Start with Mr. Green. More titles will be added as each game is rebuilt and tested.</p></div></div>
+<div class="toolbar"><input class="search" id="gameSearch" type="search" placeholder="Search games…" aria-label="Search games"></div>
+<div class="filters" aria-label="Game category filters"><button class="filter active" data-filter="all">All games</button><button class="filter" data-filter="arcade">Arcade</button><button class="filter" data-filter="puzzle">Puzzle</button><button class="filter" data-filter="racing">Racing</button><button class="filter" data-filter="sports">Sports</button><button class="filter" data-filter="adventure">Adventure</button></div>
+<div class="grid" id="gameGrid">
+<article class="gamecard" data-category="arcade" data-search="mr green pusher stopper coin pusher arcade">
+<div class="gameart"><div class="artbadge">MR. GREEN</div></div>
+<div class="gamebody"><h3>Mr. Green — Pusher Stopper</h3><p>The original quarter-pusher game. Drop coins, manage your pocket, time the stopper, and watch the pile move.</p><div class="tags"><span class="tag">Arcade</span><span class="tag">Coin pusher</span><span class="tag">Classic mechanics</span></div><div class="gamefoot"><span class="status">Original game integration in progress</span><button class="playbtn" disabled aria-disabled="true">Play soon</button></div></div>
+</article>
+</div>
+<div class="empty" id="emptyState">No games match your search. Try another term or category.</div>
+</section>
+<section class="section split">
+<div class="box">
+<h3>🏆 Challenges & Rewards</h3><p>Daily and weekly challenges, achievement badges, player streaks and leaderboards are planned as shared hub features. Scores and rewards will be connected to verified game sessions, not fabricated demo data.</div>
+<div class="box sponsor"><div class="eyebrow">ARCADE SPONSORSHIPS</div><h3>Support the 423 Arcade</h3><p>Local businesses can sponsor a game, challenge, season or hub-wide placement. Sponsor campaigns and reporting will be added after the sponsor system is connected.</p><div><a class="sponsorbtn" href="/">423.news business contact</a></div></div>
+</section>
+<section class="section box" id="club"><h3>🎖️ 423 Arcade Club</h3><p>One optional membership for the entire Game Hub. Free games remain free to play. Planned member perks focus on ad-free play (where ads are added), cosmetic customization, expanded statistics, and member events—not paid gameplay advantages.</p>
+<div class="perks"><div class="perk"><strong>Ad-free play</strong><span>Where advertising is supported</span></div><div class="perk"><strong>Cosmetic themes</strong><span>Member style options</span></div><div class="perk"><strong>Expanded stats</strong><span>Personal play history</span></div></div>
+<div class="notice">Membership, sponsor placements, reward systems and payments are informational previews only; no purchases, paid accounts, cash prizes or real-money reward transactions are enabled on this page.</div></section>
+</main>
+<footer><div class="shell">423.news Arcade • Free-to-play game hub • <a href="/">Return to 423.news</a></div></footer>
+<dialog id="perksDialog"><h3>423 Arcade Club</h3><p>Planned optional membership: one membership across the hub, cosmetic themes, expanded stats, special events and ad-free play where ads are supported. Games remain free and paid perks will not affect competitive scoring.</p><p>Membership is not active yet. This preview does not collect payment or personal information.</p><button class="dialogclose" id="closeDialog">Close</button></dialog>
+<script>
+(function(){
+ var search=document.getElementById('gameSearch'),cards=[].slice.call(document.querySelectorAll('.gamecard')),filters=[].slice.call(document.querySelectorAll('.filter')),empty=document.getElementById('emptyState'),active='all';
+ function apply(){var q=search.value.trim().toLowerCase(),shown=0;cards.forEach(function(card){var match=(active==='all'||card.dataset.category===active)&&(!q||card.dataset.search.indexOf(q)>=0);card.style.display=match?'flex':'none';if(match)shown++});empty.style.display=shown?'none':'block'}
+ filters.forEach(function(btn){btn.addEventListener('click',function(){active=btn.dataset.filter;filters.forEach(function(b){b.classList.toggle('active',b===btn)});apply()})});
+ search.addEventListener('input',apply);
+ var dialog=document.getElementById('perksDialog');document.getElementById('perksBtn').addEventListener('click',function(){dialog.showModal()});document.getElementById('closeDialog').addEventListener('click',function(){dialog.close()});
+})();
+</script>
+</body></html>
