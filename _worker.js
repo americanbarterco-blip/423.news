@@ -1,3 +1,4 @@
+import { handleArcadeStripe } from "./arcade-stripe.js";
 /* 423.news — dynamic story sitemap.
  * Serves the existing static section sitemap plus every published editorial story.
  * Spanish URLs are included only when a reviewed translation is approved.
@@ -259,6 +260,9 @@ export default {
   },
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/api/arcade/")) {
+      return handleArcadeStripe(request, env, url.pathname);
+    }
     if (url.pathname === "/api/livekit-token") {
       return livekitToken(request, env);
     }
