@@ -110,7 +110,6 @@ Deno.serve(async (req) => {
     const { count, error: rateError } = await DB.from("claudia_workspace_messages").select("id", { count: "exact", head: true }).eq("conversation_id", threadId).eq("role", "user").gte("created_at", new Date(Date.now() - 60 * 1000).toISOString());
     if (rateError) throw rateError;
     if ((count || 0) >= 8) return reply(req, { error: "Please pause briefly before sending more messages." }, 429);
-    await saveMessage(threadId, "user", message);
     const [{ data: prior, error: priorError }, { data: memory, error: memoryError }] = await Promise.all([
       DB.from("claudia_workspace_messages").select("role,content").eq("conversation_id", threadId).order("created_at", { ascending: true }).limit(30),
       DB.from("claudia_memories").select("content,kind,project,importance").order("importance", { ascending: false }).limit(15)
@@ -120,9 +119,10 @@ Deno.serve(async (req) => {
     const memoryText = (memory || []).map((m: any) => `[${m.kind} / ${m.project}] ${m.content}`).join("\n");
     const msgs: any[] = [...(prior || []).map((m: any) => ({ role: m.role, content: m.content }))];
     msgs.push({ role: "user", content: "Workspace context (files/prompt/task scratchpad):\n" + context + "\n\nUser request:\n" + message });
+    await saveMessage(threadId, "user", message);
     let finalText = "";
     for (let step = 0; step < 4; step++) {
-      const response = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": Deno.env.get("ANTHROPIC_API_KEY") || "", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "false" }, body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 1400, system: SYSTEM + "\n\nRelevant saved memory:\n" + memoryText, messages: msgs, tools }) });
+      const response = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": providerKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "false" }, body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 1400, system: SYSTEM + "\n\nRelevant saved memory:\n" + memoryText, messages: msgs, tools }) });
       if (response.status === 401 || response.status === 403) return reply(req, { error: "AI provider key is missing or rejected. Chat backend is safely stopped." }, 503);
       if (!response.ok) return reply(req, { error: "AI provider request failed (" + response.status + ")." }, 502);
       const result = await response.json();
