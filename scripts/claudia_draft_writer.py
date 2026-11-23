@@ -8,48 +8,44 @@ MIN_DOMAINS = 2
 MAX_EVIDENCE = 8
 MAX_EXCERPT = 1600
 
-# Match the sections used by 423.news; keep classification conservative.
-SECTION_RULES = [
-    ("sports", ("football","basketball","baseball","soccer","volleyball","wrestling","athletics","sports","game score","team","tournament","coach","playoff")),
-    ("schools", ("school","student","teacher","classroom","education","district","graduation","school board","campus")),
-    ("outdoors", ("outdoor","wildlife","hunting","fishing","hiking","park","trail","river","lake","conservation")),
-    ("government", ("city council","county commission","mayor","government","ordinance","legislation","budget","election","vote","public meeting","state law")),
-]
-URGENT = ("breaking","developing","shooting","homicide","fatal","death","missing person","amber alert","fire","crash","injury","arrest","charged","evacuation","emergency","tornado","storm warning")
-TOPIC_RULES = [
-    ("weather", ("weather","storm","tornado","flood","forecast","warning")),
-    ("traffic", ("traffic","crash","collision","road closure","highway","vehicle")),
-    ("public_safety", ("police","sheriff","fire","arrest","shooting","crime","missing person","emergency","rescue")),
-    ("business", ("business","company","store","restaurant","jobs","economic","opening","closing")),
-    ("community", ("community","event","festival","volunteer","fundraiser","donation")),
-]
+# Route stories by explicit subject signals, not incidental keyword matches.
+# Community-interest stories remain in the News feed (section=news, topic=community).
+SECTION_SIGNALS = {
+    "sports": ("sports", "football", "basketball", "baseball", "soccer", "volleyball", "wrestling", "athletics", "game score", "tournament", "coach", "playoff", "championship", "team roster", "match", "league"),
+    "schools": ("school district", "school board", "schools", "school", "student", "teacher", "classroom", "education", "graduation", "campus", "principal", "college", "university", "academic"),
+    "outdoors": ("outdoors", "wildlife", "hunting", "fishing", "hiking", "state park", "trail", "river", "lake", "conservation", "camping", "forest"),
+    "government": ("city council", "county commission", "mayor", "government", "ordinance", "legislation", "municipal", "budget", "election", "ballot", "vote", "public meeting", "state law", "commissioners", "public hearing"),
+}
+TOPIC_SIGNALS = {
+    "weather": ("weather", "storm", "tornado", "flood", "forecast", "warning", "rainfall", "wind advisory", "winter weather"),
+    "traffic": ("traffic", "crash", "collision", "road closure", "closed road", "highway", "vehicle", "detour", "bridge closure"),
+    "public_safety": ("police", "sheriff", "fire department", "firefighter", "arrest", "shooting", "crime", "missing person", "emergency", "rescue", "fatal crash", "investigation"),
+    "business": ("business", "company", "barber", "shop", "store", "restaurant", "employer", "jobs", "economic", "opening", "closing", "sales", "development"),
+    "community": ("community", "volunteer", "volunteers", "fundraiser", "donation", "holiday drive", "nursing home", "senior residents", "celebrates birthday", "birthday celebration", "neurodivergent", "helping others", "food drive", "charity", "neighbors", "neighborhood"),
+}
+URGENT = ("breaking", "developing", "shooting", "homicide", "fatal", "death", "missing person", "amber alert", "fire", "crash", "injury", "arrest", "charged", "evacuation", "emergency", "tornado", "storm warning")
+
+def _signal_hits(text, signals):
+    return sum(1 for term in signals if term in text)
 
 def classify_content(lead):
     text=(str(lead.get("title",""))+" "+str(lead.get("summary",""))).lower()
-    section="news"
-    for candidate,keywords in SECTION_RULES:
-        if any(k in text for k in keywords):
-            section=candidate
-            break
+    section_scores={section:_signal_hits(text,terms) for section,terms in SECTION_SIGNALS.items()}
+    # A specific editorial section wins only with at least one clear signal.
+    section=max(section_scores,key=section_scores.get) if any(section_scores.values()) else "news"
     topic=None
     if section=="news":
-        for candidate,keywords in TOPIC_RULES:
-            if any(k in text for k in keywords):
-                topic=candidate
-                break
-        topic=topic or "general"
-    elif section=="schools": topic="education"
-    elif section=="sports": topic="sports"
-    elif section=="government": topic="government"
-    elif section=="outdoors": topic="outdoors"
+        topic_scores={topic:_signal_hits(text,terms) for topic,terms in TOPIC_SIGNALS.items()}
+        topic=max(topic_scores,key=topic_scores.get) if any(topic_scores.values()) else "general"
+    else:
+        topic={"schools":"education","sports":"sports","government":"government","outdoors":"outdoors"}[section]
 
-    # Priority is content-driven: urgent public-impact first, then section-specific importance.
+    # Priority remains impact-based but includes recency-neutral section context.
     score={"news":50,"government":72,"schools":66,"sports":58,"outdoors":48}[section]
     reasons=[]
     hits=[term for term in URGENT if term in text]
     if hits:
-        score+=30
-        reasons.append("urgent public-impact keywords: "+", ".join(hits[:4]))
+        score+=30; reasons.append("urgent public-impact keywords: "+", ".join(hits[:4]))
     if section=="government" and any(k in text for k in ("vote","budget","ordinance","meeting","decision")):
         score+=8; reasons.append("civic decision/action")
     if section=="schools" and any(k in text for k in ("closure","safety","board","deadline","graduation")):
@@ -58,6 +54,10 @@ def classify_content(lead):
         score+=8; reasons.append("competition/result")
     if section=="outdoors" and any(k in text for k in ("closure","warning","rescue","wildfire","flood")):
         score+=8; reasons.append("safety or access update")
+    if topic=="community" and section=="news":
+        score+=4; reasons.append("community-interest story")
+    if topic=="business" and section=="news":
+        score+=2; reasons.append("business/economic story")
     score=min(100,score)
     return {"section":section,"topic":topic,"priority_score":score,
             "priority_reason":"; ".join(reasons) if reasons else "Section relevance and local-interest baseline"}
