@@ -1,0 +1,25 @@
+name: Claudia live incident service tests
+on:
+  pull_request:
+    paths:
+      - claudia-incident-service/**
+  push:
+    branches: [main, master]
+    paths:
+      - claudia-incident-service/**
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install service dependencies
+        working-directory: claudia-incident-service
+        run: npm install --ignore-scripts
+      - name: Run incident service tests
+        working-directory: claudia-incident-service
+        run: npm test
