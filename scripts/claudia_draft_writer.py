@@ -21,7 +21,7 @@ TOPIC_SIGNALS = {
     "traffic": ("traffic", "crash", "collision", "road closure", "closed road", "highway", "vehicle", "detour", "bridge closure"),
     "public_safety": ("police", "sheriff", "fire department", "firefighter", "arrest", "shooting", "crime", "missing person", "emergency", "rescue", "fatal crash", "investigation"),
     "business": ("business", "company", "barber", "shop", "store", "restaurant", "employer", "jobs", "economic", "opening", "closing", "sales", "development"),
-    "community": ("community", "volunteer", "volunteers", "fundraiser", "donation", "holiday drive", "nursing home", "senior residents", "celebrates birthday", "birthday celebration", "neurodivergent", "helping others", "food drive", "charity", "neighbors", "neighborhood"),
+    "community": ("community", "volunteer", "volunteers", "fundraiser", "donation", "holiday drive", "nursing home", "senior residents", "celebrates birthday", "birthday celebration", "neurodivergent", "helping others", "food drive", "charity", "neighbors", "neighborhood", "birthday", "celebrat", "elder),
 }
 URGENT = ("breaking", "developing", "shooting", "homicide", "fatal", "death", "missing person", "amber alert", "fire", "crash", "injury", "arrest", "charged", "evacuation", "emergency", "tornado", "storm warning")
 
