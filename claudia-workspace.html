@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Claudia Green Workspace · 423.news</title>
+<style>
+:root{color-scheme:dark;--bg:#08111c;--card:#111e2d;--line:#27384b;--muted:#9eb0c4;--accent:#ff6b35;--text:#f2f6fb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,Arial}header{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}h1{font-size:22px;margin:0}small,.muted{color:var(--muted)}main{max-width:1200px;margin:auto;padding:18px;display:grid;grid-template-columns:260px 1fr;gap:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:12px}.tabs button,.btn{background:#223347;border:1px solid var(--line);border-radius:8px;padding:9px 12px;color:var(--text);cursor:pointer}.btn.primary{background:#a73c25;border-color:#c85837}.tabs{display:grid;gap:7px}.tabs button{text-align:left}button:hover{filter:brightness(1.12)}textarea,input{width:100%;background:#09121c;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px;font:inherit}textarea{min-height:140px;resize:vertical}.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}#messages{min-height:250px;max-height:420px;overflow:auto;display:flex;flex-direction:column;gap:8px}.bubble{padding:10px;border-radius:10px;background:#1b2b3e;white-space:pre-wrap;overflow-wrap:anywhere}.bubble.owner{border-left:3px solid var(--accent)}.bubble.claudia{border-left:3px solid #4e9bd7}.fileitem{font-size:13px;border-top:1px solid var(--line);padding:8px 0;overflow-wrap:anywhere}#status{color:#f0b36d;min-height:22px}.danger{color:#f0a3a3}.hidden{display:none}@media(max-width:760px){main{grid-template-columns:1fr}header{padding:14px}}
+</style>
+</head>
+<body>
+<header><div><h1>Claudia Green Workspace</h1><small>423.news · Private browser workspace prototype</small></div><div class="row" style="flex:0 0 auto"><a href="/admin.html" class="btn">← Admin</a><button id="voice" class="btn primary">Open voice panel</button></div></header>
+<main>
+<aside>
+<div class="card"><b>Workspace</b><p class="muted">Saved locally in this browser on this device. No OpenAI API calls are made.</p>
+<div class="tabs"><button data-pane="chat">Conversation notebook</button><button data-pane="prompts">Saved prompts</button><button data-pane="files">Attachments</button><button data-pane="tasks">Task scratchpad</button></div>
+</div>
+<div class="card"><b>Safety status</b><p class="muted">API spending: <strong>$0</strong><br>AI execution: <strong>not connected</strong><br>Voice: existing widget (unchanged)</p></div>
+</aside>
+<section>
+<div id="chat" class="pane card"><h2>Conversation notebook</h2><p class="muted">Write notes and requests here for later AI connection. Entries are saved on this device.</p><div id="messages"></div><textarea id="chatInput" placeholder="Write a prompt, note, idea, or task for Claudia…"></textarea><div class="row"><button id="saveMessage" class="btn primary">Save entry</button><button id="clearChat" class="btn">Clear notebook</button></div></div>
+<div id="prompts" class="pane card hidden"><h2>Saved prompts</h2><textarea id="promptInput" placeholder="Reusable prompt or instruction…"></textarea><div class="row"><button id="savePrompt" class="btn primary">Save prompt</button><button id="clearPrompts" class="btn">Clear prompts</button></div><div id="promptList"></div></div>
+<div id="files" class="pane card hidden"><h2>Attachments</h2><p class="muted">Keep file names and notes in this browser workspace. Files are not uploaded to a server.</p><input id="fileInput" type="file" multiple><div id="fileList"></div></div>
+<div id="tasks" class="pane card hidden"><h2>Task scratchpad</h2><textarea id="taskInput" placeholder="Plan tasks, steps, research questions, and site changes…"></textarea><button id="saveTasks" class="btn primary">Save scratchpad</button></div>
+<div id="status" role="status"></div>
+</section>
+</main>
+<script>
+(function(){
+const KEY='423_claudia_workspace_v1';
+let data={messages:[],prompts:[],files:[],tasks:''};
+try{data=Object.assign(data,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
+const $=s=>document.querySelector(s);
+function save(){localStorage.setItem(KEY,JSON.stringify(data));$('#status').textContent='Saved in this browser.'}
+function safe(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function renderMessages(){$('#messages').innerHTML=data.messages.map(m=>'<div class="bubble owner"><small>'+safe(m.time)+'</small><div>'+safe(m.text)+'</div></div>').join('')}
+function renderPrompts(){$('#promptList').innerHTML=data.prompts.map((p,i)=>'<div class="fileitem"><div>'+safe(p)+'</div><button data-copy="'+i+'" class="btn">Copy</button> <button data-del="'+i+'" class="btn">Delete</button></div>').join('')}
+function renderFiles(){$('#fileList').innerHTML=data.files.map(f=>'<div class="fileitem">'+safe(f.name)+' <small>('+Math.ceil(f.size/1024)+' KB)</small><br><small>'+safe(f.note||'Local file reference only')+'</small></div>').join('')}
+document.querySelectorAll('[data-pane]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.pane').forEach(p=>p.classList.add('hidden'));$('#'+b.dataset.pane).classList.remove('hidden')});
+$('#saveMessage').onclick=()=>{let v=$('#chatInput').value.trim();if(!v)return;data.messages.push({time:new Date().toLocaleString(),text:v});$('#chatInput').value='';save();renderMessages()};
+$('#clearChat').onclick=()=>{if(confirm('Clear this notebook from this browser?')){data.messages=[];save();renderMessages()}};
+$('#savePrompt').onclick=()=>{let v=$('#promptInput').value.trim();if(!v)return;data.prompts.unshift(v);$('#promptInput').value='';save();renderPrompts()};
+$('#clearPrompts').onclick=()=>{if(confirm('Delete all saved prompts from this browser?')){data.prompts=[];save();renderPrompts()}};
+$('#promptList').onclick=e=>{let c=e.target.dataset.copy,d=e.target.dataset.del;if(c!=null)navigator.clipboard.writeText(data.prompts[+c]).then(()=>$('#status').textContent='Prompt copied.');if(d!=null){data.prompts.splice(+d,1);save();renderPrompts()}};
+$('#fileInput').onchange=e=>{for(const f of e.target.files)data.files.push({name:f.name,size:f.size,note:'Selected locally; content is not uploaded'});save();renderFiles();e.target.value=''};
+$('#saveTasks').onclick=()=>{data.tasks=$('#taskInput').value;save()};
+$('#voice').onclick=()=>{const launch=document.getElementById('cg-livekit-launch');if(launch)launch.click();else alert('Voice widget was not found on this page. Open 423.news to use Claudia voice.')};
+$('#taskInput').value=data.tasks||'';renderMessages();renderPrompts();renderFiles();
+})();
+</script>
+</body></html>
