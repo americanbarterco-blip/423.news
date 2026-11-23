@@ -9,13 +9,13 @@
 </style>
 </head>
 <body>
-<header><div><h1>Claudia Green Workspace</h1><small>423.news · Private browser workspace prototype</small></div><div class="row" style="flex:0 0 auto"><a href="/admin.html" class="btn">← Admin</a><button id="voice" class="btn primary">Open voice panel</button></div></header>
+<header><div><h1>Claudia Green Workspace</h1><small>423.news · Private browser workspace prototype</small></div><div class="row" style="flex:0 0 auto"><a href="/admin.html" class="btn">← Admin</a><button id="voice" class="btn primary">🎙 Talk to Claudia</button></div></header>
 <main>
 <aside>
 <div class="card"><b>Workspace</b><p class="muted">Saved locally in this browser on this device. No OpenAI API calls are made.</p>
 <div class="tabs"><button data-pane="chat">Conversation notebook</button><button data-pane="prompts">Saved prompts</button><button data-pane="files">Attachments</button><button data-pane="tasks">Task scratchpad</button><button data-pane="monitor">Free-source monitor</button></div>
 </div>
-<div class="card"><b>Safety status</b><p class="muted">API spending: <strong>$0</strong><br>AI execution: <strong>not connected</strong><br>Voice: existing widget (unchanged)</p></div>
+<div class="card"><b>Safety status</b><p class="muted">API spending: <strong>$0</strong><br>AI execution: <strong>not connected</strong><br>Voice: connected to Claudia LiveKit panel</p></div>
 </aside>
 <section>
 <div id="chat" class="pane card"><h2>Conversation notebook</h2><p class="muted">Write notes and requests here for later AI connection. Entries are saved on this device.</p><div id="messages"></div><textarea id="chatInput" placeholder="Write a prompt, note, idea, or task for Claudia…"></textarea><div class="row"><button id="saveMessage" class="btn primary">Save entry</button><button id="clearChat" class="btn">Clear notebook</button></div></div>
@@ -44,8 +44,8 @@ $('#clearPrompts').onclick=()=>{if(confirm('Delete all saved prompts from this b
 $('#promptList').onclick=e=>{let c=e.target.dataset.copy,d=e.target.dataset.del;if(c!=null)navigator.clipboard.writeText(data.prompts[+c]).then(()=>$('#status').textContent='Prompt copied.');if(d!=null){data.prompts.splice(+d,1);save();renderPrompts()}};
 $('#fileInput').onchange=e=>{for(const f of e.target.files)data.files.push({name:f.name,size:f.size,note:'Selected locally; content is not uploaded'});save();renderFiles();e.target.value=''};
 $('#saveTasks').onclick=()=>{data.tasks=$('#taskInput').value;save()};
-$('#voice').onclick=()=>{const launch=document.getElementById('cg-livekit-launch');if(launch)launch.click();else alert('Voice widget was not found on this page. Open 423.news to use Claudia voice.')};
+$('#voice').onclick=()=>{const launch=document.getElementById('cg-livekit-launch');if(launch){launch.click();$('#status').textContent='Claudia voice panel opened. Tap Start voice chat to begin.'}else{$('#status').textContent='Claudia voice panel did not load. Refresh this page and try again.'}};
 $('#taskInput').value=data.tasks||'';const reloadMonitor=$('#reloadMonitor');if(reloadMonitor)reloadMonitor.onclick=()=>{$('#monitorFrame').src='claudia-free-source-monitor.html?reload='+Date.now()};renderMessages();renderPrompts();renderFiles();
 })();
 </script>
-</body></html>
+<script src="/claudia-livekit.js"></script>\n</body></html>
