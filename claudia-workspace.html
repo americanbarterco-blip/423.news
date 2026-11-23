@@ -13,7 +13,7 @@
 <main>
 <aside>
 <div class="card"><b>Workspace</b><p class="muted">Saved locally in this browser on this device. No OpenAI API calls are made.</p>
-<div class="tabs"><button data-pane="chat">Conversation notebook</button><button data-pane="prompts">Saved prompts</button><button data-pane="files">Attachments</button><button data-pane="tasks">Task scratchpad</button></div>
+<div class="tabs"><button data-pane="chat">Conversation notebook</button><button data-pane="prompts">Saved prompts</button><button data-pane="files">Attachments</button><button data-pane="tasks">Task scratchpad</button><button data-pane="monitor">Free-source monitor</button></div>
 </div>
 <div class="card"><b>Safety status</b><p class="muted">API spending: <strong>$0</strong><br>AI execution: <strong>not connected</strong><br>Voice: existing widget (unchanged)</p></div>
 </aside>
@@ -22,7 +22,7 @@
 <div id="prompts" class="pane card hidden"><h2>Saved prompts</h2><textarea id="promptInput" placeholder="Reusable prompt or instruction…"></textarea><div class="row"><button id="savePrompt" class="btn primary">Save prompt</button><button id="clearPrompts" class="btn">Clear prompts</button></div><div id="promptList"></div></div>
 <div id="files" class="pane card hidden"><h2>Attachments</h2><p class="muted">Keep file names and notes in this browser workspace. Files are not uploaded to a server.</p><input id="fileInput" type="file" multiple><div id="fileList"></div></div>
 <div id="tasks" class="pane card hidden"><h2>Task scratchpad</h2><textarea id="taskInput" placeholder="Plan tasks, steps, research questions, and site changes…"></textarea><button id="saveTasks" class="btn primary">Save scratchpad</button></div>
-<div id="status" role="status"></div>
+<div id="monitor" class="pane card hidden"><h2>Free-source monitor</h2><p class="muted">Official NWS alerts and USGS earthquake leads for the 423 area. No Broadcastify subscription, paid API, radio audio, or auto-publication. Research leads must be independently verified.</p><div class="row"><a class="btn primary" href="claudia-free-source-monitor.html" target="_blank" rel="noopener">Open monitor in new tab</a><button id="reloadMonitor" class="btn">Reload embedded monitor</button></div><iframe id="monitorFrame" title="Claudia free-source monitor" src="claudia-free-source-monitor.html" style="width:100%;height:720px;border:1px solid var(--line);border-radius:12px;margin-top:12px;background:#07111d"></iframe></div><div id="status" role="status"></div>
 </section>
 </main>
 <script>
@@ -45,7 +45,7 @@ $('#promptList').onclick=e=>{let c=e.target.dataset.copy,d=e.target.dataset.del;
 $('#fileInput').onchange=e=>{for(const f of e.target.files)data.files.push({name:f.name,size:f.size,note:'Selected locally; content is not uploaded'});save();renderFiles();e.target.value=''};
 $('#saveTasks').onclick=()=>{data.tasks=$('#taskInput').value;save()};
 $('#voice').onclick=()=>{const launch=document.getElementById('cg-livekit-launch');if(launch)launch.click();else alert('Voice widget was not found on this page. Open 423.news to use Claudia voice.')};
-$('#taskInput').value=data.tasks||'';renderMessages();renderPrompts();renderFiles();
+$('#taskInput').value=data.tasks||'';const reloadMonitor=$('#reloadMonitor');if(reloadMonitor)reloadMonitor.onclick=()=>{$('#monitorFrame').src='claudia-free-source-monitor.html?reload='+Date.now()};renderMessages();renderPrompts();renderFiles();
 })();
 </script>
 </body></html>
