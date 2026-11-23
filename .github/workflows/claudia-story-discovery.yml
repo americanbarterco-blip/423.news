@@ -42,7 +42,7 @@ jobs:
       - name: Compile newsroom scripts
         run: python -m py_compile scripts/claudia_discovery.py scripts/claudia_workloop.py scripts/claudia_research_executor.py scripts/claudia_draft_writer.py scripts/claudia_community_discovery.py scripts/claudia_site_coverage_audit.py scripts/claudia_audio_transcribe.py scripts/claudia_discovered_media_transcribe.py scripts/claudia_gemini_analyzer.py scripts/claudia_media.py scripts/claudia_media_review.py livekit-agent/agent.py livekit-agent/claudia_public_search.py
       - name: Run unit tests
-        run: python -m unittest scripts.test_claudia_discovery scripts.test_claudia_workloop scripts.test_claudia_research_executor scripts.test_claudia_draft_writer scripts.test_claudia_community_discovery scripts.test_claudia_site_coverage_audit scripts.test_claudia_audio_transcribe scripts.test_claudia_gemini_analyzer scripts.test_claudia_public_search
+        run: python -m unittest scripts.test_locality scripts.test_claudia_discovery scripts.test_claudia_workloop scripts.test_claudia_research_executor scripts.test_claudia_draft_writer scripts.test_claudia_community_discovery scripts.test_claudia_site_coverage_audit scripts.test_claudia_audio_transcribe scripts.test_claudia_gemini_analyzer scripts.test_claudia_public_search
       - name: Run static coverage audit
         run: python scripts/claudia_site_coverage_audit.py --root . --json-out claudia-site-coverage.json
       - uses: actions/upload-artifact@v4
