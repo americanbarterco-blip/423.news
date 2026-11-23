@@ -43,6 +43,32 @@ class ClaudiaAutoPublisherTests(unittest.TestCase):
         selected=leads_with_evidence("db","key",leads)
         self.assertEqual([row["id"] for row in selected],["1"])
 
+    def test_community_human_interest_routes_to_news_community(self):
+        from scripts.claudia_draft_writer import classify_content
+        examples=[
+            {"title":"Johnson City barber says goal is helping neurodivergent community","summary":""},
+            {"title":"Cleveland Mayor Emeritus Tom Rowland celebrates 95th birthday","summary":""},
+            {"title":"East Tennessee woman makes sure nursing home residents aren't forgotten during holidays","summary":""},
+        ]
+        for lead in examples:
+            result=classify_content(lead)
+            self.assertEqual(result["section"],"news",lead["title"])
+            self.assertEqual(result["topic"],"community",lead["title"])
+
+    def test_specific_sections_route_correctly(self):
+        from scripts.claudia_draft_writer import classify_content
+        examples=[
+            ({"title":"High school football team wins championship","summary":""},"sports","sports"),
+            ({"title":"County commission approves new budget at public meeting","summary":""},"government","government"),
+            ({"title":"School district announces graduation schedule","summary":""},"schools","education"),
+            ({"title":"Wildlife conservation project restores river habitat","summary":""},"outdoors","outdoors"),
+            ({"title":"Local restaurant opens new location","summary":""},"news","business"),
+        ]
+        for lead,section,topic in examples:
+            result=classify_content(lead)
+            self.assertEqual(result["section"],section,lead["title"])
+            self.assertEqual(result["topic"],topic,lead["title"])
+
     def test_source_links_deduplicated(self):
         links=source_list([{"url":"https://a.com","source_name":"A"},{"url":"https://a.com","source_name":"A"}])
         self.assertEqual(links.count("https://a.com"),1)
