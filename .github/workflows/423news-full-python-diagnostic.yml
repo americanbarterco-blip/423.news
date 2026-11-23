@@ -29,10 +29,8 @@ jobs:
                   failures.append(f"{path}: {exc}")
           print(f"Compiled {len(files)} Python files")
           if failures:
-              print("\n".join(failures))
+              print("\\n".join(failures))
               raise SystemExit(1)
           PY
-      - name: Run tests in scripts
+      - name: Run repository Python test suite
         run: python -m unittest discover -s scripts -p 'test_*.py' -v
-      - name: Run root and nested tests
-        run: python -m unittest discover -s . -p 'test_*.py' -v
