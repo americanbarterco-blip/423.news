@@ -14,7 +14,7 @@ SECTION_SIGNALS = {
     "sports": ("sports", "football", "basketball", "baseball", "soccer", "volleyball", "wrestling", "athletics", "game score", "tournament", "coach", "playoff", "championship", "team roster", "match", "league"),
     "schools": ("school district", "school board", "schools", "school", "student", "teacher", "classroom", "education", "graduation", "campus", "principal", "college", "university", "academic"),
     "outdoors": ("outdoors", "wildlife", "hunting", "fishing", "hiking", "state park", "trail", "river", "lake", "conservation", "camping", "forest"),
-    "government": ("city council", "county commission", "mayor", "government", "ordinance", "legislation", "municipal", "budget", "election", "ballot", "vote", "public meeting", "state law", "commissioners", "public hearing"),
+    "government": ("city council", "county commission", "mayor announces", "mayor proposes", "government", "ordinance", "legislation", "municipal", "budget", "election", "ballot", "vote", "public meeting", "state law", "commissioners", "public hearing"),
 }
 TOPIC_SIGNALS = {
     "weather": ("weather", "storm", "tornado", "flood", "forecast", "warning", "rainfall", "wind advisory", "winter weather"),
