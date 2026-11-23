@@ -6,7 +6,7 @@
 
 const ALLOWED_ORIGINS = new Set(["https://423.news", "https://www.423.news"]);
 
-function json(data, status = 200) {
+function json(data, status = 200, request = null) {
   return new Response(JSON.stringify(data), { status, headers: {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"
@@ -25,19 +25,19 @@ function cors(request) {
 
 async function arcadeCheckout(request, env) {
   if (request.method === "OPTIONS") return new Response(null, {status:204, headers:cors(request)});
-  if (request.method !== "POST") return json({error:"method_not_allowed"},405);
+  if (request.method !== "POST") return json({error:"method_not_allowed"},405,request);
   const origin = request.headers.get("Origin") || "";
-  if (!ALLOWED_ORIGINS.has(origin)) return json({error:"origin_not_allowed"},403);
-  if (!env.STRIPE_SECRET_KEY) return json({error:"stripe_not_configured"},503);
+  if (!ALLOWED_ORIGINS.has(origin)) return json({error:"origin_not_allowed"},403,request);
+  if (!env.STRIPE_SECRET_KEY) return json({error:"stripe_not_configured"},503,request);
   let payload;
-  try { payload = await request.json(); } catch { return json({error:"invalid_json"},400); }
+  try { payload = await request.json(); } catch { return json({error:"invalid_json"},400,request); }
   const type = payload && payload.product;
   const products = {
     arcade_club: {price:env.ARCADE_CLUB_PRICE_ID, mode:"subscription"},
     arcade_sponsor: {price:env.ARCADE_SPONSOR_PRICE_ID, mode:"payment"}
   };
   const chosen = products[type];
-  if (!chosen || !chosen.price) return json({error:"product_unavailable"},503);
+  if (!chosen || !chosen.price) return json({error:"product_unavailable"},503,request);
   const params = new URLSearchParams();
   params.set("mode", chosen.mode);
   params.set("line_items[0][price]", chosen.price);
@@ -55,9 +55,9 @@ async function arcadeCheckout(request, env) {
   const data = await response.json().catch(()=>({}));
   if (!response.ok || !data.url) {
     console.error("Stripe checkout session error",response.status,data.error?.type || "unknown");
-    return json({error:"checkout_creation_failed"},502);
+    return json({error:"checkout_creation_failed"},502,request);
   }
-  return json({url:data.url});
+  return json({url:data.url},200,request);
 }
 
 async function verifyStripeSignature(body, header, secret) {
@@ -73,15 +73,15 @@ async function verifyStripeSignature(body, header, secret) {
 
 async function stripeWebhook(request, env) {
   if (request.method !== "POST") return json({error:"method_not_allowed"},405);
-  if (!env.STRIPE_WEBHOOK_SECRET) return json({error:"webhook_not_configured"},503);
+  if (!env.STRIPE_WEBHOOK_SECRET) return json({error:"webhook_not_configured"},503,request);
   const body = await request.text();
   const verified = await verifyStripeSignature(body,request.headers.get("Stripe-Signature"),env.STRIPE_WEBHOOK_SECRET);
-  if (!verified) return json({error:"invalid_signature"},400);
+  if (!verified) return json({error:"invalid_signature"},400,request);
   const event = JSON.parse(body);
   // Verified event accepted. Durable membership/sponsor records and entitlement sync
   // will be added when the site's storage schema is installed and tested.
   console.log("Stripe webhook verified",event.type,event.id);
-  return json({received:true});
+  return json({received:true},200,request);
 }
 
 export async function handleArcadeStripe(request, env, path) {
