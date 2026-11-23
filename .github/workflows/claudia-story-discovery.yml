@@ -51,7 +51,8 @@ jobs:
           path: claudia-site-coverage.json
           retention-days: 14
   scheduled-discovery:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    # The live research/publishing worker runs only from the production main ref.
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
