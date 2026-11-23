@@ -6,6 +6,8 @@ import hashlib, json, os, re, subprocess, sys, time, urllib.request, urllib.pars
 ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(ROOT, "checkpoints.json")
 CACHE = os.path.join(ROOT, "geocode_cache.json")
+DUI_OUT = os.path.join(ROOT, "dui-checkpoint-awareness.json")
+DUI_COUNTS = {}
 BASE = "https://www.tn.gov/content/dam/tn/safety/documents/thp-checkpoints/{y}/{m}.pdf"
 UA = "423news-checkpoint-updater/1.0 (+https://423.news)"
 
@@ -66,7 +68,10 @@ def parse(text):
             else: county, loc = words[0], " ".join(words[1:])
         if not county or county.lower() not in COUNTIES: continue
         if kind_raw.startswith("sobriety"):
-            SEEN[0] += 1; continue   # sobriety checkpoints are intentionally not published
+            SEEN[0] += 1
+            month_key = dt.date(y, mo, 1).strftime("%Y-%m")
+            DUI_COUNTS[month_key] = DUI_COUNTS.get(month_key, 0) + 1
+            continue  # Aggregate only; never publish checkpoint dates or locations
         SEEN[0] += 1
         if "belt" in kind_raw: typ, sub = "Roadblock", "Seat belt checkpoint"
         else: typ, sub = "Roadblock", "Driver license checkpoint"
@@ -102,6 +107,17 @@ def main():
             got = parse(pdf_text(data)); print(name, y, len(got), "rows"); rows += got
     if not current_ok and "--force" not in sys.argv:
         print("This month's PDF did not load; leaving existing checkpoints.json untouched"); return
+    # Publish DUI checkpoint awareness as statewide month-level counts only.
+    # Do not expose dates, locations, routes, or geocode these records.
+    dui_summary = {
+        "updated": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "source": "Tennessee Highway Patrol monthly checkpoint bulletins",
+        "scope": "Statewide monthly count; no checkpoint dates or locations",
+        "months": [{"month": month, "announced_count": count}
+                   for month, count in sorted(DUI_COUNTS.items())],
+        "safety_note": "Never drive impaired. Arrange a sober ride. This summary is not a schedule or location list."
+    }
+    json.dump(dui_summary, open(DUI_OUT, "w"), indent=2)
     cache = load_cache(); items = []
     for r in rows:
         if r["date"] < today: continue
