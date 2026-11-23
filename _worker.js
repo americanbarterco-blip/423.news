@@ -260,6 +260,9 @@ export default {
   },
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/api/arcade/")) {
+      return handleArcadeStripe(request, env, url.pathname);
+    }
     if (url.pathname === "/api/livekit-token") {
       return livekitToken(request, env);
     }
