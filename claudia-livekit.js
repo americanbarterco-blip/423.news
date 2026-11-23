@@ -37,9 +37,9 @@
   close.addEventListener("click", function () { panel.style.display = "none"; launch.setAttribute("aria-expanded", "false"); });
   var start = panel.querySelector("#cg-livekit-start");
   var stop = panel.querySelector("#cg-livekit-stop");
-  var room = null, busy = false, attachedAudio = [];
+  var room = null, busy = false, attachedAudio = [], connectAttempt = 0, tokenRequest = null;
   function setStatus(message) { status.textContent = message; }
-  function setBusy(value) { busy = value; start.disabled = value || !!room; stop.disabled = !room; }
+  function setBusy(value) { busy = value; start.disabled = value || !!room; stop.disabled = !(room || value); }
   launch.addEventListener("click", function () {
     var open = panel.style.display === "block";
     panel.style.display = open ? "none" : "block";
@@ -73,16 +73,29 @@
   launch.addEventListener("click", function () { window.setTimeout(function () { if (panel.style.display === "block") ensureVideo(); syncVideo(); }, 0); });
   start.addEventListener("click", async function () {
     if (busy || room) return;
-    setBusy(true); setStatus("Connecting securely…");
+    var attempt = ++connectAttempt;
+    setBusy(true); setStatus("Contacting Claudia’s voice service…");
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("This browser does not support microphone access.");
-      var lk = await import("https://esm.sh/livekit-client@2.15.6");
-      var response = await fetch(TOKEN_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      tokenRequest = new AbortController();
+      var response = await fetch(TOKEN_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}", signal: tokenRequest.signal });
+      if (attempt !== connectAttempt) return;
       if (!response.ok) {
         var issue = await response.json().catch(function () { return {}; });
         throw new Error(issue.error || "Voice service is not ready yet.");
       }
       var credentials = await response.json();
+      if (!credentials.server_url || !credentials.participant_token) throw new Error("The voice service returned incomplete connection details.");
+      setStatus("Loading voice connection…");
+      var lk;
+      try {
+        lk = await import("https://esm.sh/livekit-client@2.15.6");
+      } catch (cdnError) {
+        if (attempt !== connectAttempt) return;
+        try { lk = await import("https://cdn.jsdelivr.net/npm/livekit-client@2.15.6/+esm"); }
+        catch (_) { throw new Error("Claudia’s voice library could not load. Please try again."); }
+      }
+      if (attempt !== connectAttempt) return;
       room = new lk.Room({ adaptiveStream: true, dynacast: true });
       room.on(lk.RoomEvent.TrackSubscribed, function (track) {
         if (track.kind === lk.Track.Kind.Audio) {
@@ -94,16 +107,27 @@
         setBusy(false); setStatus("Disconnected. You can start another chat.");
       });
       await room.connect(credentials.server_url, credentials.participant_token);
+      if (attempt !== connectAttempt) return;
       await room.localParticipant.setMicrophoneEnabled(true);
+      if (attempt !== connectAttempt) return;
       setBusy(false); setStatus("Connected. Claudia is joining — say hello!");
     } catch (error) {
       if (room) { try { await room.disconnect(); } catch (_) {} room = null; }
-      setBusy(false); setStatus(error && error.message ? error.message : "Could not connect. Please try again.");
+      if (attempt !== connectAttempt) return;
+      if (error && error.name === "AbortError") setStatus("Connection cancelled.");
+      else setStatus(error && error.message ? error.message : "Could not connect. Please try again.");
+      setBusy(false);
     }
   });
   stop.addEventListener("click", async function () {
+    if (!room && busy) {
+      connectAttempt++;
+      if (tokenRequest) { try { tokenRequest.abort(); } catch (_) {} tokenRequest = null; }
+      setBusy(false); setStatus("Connection cancelled.");
+      return;
+    }
     if (!room) return;
-    var active = room; room = null; setStatus("Ending voice chat…");
+    var active = room; room = null; connectAttempt++; setStatus("Ending voice chat…");
     try { await active.disconnect(); } catch (_) {}
     attachedAudio.forEach(function (audio) { audio.remove(); }); attachedAudio = [];
     setBusy(false); setStatus("Voice chat ended.");
