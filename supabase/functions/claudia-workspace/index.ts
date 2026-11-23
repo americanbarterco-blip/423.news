@@ -119,7 +119,9 @@ Deno.serve(async (req) => {
     const memoryText = (memory || []).map((m: any) => `[${m.kind} / ${m.project}] ${m.content}`).join("\n");
     const msgs: any[] = [...(prior || []).reverse().map((m: any) => ({ role: m.role, content: m.content }))];
     msgs.push({ role: "user", content: "Workspace context (files/prompt/task scratchpad):\n" + context + "\n\nUser request:\n" + message });
-    const providerKey = Deno.env.get("ANTHROPIC_API_KEY") || "";\n    if (!providerKey) return reply(req, { error: "AI secret not configured. Admin must add ANTHROPIC_API_KEY to Supabase Edge Function secrets." }, 503);\n    await saveMessage(threadId, "user", message);
+    const providerKey = Deno.env.get("ANTHROPIC_API_KEY") || "";
+    if (!providerKey) return reply(req, { error: "AI secret not configured. Admin must add ANTHROPIC_API_KEY to Supabase Edge Function secrets." }, 503);
+    await saveMessage(threadId, "user", message);
     let finalText = "";
     for (let step = 0; step < 4; step++) {
       const response = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": providerKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "false" }, body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 1400, system: SYSTEM + "\n\nRelevant saved memory:\n" + memoryText, messages: msgs, tools }) });
