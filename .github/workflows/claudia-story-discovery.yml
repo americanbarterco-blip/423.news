@@ -13,6 +13,7 @@ on:
       - livekit-agent/claudia_public_search.py
       - scripts/test_claudia_public_search.py
       - scripts/test_claudia_draft_writer.py
+      - scripts/test_claudia_draft_writer.py
   pull_request:
     paths:
       - scripts/claudia_*.py
