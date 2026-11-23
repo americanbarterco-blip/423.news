@@ -30,3 +30,4 @@ alter table public.claudia_workspace_action_requests enable row level security;
 revoke all on public.claudia_workspace_conversations from anon, authenticated;
 revoke all on public.claudia_workspace_messages from anon, authenticated;
 revoke all on public.claudia_workspace_action_requests from anon, authenticated;
+ grant all on public.claudia_workspace_conversations, public.claudia_workspace_messages, public.claudia_workspace_action_requests to service_role;
