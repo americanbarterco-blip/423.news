@@ -7,11 +7,11 @@ from datetime import datetime,timezone,timedelta
 
 UA="423.news-Claudia-CommunityResearch/2.0 (+https://423.news/)"
 SUBREDDITS=("Chattanooga","Tennessee","ClevelandTN","UTC")
-LOCAL_TERMS=("423","chattanooga","cleveland tn","cleveland, tn","hamilton county","bradley county","soddy-daisy","east ridge","dayton tn","polk county tn","rhea county","ooltewah","hixson","signal mountain","sweetwater","meigs county","sequatchie county")
+LOCAL_TERMS=("423","chattanooga","cleveland tn","cleveland, tn","hamilton county","bradley county","soddy-daisy","east ridge","dayton tn","polk county tn","rhea county","mcminn county","athens tn","grundy county","tracy city","altamont tn","coalmont","benton tn","copperhill","ducktown","spring city tn","ooltewah","hixson","signal mountain","sweetwater","meigs county","sequatchie county")
 CRIME_TERMS=("shooting","shots fired","police","arrest","robbery","homicide","assault","missing","crash","wreck","fire","rescue","pursuit","burglary","theft","investigation","sheriff","crime","incident","emergency","breaking")
 REDDIT_QUERIES=("shooting","police","arrest","crime","fire","crash","missing person","breaking news","incident","robbery","pursuit","rescue")
-REDDIT_PUBLIC_QUERIES=("Chattanooga Cleveland Tennessee","Chattanooga police","Cleveland Tennessee police","Hamilton County schools","Bradley County schools","local event","road closure","missing person Tennessee")
-YOUTUBE_QUERIES=("Chattanooga Tennessee breaking police crime shooting arrest","Hamilton County Tennessee police incident breaking","Cleveland Tennessee Bradley County crime police arrest","423 Tennessee fire crash rescue emergency","Soddy Daisy East Ridge Hixson police incident")
+REDDIT_PUBLIC_QUERIES=("Chattanooga Cleveland Tennessee","Chattanooga police","Cleveland Tennessee police","Hamilton County schools","Bradley County schools","Athens McMinn County Tennessee","Polk County Benton Copperhill Ducktown Tennessee","Rhea County Dayton Spring City Tennessee","Grundy County Tracy City Altamont Coalmont Tennessee","local event","road closure","missing person Tennessee")
+YOUTUBE_QUERIES=("Chattanooga Tennessee breaking police crime shooting arrest","Hamilton County Tennessee police incident breaking","Cleveland Tennessee Bradley County crime police arrest","Athens McMinn County Tennessee local news schools public safety","Polk County Benton Copperhill Ducktown Tennessee news","Rhea County Dayton Spring City Tennessee news public safety","Grundy County Tracy City Altamont Coalmont Tennessee news","423 Tennessee fire crash rescue emergency","Soddy Daisy East Ridge Hixson police incident")
 def fingerprint(url):return hashlib.sha256(url.strip().encode("utf-8")).hexdigest()
 def category(text):
  t=text.lower()
