@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Claudia Green — Free Source Monitor | 423.news</title>
+<meta name="description" content="Free official-source monitoring dashboard for the 423 region. Weather alerts and earthquakes.">
+<style>
+:root{color-scheme:dark;--bg:#07111d;--panel:#101e2c;--line:#293b4d;--muted:#9cb1c5;--text:#edf4fb;--cyan:#54d7f3;--amber:#ffb84d;--red:#ff6477;--green:#58d6a2}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#10243a,var(--bg) 55%);color:var(--text);font:15px/1.5 system-ui,Arial}header{padding:20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}h1{margin:0;font-size:clamp(20px,4vw,30px)}.sub{color:var(--muted);font-size:13px}.live{color:var(--green);font-weight:700}main{max-width:1150px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.panel{background:linear-gradient(150deg,#14263a,#0e1a28);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}.panel h2{margin:0 0 8px;font-size:18px}.stats{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.stat{background:#081521;border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-width:120px}.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:var(--muted)}button,a.btn{display:inline-block;border:1px solid #2d5269;background:#17344b;color:#e9f7ff;padding:9px 13px;border-radius:9px;text-decoration:none;cursor:pointer;font:inherit}button:hover,a:hover{filter:brightness(1.2)}.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.items{display:grid;gap:10px}.item{border:1px solid var(--line);background:#0a1724;border-radius:11px;padding:12px}.item .top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.tag{font-size:11px;padding:3px 7px;border-radius:20px;border:1px solid var(--line);color:var(--cyan)}.tag.warn{color:var(--amber)}.tag.urgent{color:var(--red)}.item h3{margin:5px 0;font-size:16px}.item p{margin:4px 0;color:#b9c8d6}.item a{color:var(--cyan)}.small{font-size:12px;color:var(--muted)}.counties{display:flex;flex-wrap:wrap;gap:7px}.county{border:1px solid #2d465b;background:#0a1723;padding:5px 8px;border-radius:7px;font-size:12px}.empty{color:var(--muted);padding:18px;text-align:center;border:1px dashed var(--line);border-radius:10px}.foot{font-size:12px;color:var(--muted);padding:16px 0}#updated{color:var(--muted)}@media(max-width:560px){main{padding:12px}header{padding:15px}}
+</style></head>
+<body>
+<header><div><h1>📡 Claudia Green — Free Source Monitor</h1><div class="sub">423.news · Official-source alerts · <span class="live">● MONITOR ACTIVE</span></div></div><div class="row"><button id="refresh">↻ Refresh now</button><span id="updated">Not yet updated</span></div></header>
+<main>
+<div class="panel"><h2>Coverage area</h2><div class="counties"><span class="county">Hamilton · Chattanooga</span><span class="county">Bradley · Cleveland</span><span class="county">Polk · Benton / Copperhill / Ducktown</span><span class="county">McMinn · Athens</span><span class="county">Rhea · Dayton / Spring City</span><span class="county">Grundy · Tracy City / Altamont / Coalmont</span></div><div class="small" style="margin-top:8px">This monitor gathers official weather alerts and USGS earthquake data. It does not listen to radio audio, verify scanner traffic, or publish stories automatically.</div></div>
+<div class="stats"><div class="stat"><b id="alertCount">—</b><span>Weather alerts</span></div><div class="stat"><b id="quakeCount">—</b><span>Earthquakes (24h, 250km)</span></div><div class="stat"><b id="sourceCount">2</b><span>Live data sources</span></div></div>
+<div class="grid">
+<section class="panel"><h2>🌩️ Official weather alerts</h2><div id="weather" class="items"><div class="empty">Loading official NWS alerts…</div></div></section>
+<section class="panel"><h2>🌎 USGS earthquakes</h2><div id="quakes" class="items"><div class="empty">Loading USGS feed…</div></div></section>
+</div>
+<div class="panel"><h2>Other official public-information desks</h2><div class="grid">
+<div class="item"><b>Tennessee 511 — Traffic & road conditions</b><p>Check the official statewide traffic service for closures, crashes, work zones, and road conditions.</p><a target="_blank" rel="noopener" href="https://www.tn.gov/tdot/traffic-511.html">Open Tennessee 511 ↗</a></div>
+<div class="item"><b>FEMA / IPAWS — Public emergency alerts</b><p>Official public information and alerting resources. Verify details at the source before reporting.</p><a target="_blank" rel="noopener" href="https://www.fema.gov/emergency-managers/practitioners/integrated-public-alert-warning-system/public">Open FEMA IPAWS ↗</a></div>
+<div class="item"><b>National Weather Service API</b><p>Machine-readable weather warnings and advisories, used by the weather-alert panel.</p><a target="_blank" rel="noopener" href="https://api.weather.gov/">Open NWS API ↗</a></div>
+</div></div>
+<div class="foot">Editorial safeguard: every alert is a lead, not a publish-ready story. Confirm facts, timestamps, scope, and source links; protect personal information and avoid unsupported identification. Free official sources only.</div>
+</main>
+<script>
+const points=[{name:"Hamilton",lat:35.0456,lon:-85.3097},{name:"Bradley",lat:35.1595,lon:-84.8766},{name:"Polk",lat:35.0898,lon:-84.6485},{name:"McMinn",lat:35.4429,lon:-84.5927},{name:"Rhea",lat:35.6023,lon:-84.9311},{name:"Grundy",lat:35.3620,lon:-85.7200}];
+const weather=document.querySelector("#weather"),quakes=document.querySelector("#quakes");
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const timefmt=t=>t?new Date(t).toLocaleString():"Time unavailable";
+async function loadWeather(){
+ const results=await Promise.allSettled(points.map(p=>fetch("https://api.weather.gov/alerts/active?point="+p.lat+","+p.lon,{headers:{"Accept":"application/geo+json"}}).then(r=>{if(!r.ok)throw Error("NWS HTTP "+r.status);return r.json()})));
+ const map=new Map();
+ results.forEach((res,i)=>{if(res.status!=="fulfilled")return;(res.value.features||[]).forEach(f=>{const p=f.properties||{};if(!map.has(f.id))map.set(f.id,{p,area:new Set()});map.get(f.id).area.add(points[i].name)})});
+ const arr=[...map.values()].sort((a,b)=>rank(b.p)-rank(a.p));
+ document.querySelector("#alertCount").textContent=arr.length;
+ weather.innerHTML=arr.length?arr.map(({p,area})=>{const sev=(p.severity||"Unknown");const cls=/Extreme|Severe/i.test(sev)?"urgent":/Moderate/i.test(sev)?"warn":"";return '<article class="item"><div class="top"><span class="tag '+cls+'">'+esc(p.event||"Alert")+' · '+esc(sev)+'</span><span class="small">'+esc([...area].join(", "))+'</span></div><h3>'+esc(p.headline||p.event||"Weather alert")+'</h3><p>'+esc((p.description||p.instruction||"Official alert details available at source.").slice(0,420))+'</p><div class="small">Issued: '+esc(timefmt(p.sent))+' · Expires: '+esc(timefmt(p.expires))+'</div><a target="_blank" rel="noopener" href="'+esc(p.web||"https://www.weather.gov/")+'">View official alert ↗</a></article>'}).join(""):'<div class="empty">No active NWS alerts found for the selected coverage points.</div>';
+ if(results.every(r=>r.status!=="fulfilled"))weather.innerHTML='<div class="empty">NWS API unavailable. Try again later or open weather.gov.</div>';
+}
+function rank(p){return /Extreme/i.test(p.severity)?4:/Severe/i.test(p.severity)?3:/Moderate/i.test(p.severity)?2:/Minor/i.test(p.severity)?1:0}
+async function loadQuakes(){
+ const url="https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime="+encodeURIComponent(new Date(Date.now()-24*3600*1000).toISOString())+"&latitude=35.0456&longitude=-85.3097&maxradiuskm=250&orderby=time";
+ const res=await fetch(url);if(!res.ok)throw Error("USGS HTTP "+res.status);const data=await res.json();const list=data.features||[];
+ document.querySelector("#quakeCount").textContent=list.length;
+ quakes.innerHTML=list.length?list.map(f=>{const p=f.properties||{},c=f.geometry?.coordinates||[],mag=p.mag;return '<article class="item"><div class="top"><span class="tag warn">Magnitude '+esc(mag??"N/A")+'</span><span class="small">'+esc(timefmt(p.time))+'</span></div><h3>'+esc(p.place||"Earthquake")+'</h3><p>Coordinates: '+esc(c[1]?.toFixed?.(3))+', '+esc(c[0]?.toFixed?.(3))+' · Depth '+esc(c[2])+' km</p><a target="_blank" rel="noopener" href="'+esc(p.url||"https://earthquake.usgs.gov/")+'">USGS event details ↗</a></article>'}).join(""):'<div class="empty">No earthquakes in the 24-hour, 250-km search window.</div>';
+}
+async function refresh(){const btn=document.querySelector("#refresh");btn.disabled=true;document.querySelector("#updated").textContent="Refreshing…";const outcomes=await Promise.allSettled([loadWeather(),loadQuakes()]);document.querySelector("#updated").textContent="Updated "+new Date().toLocaleTimeString()+" · "+(outcomes.some(x=>x.status==="rejected")?"Some sources unavailable":"All sources checked");btn.disabled=false}
+document.querySelector("#refresh").addEventListener("click",refresh);refresh();setInterval(refresh,120000);
+</script></body></html>
