@@ -77,7 +77,7 @@ class HealthMonitorTests(unittest.TestCase):
 
     def test_homepage_static_fallback_contains_h1_and_intro(self):
         html = (Path(__file__).resolve().parent.parent / "index.html").read_text(encoding="utf-8")
-        self.assertIn("<h1>Local News for Chattanooga, Cleveland &amp; the 423 Region</h1>", html)
+        self.assertIn("<h1>Local News Across Southeast Tennessee</h1>", html)
         self.assertIn("423.news brings local reporting", html)
 
     def test_spanish_homepage_metadata_lengths_and_consistency(self):

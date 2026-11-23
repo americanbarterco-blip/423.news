@@ -126,6 +126,18 @@
       "type": "web",
       "url": "https://www.athenscityschools.net",
       "enabled": true
+    },
+    {
+      "name": "Google News Southeast Tennessee expanded county coverage",
+      "type": "feed",
+      "url": "https://news.google.com/rss/search?q=%28Chattanooga+OR+Cleveland+TN+OR+Athens+TN+OR+Dayton+TN+OR+Polk+County+TN+OR+Bradley+County+TN+OR+Hamilton+County+TN+OR+McMinn+County+TN+OR+Rhea+County+TN+OR+Grundy+County+TN+OR+Tracy+City+TN+OR+Altamont+TN+OR+Coalmont+TN+OR+Benton+TN+OR+Copperhill+TN+OR+Ducktown+TN+OR+Spring+City+TN%29&hl=en-US&gl=US&ceid=US%3Aen",
+      "enabled": true
+    },
+    {
+      "name": "Google News Southeast Tennessee public safety and emergency leads",
+      "type": "feed",
+      "url": "https://news.google.com/rss/search?q=%28Chattanooga+OR+Cleveland+TN+OR+Athens+TN+OR+Dayton+TN+OR+Polk+County+TN+OR+Bradley+County+TN+OR+Hamilton+County+TN+OR+McMinn+County+TN+OR+Rhea+County+TN+OR+Grundy+County+TN%29+%28police+OR+fire+OR+crash+OR+rescue+OR+missing+person+OR+emergency+OR+court+OR+school%29&hl=en-US&gl=US&ceid=US%3Aen",
+      "enabled": true
     }
   ]
 }

@@ -28,10 +28,10 @@ PLACES = [
     # Chattanooga region
     "chattanooga", "hamilton county", "red bank", "soddy-daisy", "signal mountain", "collegedale",
     "east ridge", "lookout mountain", "ooltewah", "harrison", "cleveland", "bradley county",
-    "athens", "mcminn county", "etowah", "dayton", "rhea county", "dunlap", "sequatchie",
+    "athens", "mcminn county", "etowah", "dayton", "rhea county", "spring city", "graysville", "dunlap", "sequatchie",
     "marion county", "jasper", "south pittsburg", "ringgold", "dalton", "catoosa", "walker county",
-    "polk county", "benton", "copperhill", "sweetwater", "monroe county", "madisonville",
-    "meigs county", "decatur", "bledsoe county", "pikeville", "grundy county", "tracy city",
+    "polk county", "benton", "copperhill", "copper hill", "ducktown", "copper basin", "sweetwater", "monroe county", "madisonville",
+    "meigs county", "decatur", "bledsoe county", "pikeville", "grundy county", "tracy city", "altamont", "coalmont", "palmer",
     # Tri-Cities / Northeast Tennessee
     "tri-cities", "kingsport", "johnson city", "bristol", "sullivan county", "washington county",
     "carter county", "elizabethton", "unicoi", "erwin", "greene county", "greeneville",
@@ -97,9 +97,17 @@ def check_report(r: dict) -> tuple[bool, list[str]]:
     if not is_english(body):
         reasons.append("not English")
 
-    # The dateline is a label, not evidence: the place must show up in the story itself.
-    strong = [p for p in local_places(body) if p not in WEAK]
-    weak = [p for p in local_places(body) if p in WEAK]
+    # The dateline and publisher byline are labels, not evidence. Strip common
+    # source-location attributions before testing whether the story itself is local.
+    locality_summary = re.sub(
+        r"\b(?:a\s+)?(?:syndicated\s+)?(?:publisher|reporter|journalist|news organization|news outlet|media outlet)\s+(?:based|located)\s+in\s+[^,.;]+",
+        "", summ, flags=re.I)
+    locality_summary = re.sub(
+        r"\b(?:filed|reported|originated)\s+(?:this report\s+)?(?:from|out of)\s+[^,.;]+",
+        "", locality_summary, flags=re.I)
+    locality_body = f"{head} {locality_summary}"
+    strong = [p for p in local_places(locality_body) if p not in WEAK]
+    weak = [p for p in local_places(locality_body) if p in WEAK]
     if not strong and not weak:
         reasons.append("no 423-area place named in headline or summary")
     elif not strong:

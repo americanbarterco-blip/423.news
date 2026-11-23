@@ -50,9 +50,9 @@ def parse_youtube(payload):
         rows.append({"source":"YouTube search API","publisher":snip.get("channelTitle") or "Channel unavailable","title":title,"url":"https://www.youtube.com/watch?v="+ident,"summary":strip_html(snip.get("description","")),"published":snip.get("publishedAt")})
     return rows[:5]
 
-def search_sources(query,area="423 region",youtube_api_key=None):
+def search_sources(query,area="Southeast Tennessee: Chattanooga, Cleveland, Athens, Dayton; Hamilton, Bradley, Polk, McMinn, Rhea and Grundy counties",youtube_api_key=None):
     query=(query or "").strip()[:140]
-    area=(area or "423 region").strip()[:100]
+    area=(area or "Southeast Tennessee: Chattanooga, Cleveland, Athens, Dayton; Hamilton, Bradley, Polk, McMinn, Rhea and Grundy counties").strip()[:180]
     if not query:return {"query":"","area":area,"retrieved_at":datetime.now(timezone.utc).isoformat(),"results":[],"source_status":{},"note":"Provide a topic to search."}
     q=f"{query} {area}".strip()
     results=[];status={}
