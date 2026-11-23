@@ -1,7 +1,20 @@
 {
-  "updated": null,
+  "updated": "2026-11-23T20:12:09.209470+00:00",
   "source": "Tennessee Highway Patrol monthly checkpoint bulletins",
   "scope": "Statewide monthly count; no checkpoint dates or locations",
-  "months": [],
+  "months": [
+    {
+      "month": "2026-10",
+      "announced_count": 25
+    },
+    {
+      "month": "2026-11",
+      "announced_count": 25
+    },
+    {
+      "month": "2026-12",
+      "announced_count": 25
+    }
+  ],
   "safety_note": "Never drive impaired. Arrange a sober ride. This summary is not a schedule or location list."
 }
