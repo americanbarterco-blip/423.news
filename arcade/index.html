@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>423 Arcade</title>
+<style>
+:root{color-scheme:dark;--bg:#070b12;--panel:#111b2a;--line:#26364b;--accent:#00e5ff;--gold:#ffbd45}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#14253a,#070b12 65%);color:#e9f2ff;font:16px system-ui,Segoe UI,sans-serif;min-height:100vh}
+header{padding:24px 18px;text-align:center;border-bottom:1px solid var(--line)}header h1{margin:0;color:var(--accent);letter-spacing:.08em}header p{color:#9fb1c8;margin:8px 0 0}
+main{max-width:1100px;margin:auto;padding:20px}nav{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+button,.card{border:1px solid var(--line);background:var(--panel);color:inherit;border-radius:12px;padding:14px;cursor:pointer}button:hover,.card:hover{border-color:var(--accent);transform:translateY(-1px)}button.active{border-color:var(--accent);color:var(--accent)}
+.card h3{margin:0 0 6px}.card p{margin:0;color:#a9bad0;font-size:.9rem}.card button{margin-top:12px;width:100%}
+#playerWrap{margin-top:18px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#05080d}#playerHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;background:#111b2a}#gameTitle{font-weight:700;color:var(--gold)}#player{width:100%;height:min(75vh,850px);border:0;background:#000}#empty{padding:48px 20px;text-align:center;color:#a9bad0}
+@media(max-width:600px){main{padding:12px}#player{height:72vh}header{padding:18px 10px}}
+</style></head>
+<body>
+<header><h1>423 ARCADE</h1><p>Original games • Play free • Local fun</p></header>
+<main><nav><button id="homeBtn" class="active" onclick="showHome()">Game Library</button><button onclick="launch('mrgreen')">Play Mr. Green</button></nav>
+<section class="games" id="library">
+<div class="card"><h3>Mr. Green</h3><p>Coin-pusher arcade action</p><button onclick="launch('mrgreen')">Play Game</button></div>
+<div class="card"><h3>Trump's Quarters</h3><p>Quarter-themed arcade game</p><button onclick="launch('trumps')">Play Game</button></div>
+<div class="card"><h3>Quarter Shoveler</h3><p>Shovel and collect quarters</p><button onclick="launch('shoveler')">Play Game</button></div>
+<div class="card"><h3>ATV Deer Dodge</h3><p>Ride and dodge through the outdoors</p><button onclick="launch('atv')">Play Game</button></div>
+<div class="card"><h3>Apex Society Deer Hunt</h3><p>Hunting game adventure</p><button onclick="launch('apex')">Play Game</button></div>
+</section>
+<div id="playerWrap" hidden><div id="playerHead"><span id="gameTitle">Game</span><div><button onclick="fullscreenGame()">Fullscreen</button><button onclick="showHome()">Back to Library</button></div></div><iframe id="player" title="423 Arcade game" allow="fullscreen; autoplay; gamepad" allowfullscreen></iframe></div>
+<div id="empty">Choose a game above to launch it.</div>
+</main>
+<script>
+const games={mrgreen:{title:"Mr. Green",url:"https://bigdfleamarket.online/game-mr-green.html"},trumps:{title:"Trump's Quarters",url:"https://bigdfleamarket.online/game-trumps-quarters.html"},shoveler:{title:"Quarter Shoveler",url:"https://bigdfleamarket.online/game-quarter-shoveler.html"},atv:{title:"ATV Deer Dodge",url:"https://bigdfleamarket.online/game-atv-deer-dodge.html"},apex:{title:"Apex Society Deer Hunt",url:"https://bigdfleamarket.online/game-apex-society-hunt.html"}};
+function launch(key){const g=games[key];if(!g)return;document.getElementById('player').src=g.url;document.getElementById('gameTitle').textContent=g.title;document.getElementById('playerWrap').hidden=false;document.getElementById('empty').hidden=true;document.getElementById('library').hidden=true;document.getElementById('homeBtn').classList.remove('active');document.getElementById('playerWrap').scrollIntoView({behavior:'smooth'});}
+function showHome(){document.getElementById('player').src='about:blank';document.getElementById('playerWrap').hidden=true;document.getElementById('empty').hidden=false;document.getElementById('library').hidden=false;document.getElementById('homeBtn').classList.add('active');}
+function fullscreenGame(){const f=document.getElementById('player');if(f.requestFullscreen)f.requestFullscreen();}
+</script></body></html>
