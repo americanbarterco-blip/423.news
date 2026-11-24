@@ -22,6 +22,7 @@ on:
       - '**/*.svg'
       - '**/*.ico'
       - '**/*.mp4'
+      - '**/*.py'
 
 permissions:
   contents: read

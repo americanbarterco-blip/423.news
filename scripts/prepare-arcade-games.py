@@ -34,8 +34,19 @@ def remove_purchase_buttons(source):
     return source
 
 
+
+def clarify_winnings(source):
+    source = source.replace("Add funds", "Use winnings")
+    source = source.replace(">+ $1</button>", ">Move $1</button>")
+    source = source.replace(">+ $5</button>", ">Move $5</button>")
+    source = source.replace(">All</button>", ">Move all</button>")
+    source = source.replace("after funds are added", "after winnings are moved into play")
+    source = source.replace("after funds added", "after winnings are moved into play")
+    return source
+
+
 def patch_coin_pusher(name):
-    s = read(name)
+    s = clarify_winnings(read(name))
     s = remove_purchase_buttons(s)
     s = s.replace(
         "when they run out, buy more or watch an ad.",
@@ -57,7 +68,7 @@ def patch_coin_pusher(name):
 
 
 def patch_shooting_game(name):
-    s = read(name)
+    s = clarify_winnings(read(name))
     old = "['p1|Buy $1 \\u00B7 200 coins','p5|Buy $5 \\u00B7 600 coins','ad|Watch ad \\u00B7 +50 coins']"
     if old not in s:
         raise SystemExit(f"Could not locate coin offer list in {name}")
@@ -73,7 +84,7 @@ def patch_shooting_game(name):
 
 def patch_mr_green():
     name = "game-mr-green.html"
-    s = read(name)
+    s = clarify_winnings(read(name))
     old = '<p id="bestLine">Best: $0.00</p>\n        <button id="again">Play again</button>'
     new = '<p id="bestLine">Best: $0.00</p>\n        <button id="watchAdBtn" class="fbtn">Watch ad · +50 coins</button>\n        <button id="again">Play again</button>'
     if old not in s:
