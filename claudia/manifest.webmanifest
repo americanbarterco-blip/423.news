@@ -14,9 +14,9 @@
   "description": "A standalone voice-only chat app for Claudia Green, your 423-area news companion.",
   "icons": [
     {
-      "src": "/apple-touch-icon.png",
-      "sizes": "180x180",
-      "type": "image/png",
+      "src": "./claudia-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any"
     }
   ],
