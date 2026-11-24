@@ -1,12 +1,12 @@
 {
-  "name": "Claudia — AI News Companion",
+  "name": "Claudia Green",
   "short_name": "Claudia",
   "start_url": "/claudia-app.html",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#06121f",
-  "theme_color": "#06121f",
-  "description": "Claudia: voice-first AI companion for regional news, weather, traffic and public-safety updates.",
+  "background_color": "#07131f",
+  "theme_color": "#07131f",
+  "description": "Talk with Claudia Green, your voice companion for regional news.",
   "icons": [
     {
       "src": "/icon-192.png",
