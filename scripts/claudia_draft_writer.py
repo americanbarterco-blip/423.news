@@ -220,7 +220,7 @@ def flag_lead(base,key,lead,reason):
     if not lead_id:return False
     prior=str(lead.get("notes","")).strip()
     note=("CLAUDIA_AUTO_FLAGGED: "+str(reason).strip())[:1200]
-    notes=(prior+"\\n"+note).strip()[-2000:]
+    notes=(prior+"\n"+note).strip()[-2000:]
     patch={"status":"dismissed","notes":notes,"reviewed_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}
     path="rest/v1/claudia_story_leads?id=eq."+urllib.parse.quote(str(lead_id),safe="")
     try:
