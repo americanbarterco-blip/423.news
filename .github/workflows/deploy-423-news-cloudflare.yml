@@ -69,6 +69,7 @@ jobs:
           download_game "game-quarter-shoveler.html" "0eec745c118f700d3641d90cc264b7d05dd40551c96b7818beda1b9e95b8e0c7"
           download_game "game-atv-deer-dodge.html" "b7d67b0564e3b32410cf232312149cc227b5d6bfb6b479286c295bad330d6373"
           download_game "game-apex-society-hunt.html" "681f0806428e516f961fe5f36817557fc62d7aa731e510163b515b8d383537e2"
+          python3 scripts/prepare-arcade-games.py
       - name: Deploy with Wrangler
         id: deploy
         if: steps.credentials.outcome == 'success'

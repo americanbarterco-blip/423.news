@@ -68,4 +68,77 @@ document.addEventListener('click',function(event){
   if(action.dataset.action==='home')showHome();
   if(action.dataset.action==='fullscreen')fullscreenGame();
 });
+
+// Rewarded ads are the ONLY coin-refill purchase alternative. Set this to the
+// approved Google Ad Manager rewarded ad-unit path when the publisher account is ready.
+const REWARDED_AD_UNIT = '';
+const REWARDED_AD_COINS = 50;
+let activeRewardSlot = null;
+let rewardGranted = false;
+let rewardReadyTimer = 0;
+function adNotice(message){ window.alert(message); }
+function requestRewardedAd(){
+  if(!REWARDED_AD_UNIT){
+    adNotice('Rewarded ads are not connected yet. No coins were charged. Please try again later.');
+    return;
+  }
+  if(activeRewardSlot){ adNotice('A rewarded ad is already in progress.'); return; }
+  window.googletag = window.googletag || {cmd:[]};
+  const gptScript = document.querySelector('script[data-arcade-gpt]');
+  if(!gptScript){
+    const script=document.createElement('script');
+    script.async=true;
+    script.dataset.arcadeGpt='1';
+    script.src='https://securepubads.g.doubleclick.net/tag/js/gpt.js';
+    script.onerror=()=>adNotice('The ad service could not be loaded. No coins were charged.');
+    document.head.appendChild(script);
+  }
+  window.googletag.cmd.push(()=>{
+    const g=window.googletag;
+    if(!g.enums || !g.enums.OutOfPageFormat || !g.enums.OutOfPageFormat.REWARDED){
+      adNotice('Rewarded ads are not supported by the current ad setup.');
+      return;
+    }
+    if(!window.__423RewardEventsBound){
+      g.pubads().addEventListener('rewardedSlotReady',event=>{
+        if(event.slot!==activeRewardSlot)return;
+        clearTimeout(rewardReadyTimer);
+        event.makeRewardedVisible();
+      });
+      g.pubads().addEventListener('rewardedSlotGranted',event=>{
+        if(event.slot!==activeRewardSlot || rewardGranted)return;
+        rewardGranted=true;
+        const frame=document.getElementById('player');
+        if(frame && frame.contentWindow)frame.contentWindow.postMessage({bdfmGrant:REWARDED_AD_COINS},location.origin);
+      });
+      g.pubads().addEventListener('rewardedSlotClosed',event=>{
+        if(event.slot!==activeRewardSlot)return;
+        clearTimeout(rewardReadyTimer);
+        const slot=activeRewardSlot;
+        activeRewardSlot=null;
+        g.destroySlots([slot]);
+        if(!rewardGranted)adNotice('The ad was closed before completion. No coins were added.');
+      });
+      window.__423RewardEventsBound=true;
+    }
+    const slot=g.defineOutOfPageSlot(REWARDED_AD_UNIT,g.enums.OutOfPageFormat.REWARDED);
+    if(!slot){adNotice('No rewarded ad is available right now. No coins were charged.');return;}
+    activeRewardSlot=slot;
+    rewardGranted=false;
+    slot.addService(g.pubads());
+    g.enableServices();
+    g.display(slot);
+    rewardReadyTimer=setTimeout(()=>{
+      if(activeRewardSlot!==slot || rewardGranted)return;
+      activeRewardSlot=null;
+      g.destroySlots([slot]);
+      adNotice('No rewarded ad is available right now. Please try again later.');
+    },20000);
+  });
+}
+window.addEventListener('message',event=>{
+  const frame=document.getElementById('player');
+  if(event.source!==frame.contentWindow || !event.data || event.data.bdfm!=='ad')return;
+  requestRewardedAd();
+});
 </script></body></html>
