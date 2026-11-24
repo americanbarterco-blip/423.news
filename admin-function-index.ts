@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
   if (!await valid(b.token)) return j({ error: 'auth' }, 401);
   const tables = (Deno.env.get('ADMIN_TABLES') || DEFAULT_TABLES).split(',').map(s => s.trim()).filter(s => /^[a-z0-9_]+$/.test(s));
   if (!tables.includes('news_ads')) tables.push('news_ads');
-  if (a === 'tables') return j({ tables });
+  if (a === 'gamehubStats') {\n    const r = await fetch(`${URL_}/rest/v1/rpc/gamehub_admin_stats`, { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: '{}' });\n    if (!r.ok) return j({ error: 'stats' }, 502);\n    return j(await r.json());\n  }\n  if (a === 'tables') return j({ tables });
   if (a === 'change') {
     const nw = String(b.next || '');
     if (nw.length < 10) return j({ error: 'short' }, 400);
