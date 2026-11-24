@@ -89,4 +89,14 @@ dialog{border:1px solid #426047;background:#0c1a11;color:var(--text);border-radi
  var memberBtn=document.getElementById("arcadeClubPay"),modalBtn=document.getElementById("dialogCheckout"),sponsorBtn=document.getElementById("sponsorCheckout");if(memberBtn)memberBtn.addEventListener("click",function(){checkout("arcade_club")});if(modalBtn)modalBtn.addEventListener("click",function(){checkout("arcade_club")});if(sponsorBtn)sponsorBtn.addEventListener("click",function(){checkout("arcade_sponsor")});
 })();
 </script>
+<script>
+(function(){
+ var endpoint="https://kdiwehqtezlhecxsoysj.supabase.co/functions/v1/gamehub-track";
+ var publicKey="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE";
+ function id(storage,key){var v=storage.getItem(key);if(!v){v=crypto.randomUUID?crypto.randomUUID():([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));storage.setItem(key,v)}return v}
+ var visitor=id(localStorage,"423arcade.visitor"),session=id(sessionStorage,"423arcade.session");
+ window.ArcadeAnalytics={track:function(event){if(!event||!["page_view","game_launch","download"].includes(event.event_type))return Promise.resolve(false);return fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","apikey":publicKey,"Authorization":"Bearer "+publicKey},body:JSON.stringify({event_type:event.event_type,game_slug:event.game_slug||"",item_name:event.item_name||"",visitor_id:visitor,session_id:session})}).then(function(r){return r.ok}).catch(function(){return false})}};
+ window.ArcadeAnalytics.track({event_type:"page_view",game_slug:"gamehub"});
+})();
+</script>
 </body></html>
