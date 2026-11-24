@@ -240,14 +240,38 @@
     var opts = { section: sec, limit: 60 };
     if (sec === 'community' && topic === 'photos') opts.photos = true; else opts.topic = topic;
     if (sec === 'sports') return sportsView(topic, tabs, opts);
-    var vidP = sec === 'news' && topic === 'all' ? newsVideos() : Promise.resolve('');
-    return Promise.all([listPosts(opts), vidP]).then(function (rr) {
-      var posts = rr[0], vid = rr[1];
+    var includeFieldWire = sec === 'news' && topic === 'all';
+    var vidP = includeFieldWire ? newsVideos() : Promise.resolve('');
+    var fieldP = includeFieldWire ? Promise.all([
+      sb.from('news_reports').select('id,kind,dateline,confidence,headline,summary,ts').eq('published', true).order('ts', { ascending: false }).limit(80),
+      sb.from('news_posts').select('slug').like('slug', 'claudia-%').limit(1000)
+    ]) : Promise.resolve(null);
+    return Promise.all([listPosts(opts), vidP, fieldP]).then(function (rr) {
+      var posts = rr[0], vid = rr[1], fieldRows = rr[2];
       var head = '<div class="chead"><div style="margin-bottom:18px"><span class="badge">' + esc(meta.label) + '</span><h1>' + esc(meta.label) + '</h1><p class="muted">' + esc(meta.blurb) + '</p></div>' +
         '<button class="btn" data-submit="' + sec + '"' + (topic && topic !== 'all' && topic !== 'photos' ? ' data-topic="' + esc(topic) + '"' : '') + '>' +
         (sec === 'community' ? 'Create Post' : sec === 'classifieds' ? 'Post a Listing' : sec === 'sports' ? 'Post a Score or Story' : 'Submit a Story') + '</button></div>';
       var body;
-      if (!posts.length) {
+      if (sec === 'news' && topic === 'all' && fieldRows && fieldRows[0] && !fieldRows[0].error) {
+        var reports = fieldRows[0].data || [];
+        var archivedSlugs = ((fieldRows[1] && !fieldRows[1].error && fieldRows[1].data) || []).map(function (p) { return String(p.slug || ''); });
+        var fieldCards = reports.filter(function (report) {
+          if (String(report.kind || '').trim().toUpperCase() !== 'FIELD') return false;
+          var suffix = String(report.id || '').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(-16);
+          return !suffix || !archivedSlugs.some(function (slug) { return slug.slice(-suffix.length - 1) === '-' + suffix; });
+        }).map(function (report) {
+          var link = 'report.html?id=' + encodeURIComponent(report.id);
+          return { stamp: new Date(report.ts || 0).getTime() || 0, html:
+            '<article class="panel pad"><div class="row" style="justify-content:space-between;gap:8px"><span class="badge">FIELD · NEWS</span><span class="muted">' + esc(ago(report.ts)) + '</span></div>' +
+            '<h3 style="margin:10px 0 6px"><a href="' + esc(link) + '">' + esc(report.headline || 'Local field report') + '</a></h3>' +
+            '<p class="muted">' + esc((report.summary || '').slice(0, 220)) + '</p><div class="muted">' + esc(report.dateline || '423 Area') +
+            (report.confidence ? ' · ' + esc(String(report.confidence).toUpperCase()) : '') + '</div><a href="' + esc(link) + '" style="display:inline-block;margin-top:10px;font-weight:700">Read field report →</a></article>' };
+        });
+        var merged = posts.map(function (post) { return { stamp: new Date(post.created_at || 0).getTime() || 0, html: card(post) }; }).concat(fieldCards);
+        merged.sort(function (a, b) { return b.stamp - a.stamp; });
+        body = merged.length ? '<div class="grid">' + merged.map(function (item) { return item.html; }).join('') + '</div>' :
+          empty('Nothing here yet', 'Stories and field reports will appear here as they are published.');
+      } else if (!posts.length) {
         body = empty('Nothing here yet', sec === 'news' || sec === 'sports' || sec === 'outdoors' || sec === 'government'
           ? 'Stories are reviewed by an editor before they go live. Be the first to submit one.' : 'Be the first to post.');
       } else if (sec === 'community') {
