@@ -1064,7 +1064,24 @@
         var u = /^https:\/\//i.test(h.url || '') ? h.url : '';
         return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(h.title) + '<small>' + esc(h.source || LEAGUE_NAME[h.league] || '') + '</small></a>' : '';
       }).join('') + '</div>' : '';
-      return head + tabsHtml + ticker + body + hl;
+      /* Active local coverage radar + photo-led gallery: source links are editorial research targets, not scraped/published claims. */
+      var coverage = [
+        ['Bradley Central Bears & Bearettes','Bradley Central athletics and school sports','https://www.maxpreps.com/tn/cleveland/bradley-central-bears/'],
+        ['Cleveland Blue Raiders','Cleveland High School athletics','https://www.maxpreps.com/tn/cleveland/cleveland-blue-raiders/'],
+        ['Ooltewah Owls','Ooltewah athletics','https://www.maxpreps.com/tn/ooltewah/ooltewah-owls/'],
+        ['Polk County Wildcats','Polk County athletics','https://www.maxpreps.com/tn/benton/polk-county-wildcats/'],
+        ['McMinn County & Athens','McMinn County athletics','https://www.maxpreps.com/tn/athens/mcminn-county-cherokees/'],
+        ['Walker Valley Mustangs','Walker Valley athletics','https://www.maxpreps.com/tn/cleveland/walker-valley-mustangs/'],
+        ['Copper Basin Cougars','Copper Basin athletics','https://www.maxpreps.com/tn/copperhill/copper-basin-cougars/'],
+        ['UTC Chattanooga Mocs','Official Mocs teams, schedules, news and photos','https://gomocs.com/'],
+        ['TSSAA','Tennessee high school sports and championship coverage','https://www.tssaa.org/'],
+        ['Chattanooga Times Free Press','Regional sports news and reporting','https://www.timesfreepress.com/sports/']
+      ];
+      var radar = '<section class="es-sec es-radar"><h2>423 Sports Coverage Radar</h2><p class="es-sub">Claudia is prioritizing these teams, schools and sources. Follow source links for schedules, results, announcements and photo coverage.</p><div class="es-radar-grid">' + coverage.map(function(x){return '<a class="es-radar-card" href="'+esc(x[2])+'" target="_blank" rel="noopener noreferrer"><b>'+esc(x[0])+'</b><small>'+esc(x[1])+'</small><span>Open source ↗</span></a>'}).join('') + '</div></section>';
+      var photoPosts = posts.filter(function(p){return !!safeImg(p.image_url)}).slice(0,8);
+      var gallery = photoPosts.length ? '<section class="es-sec es-photo"><h2>Local Sports Photos</h2><p class="es-sub">Images attached to local sports reports and community submissions.</p><div class="es-photo-grid">'+photoPosts.map(function(p){return '<a href="'+href(p)+'"><img src="'+esc(safeImg(p.image_url))+'" alt="'+esc(p.title)+'" loading="lazy"><b>'+esc(p.title)+'</b></a>'}).join('')+'</div></section>' : '';
+      var extraStyle = '<style id="esRadarStyle">.es-radar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.es-radar-card{display:flex;flex-direction:column;gap:7px;background:var(--panel,#101a28);border:1px solid var(--line,#28384b);border-radius:14px;padding:14px;text-decoration:none;color:inherit;min-height:112px}.es-radar-card b{font-size:15px}.es-radar-card small{color:var(--muted,#9eafc0);line-height:1.4}.es-radar-card span{color:#60a5fa;font-weight:800;font-size:12px;margin-top:auto}.es-photo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}.es-photo-grid a{display:flex;flex-direction:column;gap:8px;color:inherit;text-decoration:none;background:var(--panel,#101a28);border:1px solid var(--line,#28384b);padding:8px;border-radius:12px}.es-photo-grid img{width:100%;height:160px;object-fit:cover;border-radius:8px}.es-photo-grid b{font-size:13px;line-height:1.4}</style>';
+      return head + tabsHtml + ticker + body + hl + radar + gallery + extraStyle;
     });
   }
 
