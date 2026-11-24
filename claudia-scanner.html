@@ -1,9 +1,41 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Claudia Green Live Wire — 423.news</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex">
-<link rel="canonical" href="live-wire.html">
-<script>location.replace('live-wire.html' + location.search + location.hash);</script>
-<noscript><meta http-equiv="refresh" content="0;url=live-wire.html"></noscript>
-<script src="/translate.js" defer></script>
-</head><body><p><a href="live-wire.html">Go to Claudia Green's Live Wire</a></p></body></html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Claudia Green — Unified Desk | 423.news</title><meta name="robots" content="noindex">
+<style>
+:root{color-scheme:dark;--bg:#07101a;--card:#101d2c;--line:#24364a;--muted:#a7b8c9;--text:#edf5ff;--accent:#00d5ff;--green:#39d98a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,Arial,sans-serif}
+header{padding:16px clamp(14px,3vw,30px);background:linear-gradient(120deg,#071321,#10283c);border-bottom:1px solid var(--line)}
+h1{margin:0;font-size:clamp(22px,4vw,32px)}.subtitle{margin:5px 0 0;color:var(--muted)}
+.shell{max-width:1600px;margin:auto;padding:14px}.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:11px 15px;font-weight:700;cursor:pointer}
+.tab.active{border-color:var(--accent);background:#103149;box-shadow:0 0 0 1px #00d5ff33 inset}
+.tab small{display:block;font-weight:500;color:var(--muted);font-size:11px;margin-top:2px}
+.refresh{margin-left:auto;border:1px solid var(--line);border-radius:9px;background:#142538;color:#fff;padding:10px 14px;cursor:pointer}
+.panel{border:1px solid var(--line);background:#0b1724;border-radius:13px;overflow:hidden}
+.frame{display:none;width:100%;height:calc(100dvh - 190px);min-height:640px;border:0;background:#06101a}
+.frame.active{display:block}.hint{padding:10px 14px;color:var(--muted);border-top:1px solid var(--line);font-size:12px}
+@media(max-width:700px){.shell{padding:8px}.tab{flex:1;min-width:calc(50% - 8px);padding:10px}.refresh{margin-left:0;flex:1}.frame{height:calc(100dvh - 220px);min-height:520px}}
+</style></head><body>
+<header><h1>🟢 Claudia Green — Unified Desk</h1><p class="subtitle">Live Wire, AI Workspace, source monitoring and newsroom tools — all contained in one Claudia tab.</p></header>
+<main class="shell">
+<nav class="toolbar" aria-label="Claudia workspace sections">
+<button class="tab active" data-panel="wire">📡 Live Wire<small>Scanner & reports</small></button>
+<button class="tab" data-panel="workspace">🧠 AI Workspace<small>Chat, voice, memory & tasks</small></button>
+<button class="tab" data-panel="monitor">🔎 Source Monitor<small>Research & source tools</small></button>
+<button class="refresh" id="reloadPanel">↻ Reload section</button>
+</nav>
+<section class="panel">
+<iframe class="frame active" id="wire" title="Claudia Green Live Wire" src="live-wire.html"></iframe>
+<iframe class="frame" id="workspace" title="Claudia Green AI Workspace" src="claudia-workspace.html"></iframe>
+<iframe class="frame" id="monitor" title="Claudia Green Official Source Monitor" src="claudia-free-source-monitor.html"></iframe>
+<div class="hint">These tools are grouped under this tab. They remain separate underlying modules so existing functionality and login/session behavior are preserved. Homepage layout and content are unchanged.</div>
+</section>
+</main>
+<script>
+(function(){
+ const tabs=[...document.querySelectorAll('.tab')],frames=[...document.querySelectorAll('.frame')];
+ function show(name){tabs.forEach(t=>t.classList.toggle('active',t.dataset.panel===name));frames.forEach(f=>f.classList.toggle('active',f.id===name));}
+ tabs.forEach(t=>t.addEventListener('click',()=>show(t.dataset.panel)));
+ document.getElementById('reloadPanel').addEventListener('click',()=>{const f=frames.find(x=>x.classList.contains('active'));if(f)f.src=f.src;});
+})();
+</script></body></html>
