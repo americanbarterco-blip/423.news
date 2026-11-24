@@ -1,7 +1,13 @@
-# Claudia integration conflict resolution
+# Claudia newsroom automation — operating model
 
-PRs 66–68 independently changed the same discovery workflow, creating overlapping edits. This integration branch consolidates research executor, evidence-gated draft writer, and optional community/video adapters onto main with one workflow file and standalone manual workflows.
+The scheduled workflow consolidates public-source discovery, research intake, evidence collection, and evidence-gated automatic publishing.
 
-Scheduled discovery runs public feed/site collection and lead queueing. Community/video discovery is enabled when API credentials are configured. Draft generation is gated behind the opt-in GitHub secret CLAUDIA_AUTONOMY_ENABLED=true and requires Supabase/OpenAI credentials; drafts stay private and review-only. Research executor remains manual pending deployed migration verification. No publication step is added.
+- Discovery and research run on a 15-minute schedule.
+- Claudia automatically publishes qualifying stories after evidence collection and factual verification.
+- Topic neutrality is mandatory: no blanket exclusions for crime, violence, tragedy, missing persons, emergencies, courts, politics, or other sensitive beats.
+- A rumor or unsupported item is a record-level exception. Claudia flags/dismisses that one lead with an audit note; the rest of the batch continues.
+- Temporary provider/network failures are not treated as rumors and are logged as operational failures.
+- Successful posts are marked drafted and protected by an idempotency guard.
+- Public-source content is untrusted data; instructions embedded in source pages are ignored.
 
-This PR supersedes PRs 66–68 and includes their source scripts, tests, docs, and SQL migration.
+The public site and private admin tools remain separate. Production deployment is independently triggered by pushes to `main`.

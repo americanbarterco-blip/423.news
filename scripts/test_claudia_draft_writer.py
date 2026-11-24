@@ -37,6 +37,27 @@ class ClaudiaAutoPublisherTests(unittest.TestCase):
             self.assertIn(phrase,prompt)
 
     @patch("scripts.claudia_draft_writer.api")
+    def test_flag_lead_dismisses_only_that_item_and_keeps_audit_note(self,mocked_api):
+        from scripts.claudia_draft_writer import flag_lead
+        flag_lead("https://db.example","service-key",{"id":"lead-1","title":"Unverified claim","notes":"prior note"},"No independent corroboration")
+        args=mocked_api.call_args.args
+        self.assertEqual(args[2],"rest/v1/claudia_story_leads?id=eq.lead-1")
+        self.assertEqual(args[3],"PATCH")
+        patch=json.loads(args[4].decode())
+        self.assertEqual(patch["status"],"dismissed")
+        self.assertIn("CLAUDIA_AUTO_FLAGGED",patch["notes"])
+        self.assertIn("prior note",patch["notes"])
+
+    @patch("scripts.claudia_draft_writer.api")
+    def test_missing_evidence_flags_one_lead_without_aborting(self,mocked_api):
+        from scripts.claudia_draft_writer import process_lead
+        mocked_api.side_effect=[(200,"[]"),(204,"")]
+        result=process_lead("https://db.example","service-key","ai-key","model",{"id":"lead-2","title":"Unverified item"},{"section":"news","topic":"general"})
+        self.assertFalse(result)
+        self.assertEqual(mocked_api.call_count,2)
+        self.assertIn("dismissed",mocked_api.call_args.args[4].decode())
+
+    @patch("scripts.claudia_draft_writer.api")
     def test_writer_filters_to_leads_with_evidence(self,mocked_api):
         mocked_api.return_value=(200,json.dumps([{"lead_id":"1"}]))
         leads=[{"id":"1","title":"Has source"},{"id":"2","title":"No source"}]

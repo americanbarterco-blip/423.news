@@ -214,6 +214,23 @@ def existing_post(base,key,lead_id):
     _,raw=api(base,key,"rest/v1/news_posts?slug=eq.claudia-auto-"+urllib.parse.quote(str(lead_id),safe="")+"&select=id&limit=1")
     return bool(json.loads(raw))
 
+def flag_lead(base,key,lead,reason):
+    """Close one unpublishable lead with an audit note; never stop the writer batch."""
+    lead_id=lead.get("id")
+    if not lead_id:return False
+    prior=str(lead.get("notes","")).strip()
+    note=("CLAUDIA_AUTO_FLAGGED: "+str(reason).strip())[:1200]
+    notes=(prior+"\n"+note).strip()[-2000:]
+    patch={"status":"dismissed","notes":notes,"reviewed_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}
+    path="rest/v1/claudia_story_leads?id=eq."+urllib.parse.quote(str(lead_id),safe="")
+    try:
+        api(base,key,path,"PATCH",json.dumps(patch).encode(),"return=minimal")
+        print("FLAGGED individual lead (not published; other leads continue): %s — %s"%(lead.get("title","Untitled"),reason))
+        return True
+    except Exception as exc:
+        print("Could not persist flag for lead %s: %s: %s"%(lead_id,type(exc).__name__,str(exc)[:240]))
+        return False
+
 def verification_attempts(base,key):
     """Count persisted story fact-check attempts, capped at two."""
     _,raw=api(base,key,"rest/v1/claudia_memories?project=eq.423.news&kind=eq.verification_attempt&select=id&limit=2")
@@ -251,27 +268,33 @@ def process_lead(base, key, ai_key, model, lead, classification, lessons=None, a
         "&select=evidence_type,url,source_name,excerpt,reliability_notes,observed_at&order=observed_at.desc")
     evidence = eligible_evidence(json.loads(raw), min_domains=1)
     if not evidence:
-        print("Skipped lead %s: no retrieved source evidence." % lead.get("id")); return False
+        flag_lead(base,key,lead,"No readable source evidence could be retrieved. Removed from the automatic queue; retained for audit.")
+        return False
     if existing_post(base,key,lead["id"]):
         print("Skipped lead %s: already auto-published; idempotency guard." % lead.get("id")); return False
     attempt_count=verification_attempts(base,key)
     starter_gate=attempt_count < 2
     required_domains=1 if starter_gate else MIN_DOMAINS
     if len(distinct_domains(evidence)) < required_domains:
-        print("HELD factual verification exception: requires %s independent source(s); found %s."%(required_domains,len(distinct_domains(evidence))))
+        found=len(distinct_domains(evidence))
+        flag_lead(base,key,lead,"Insufficient independent publisher evidence (requires %s distinct domain(s), found %s). Not published."%(required_domains,found))
         return False
     draft=call_openai(model,ai_key,lead,evidence,classification,lessons,ai_base_url)
     verification=verify_article(model,ai_key,lead,evidence,draft,min_confidence=0.75 if starter_gate else 0.90,base_url=ai_base_url)
     save_verification_attempt(base,key,lead,verification,starter_gate)
-    # News topics never block coverage. Only factual support/conflict checks can hold.
+    # A failed fact check flags only this lead. The outer loop continues with every other story.
     if not verification or not verification.get("passed"):
-        print("HELD factual verification exception (not a topic exclusion): confidence=%s, details=%s, title=%s"%(verification and verification.get("confidence"),verification and verification.get("result"),draft["title"]))
+        detail=(verification or {}).get("result") or {}
+        reason="Factual verification did not pass; confidence=%s; unsupported=%s; conflicts=%s; reason=%s"%(
+            (verification or {}).get("confidence"),detail.get("unsupported_claims",[]),detail.get("conflicting_claims",[]),detail.get("reason","No reason returned"))
+        flag_lead(base,key,lead,reason)
         return False
     slug="claudia-auto-"+str(lead["id"])
     row={"slug":slug,"section":classification["section"],"topic":classification["topic"],
           "title":draft["title"],"body":draft["body_markdown"]+source_list(evidence)+"\n\n<!-- CLAUDIA_AUTO_VERIFIED -->",
           "author_name":"Claudia Green","status":"published"}
     api(base,key,"rest/v1/news_posts","POST",json.dumps(row).encode(),"return=representation")
+    api(base,key,"rest/v1/claudia_story_leads?id=eq."+urllib.parse.quote(str(lead["id"]),safe=""),"PATCH",json.dumps({"status":"drafted","reviewed_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}).encode(),"return=minimal")
     print("AUTOPUBLISHED VERIFIED STORY (starter=%s, sources=%s, confidence=%s): %s"%(starter_gate,required_domains,verification.get("confidence"),draft["title"]))
     return True
 
