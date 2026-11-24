@@ -3397,7 +3397,7 @@ function renderFeed() {
   }
   if (!rows.length) { ul.innerHTML = banner + stateBlock('<strong>No incidents match your filters</strong><button class="cg-btn sec" id="cgClear">Clear filters</button>'); announce('No incidents match the filters.'); return; }
   ul.innerHTML = banner + rows.map(i => `<li class="cg-item" data-id="${esc(i.id)}" data-sel="${S.sel === i.id}">
-<button class="cg-row" data-pick="${esc(i.id)}" aria-pressed="${S.sel === i.id}">${iconBadge(i.category)}<span class="cg-row-main"><span class="cg-row-top"><time datetime="${esc(N().dt(i.createdAt).toISOString())}">${esc(tm(i.createdAt))}</time>${catTag(i.category)}${i.sourceKind === 'FIELD' ? '<span class="cg-tag" style="--c:#39d98a">FIELD</span>' : ''}${stTag(i.status)}${demoTag(i)}</span>
+<button class="cg-row" data-pick="${esc(i.id)}" aria-pressed="${S.sel === i.id}">${iconBadge(i.category)}<span class="cg-row-main"><span class="cg-row-top"><time datetime="${esc(N().dt(i.createdAt).toISOString())}">${esc(tm(i.createdAt))}</time>${catTag(i.category)}${i.sourceKind.includes('FIELD') ? '<span class="cg-tag" style="--c:#39d98a">FIELD</span>' : ''}${stTag(i.status)}${demoTag(i)}</span>
 <span class="t">${esc(i.headline)}</span><span class="loc">${esc(i.location)}${i.lat == null ? ' \u00b7 not on map' : ''}</span><span class="desc">${esc(i.details)}</span></span></button>
 <button class="cg-more" data-open="${esc(i.id)}" aria-label="Details for ${esc(i.headline)}">Details</button></li>`).join('');
   announce(rows.length + (rows.length === 1 ? ' incident shown.' : ' incidents shown.'));
