@@ -344,8 +344,8 @@ Deno.serve(async (req) => {
     const reportId = String(b.report_id || '').trim();
     const title = String(b.title || '').trim().slice(0, 200);
     const body = String(b.body || '').trim().slice(0, 12000);
-    const section = String(b.section || 'news');
-    const topic = String(b.topic || '').trim().slice(0, 40) || null;
+    let section = String(b.section || 'news');
+    let topic = String(b.topic || '').trim().slice(0, 40) || null;
     if (!reportId || reportId.length > 180 || !title || title.length < 3 || body.length < 80 ||
         !['news', 'sports', 'schools', 'outdoors', 'government'].includes(section) ||
         (topic && !['weather', 'traffic'].includes(topic))) {
@@ -356,6 +356,11 @@ Deno.serve(async (req) => {
     if (!reportR.ok) return j({ error: 'wire_read' }, 500);
     const report = (await reportR.json())[0];
     if (!report) return j({ error: 'wire_not_found' }, 404);
+    // Enforce FIELD -> News at the publication boundary, regardless of form selection.
+    if (String(report.kind || '').trim().toUpperCase() === 'FIELD') {
+      section = 'news';
+      topic = null;
+    }
     const slug = claudiaSlug(title, reportId);
     const existingR = await rest('news_posts?select=id,slug,status&slug=eq.' + encodeURIComponent(slug) + '&limit=1');
     if (!existingR.ok) return j({ error: 'story_duplicate_check' }, 500);
