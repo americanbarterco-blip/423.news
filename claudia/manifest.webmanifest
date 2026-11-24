@@ -1,0 +1,28 @@
+{
+  "name": "Claudia Green — Voice Companion",
+  "short_name": "Claudia",
+  "id": "/claudia/",
+  "start_url": "/claudia/",
+  "scope": "/claudia/",
+  "display": "standalone",
+  "display_override": [
+    "standalone"
+  ],
+  "orientation": "portrait",
+  "background_color": "#07131f",
+  "theme_color": "#07131f",
+  "description": "A standalone voice-only chat app for Claudia Green, your 423-area news companion.",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": [
+    "news",
+    "weather",
+    "utilities"
+  ]
+}
