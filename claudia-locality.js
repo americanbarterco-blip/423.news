@@ -7,7 +7,7 @@
   var LOCAL_DATELINE_RE = /\b(chattanooga|cleveland|athens|knoxville|morristown|johnson city|kingsport|bristol|tri[ -]cities|northeast tennessee|noreste de tennessee|east tennessee|este de tennessee|north georgia|norte de georgia|southwest virginia|423 area|área 423|area 423|condado de (hamilton|bradley|mcminn|rhea|sullivan))\b/i;
   var WORLD_RE = /\b(argentina|egypt|iran|iraq|israel|gaza|hamas|nato|putin|ukraine|russia|kremlin|china|beijing|taiwan|riyadh|venezuela|microsoft|nvidia|wall street|nasdaq|hollywood|white house|congress|supreme court|president trump|melania trump|lsu|transatlantic|artificial reef)\b/i;
   var NONLOCAL_ROUTE_RE = /\/(regional-national|en-espanol)(\/|$)/i;
-  var LOCAL_ROUTE_RE = /\/(local-news|news\/local|news\/knox-county-news|knox-county-news|local)(\/|$)/i;
+  var LOCAL_ROUTE_RE = /\/(local-news|news\/local|news\/knox-county-news|knox-county-news|local|article\/news\/community|article\/sports\/college\/vols)(\/|$)/i;
   var LOCAL_PUBLISHER_RE = /(^|\.)((local3news)|(wjhl)|(wate)|(wbir)|(timesfreepress)|(chattanoogan)|(clevelandbanner)|(mainstreetnews)|(nooga))\.com$/i;
 
   function getHostAndPath(rawUrl) {
