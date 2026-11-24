@@ -9,21 +9,21 @@
 header{padding:24px 18px;text-align:center;border-bottom:1px solid var(--line)}header h1{margin:0;color:var(--accent);letter-spacing:.08em}header p{color:#9fb1c8;margin:8px 0 0}
 main{max-width:1100px;margin:auto;padding:20px}nav{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
 button,.card{border:1px solid var(--line);background:var(--panel);color:inherit;border-radius:12px;padding:14px;cursor:pointer}button:hover,.card:hover{border-color:var(--accent);transform:translateY(-1px)}button.active{border-color:var(--accent);color:var(--accent)}
-.card h3{margin:0 0 6px}.card p{margin:0;color:#a9bad0;font-size:.9rem}.card button{margin-top:12px;width:100%}
+.card h3{margin:0 0 6px}.card p{margin:0;color:#a9bad0;font-size:.9rem}.launch-link{display:inline-block;margin-top:12px;width:100%;text-align:center;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:inherit;border-radius:12px;padding:14px;cursor:pointer}.launch-link:hover{border-color:var(--accent);transform:translateY(-1px)}
 #playerWrap{margin-top:18px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#05080d}#playerHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;background:#111b2a}#gameTitle{font-weight:700;color:var(--gold)}#player{width:100%;height:min(75vh,850px);border:0;background:#000}#empty{padding:48px 20px;text-align:center;color:#a9bad0}
 @media(max-width:600px){main{padding:12px}#player{height:72vh}header{padding:18px 10px}#playerHead{align-items:flex-start;flex-direction:column}}
 </style></head>
 <body>
 <header><h1>423 ARCADE</h1><p>Original games • Play free • Hosted on 423.news</p></header>
-<main><nav><button id="homeBtn" class="active" onclick="showHome()">Game Library</button><button onclick="launch('mrgreen')">Play Mr. Green</button></nav>
+<main><nav><button id="homeBtn" class="active" type="button" data-action="home">Game Library</button><a class="launch-link" href="/arcade/games/game-mr-green.html" data-game="mrgreen">Play Mr. Green</a></nav>
 <section class="games" id="library">
-<div class="card"><h3>Mr. Green</h3><p>Coin-pusher arcade action</p><button onclick="launch('mrgreen')">Play Game</button></div>
-<div class="card"><h3>Trump's Quarters</h3><p>Quarter-themed arcade game</p><button onclick="launch('trumps')">Play Game</button></div>
-<div class="card"><h3>Quarter Shoveler</h3><p>Shovel and collect quarters</p><button onclick="launch('shoveler')">Play Game</button></div>
-<div class="card"><h3>ATV Deer Dodge</h3><p>Ride and dodge through the outdoors</p><button onclick="launch('atv')">Play Game</button></div>
-<div class="card"><h3>Apex Society Deer Hunt</h3><p>Hunting game adventure</p><button onclick="launch('apex')">Play Game</button></div>
+<div class="card"><h3>Mr. Green</h3><p>Coin-pusher arcade action</p><a class="launch-link" href="/arcade/games/game-mr-green.html" data-game="mrgreen">Play Game</a></div>
+<div class="card"><h3>Trump's Quarters</h3><p>Quarter-themed arcade game</p><a class="launch-link" href="/arcade/games/game-trumps-quarters.html" data-game="trumps">Play Game</a></div>
+<div class="card"><h3>Quarter Shoveler</h3><p>Shovel and collect quarters</p><a class="launch-link" href="/arcade/games/game-quarter-shoveler.html" data-game="shoveler">Play Game</a></div>
+<div class="card"><h3>ATV Deer Dodge</h3><p>Ride and dodge through the outdoors</p><a class="launch-link" href="/arcade/games/game-atv-deer-dodge.html" data-game="atv">Play Game</a></div>
+<div class="card"><h3>Apex Society Deer Hunt</h3><p>Hunting game adventure</p><a class="launch-link" href="/arcade/games/game-apex-society-hunt.html" data-game="apex">Play Game</a></div>
 </section>
-<div id="playerWrap" hidden><div id="playerHead"><span id="gameTitle">Game</span><div><button onclick="fullscreenGame()">Fullscreen</button><button onclick="showHome()">Back to Library</button></div></div><iframe id="player" title="423 Arcade game" allow="fullscreen; autoplay; gamepad" allowfullscreen loading="eager"></iframe></div>
+<div id="playerWrap" hidden><div id="playerHead"><span id="gameTitle">Game</span><div><button type="button" data-action="fullscreen">Fullscreen</button><button type="button" data-action="home">Back to Library</button></div></div><iframe id="player" title="423 Arcade game" allow="fullscreen; autoplay; gamepad" allowfullscreen loading="eager"></iframe></div>
 <div id="empty">Choose a game above to launch it.</div>
 </main>
 <script>
@@ -56,4 +56,16 @@ function fullscreenGame(){
   const f=document.getElementById('player');
   if(f.requestFullscreen)f.requestFullscreen();
 }
+document.addEventListener('click',function(event){
+  const gameLink=event.target.closest('[data-game]');
+  if(gameLink){
+    event.preventDefault();
+    launch(gameLink.dataset.game);
+    return;
+  }
+  const action=event.target.closest('[data-action]');
+  if(!action)return;
+  if(action.dataset.action==='home')showHome();
+  if(action.dataset.action==='fullscreen')fullscreenGame();
+});
 </script></body></html>
