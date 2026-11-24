@@ -4,25 +4,6 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths:
-      - '_worker.js'
-      - '.assetsignore'
-      - 'wrangler.jsonc'
-      - 'sitemap.xml'
-      - 'robots.txt'
-      - '**/*.html'
-      - '**/*.js'
-      - '**/*.css'
-      - '**/*.json'
-      - '**/*.txt'
-      - '**/*.png'
-      - '**/*.jpg'
-      - '**/*.jpeg'
-      - '**/*.webp'
-      - '**/*.svg'
-      - '**/*.ico'
-      - '**/*.mp4'
-      - '**/*.py'
 
 permissions:
   contents: read
