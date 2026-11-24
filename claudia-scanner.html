@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Claudia Green — Unified Desk | 423.news</title><meta name="robots" content="noindex">
+<title>Claudia Green — Live Wire | 423.news</title><meta name="robots" content="noindex">
 <style>
 :root{color-scheme:dark;--bg:#07101a;--card:#101d2c;--line:#24364a;--muted:#a7b8c9;--text:#edf5ff;--accent:#00d5ff;--green:#39d98a}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,Arial,sans-serif}
@@ -16,19 +16,14 @@ h1{margin:0;font-size:clamp(22px,4vw,32px)}.subtitle{margin:5px 0 0;color:var(--
 .frame.active{display:block}.hint{padding:10px 14px;color:var(--muted);border-top:1px solid var(--line);font-size:12px}
 @media(max-width:700px){.shell{padding:8px}.tab{flex:1;min-width:calc(50% - 8px);padding:10px}.refresh{margin-left:0;flex:1}.frame{height:calc(100dvh - 220px);min-height:520px}}
 </style></head><body>
-<header><h1>🟢 Claudia Green — Unified Desk</h1><p class="subtitle">Live Wire, AI Workspace, source monitoring and newsroom tools — all contained in one Claudia tab.</p></header>
+<header><h1>🟢 Claudia Green — Live Wire</h1><p class="subtitle">Scanner reports and newsroom updates for the 423 area.</p></header>
 <main class="shell">
 <nav class="toolbar" aria-label="Claudia workspace sections">
 <button class="tab active" data-panel="wire">📡 Live Wire<small>Scanner & reports</small></button>
-<button class="tab" data-panel="workspace">🧠 AI Workspace<small>Chat, voice, memory & tasks</small></button>
-<button class="tab" data-panel="monitor">🔎 Source Monitor<small>Research & source tools</small></button>
 <button class="refresh" id="reloadPanel">↻ Reload section</button>
 </nav>
 <section class="panel">
 <iframe class="frame active" id="wire" title="Claudia Green Live Wire" src="live-wire.html"></iframe>
-<iframe class="frame" id="workspace" title="Claudia Green AI Workspace" src="claudia-workspace.html"></iframe>
-<iframe class="frame" id="monitor" title="Claudia Green Official Source Monitor" src="claudia-free-source-monitor.html"></iframe>
-<div class="hint">These tools are grouped under this tab. They remain separate underlying modules so existing functionality and login/session behavior are preserved. Homepage layout and content are unchanged.</div>
 </section>
 </main>
 <script>
