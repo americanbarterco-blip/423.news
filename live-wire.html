@@ -3074,7 +3074,7 @@ const SECTION_RULES = [
   ['community', /\b(community|festival|parade|fundraiser|volunteer|nonprofit|celebration|church|charity|event|announcement|lost and found)\b/i]
 ];
 function category(r) {
-  const text = [r.headline, r.summary, (r.tags || []).join(' '), r.dateline].join(' ');
+  const text = [r.headline, r.summary, (r.tags || []).join(' '), r.dateline, r.location, r.zone, r.category, r.kind].join(' ');
   for (const [section, rx] of SECTION_RULES) if (rx.test(text)) return section;
   return 'community';
 }
@@ -3087,7 +3087,7 @@ function toIncident(r) {
     : String(r.confidence || '').toLowerCase() === 'developing' ? 'developing' : 'unverified';
   const safety = (r.safety || []).length ? '\n\nWhat it means for you:\n- ' + r.safety.join('\n- ') : '';
   const unc = (r.uncertain || []).length ? '\n\nStill unconfirmed:\n- ' + r.uncertain.join('\n- ') : '';
-  return { id: r.id, headline: r.headline, zone: '', category: category(r), categoryLabel: categoryLabel(category(r)), status, location: r.dateline || '',
+  return { id: r.id, headline: r.headline, zone: r.zone || r.county || '', category: category(r), categoryLabel: categoryLabel(category(r)), sourceKind: String(r.kind || r.type || '').toUpperCase(), status, location: r.dateline || r.location || r.area || '',
     units: '', talkgroup: '', details: String(r.summary || '') + safety + unc, lat: null, lng: null, createdAt: r.ts, authorName: 'Claudia Green' };
 }
 async function loadReports(limit) {
@@ -3217,7 +3217,7 @@ const num = (v, lo, hi) => { if (v == null || v === '') return null; const n = N
 function norm(r, demo) {
   if (!r || r.id == null || !r.headline) return null;
   return {
-    id: String(r.id), headline: String(r.headline).slice(0, 200), zone: String(r.zone || ''), category: CAT[r.category] ? r.category : 'Community',
+    id: String(r.id), sourceKind: String(r.sourceKind || '').toUpperCase(), headline: String(r.headline).slice(0, 200), zone: String(r.zone || ''), category: CAT[r.category] ? r.category : 'Community',
     status: STATUS[r.status] ? r.status : 'unverified', location: String(r.location || ''), units: String(r.units || ''), talkgroup: String(r.talkgroup || ''),
     details: String(r.details || ''), lat: num(r.lat, -90, 90), lng: num(r.lng, -180, 180), createdAt: r.createdAt || new Date().toISOString(),
     author: String(r.authorName || ''), demo: !!demo
@@ -3397,7 +3397,7 @@ function renderFeed() {
   }
   if (!rows.length) { ul.innerHTML = banner + stateBlock('<strong>No incidents match your filters</strong><button class="cg-btn sec" id="cgClear">Clear filters</button>'); announce('No incidents match the filters.'); return; }
   ul.innerHTML = banner + rows.map(i => `<li class="cg-item" data-id="${esc(i.id)}" data-sel="${S.sel === i.id}">
-<button class="cg-row" data-pick="${esc(i.id)}" aria-pressed="${S.sel === i.id}">${iconBadge(i.category)}<span class="cg-row-main"><span class="cg-row-top"><time datetime="${esc(N().dt(i.createdAt).toISOString())}">${esc(tm(i.createdAt))}</time>${catTag(i.category)}${stTag(i.status)}${demoTag(i)}</span>
+<button class="cg-row" data-pick="${esc(i.id)}" aria-pressed="${S.sel === i.id}">${iconBadge(i.category)}<span class="cg-row-main"><span class="cg-row-top"><time datetime="${esc(N().dt(i.createdAt).toISOString())}">${esc(tm(i.createdAt))}</time>${catTag(i.category)}${i.sourceKind.includes('FIELD') ? '<span class="cg-tag" style="--c:#39d98a">FIELD</span>' : ''}${stTag(i.status)}${demoTag(i)}</span>
 <span class="t">${esc(i.headline)}</span><span class="loc">${esc(i.location)}${i.lat == null ? ' \u00b7 not on map' : ''}</span><span class="desc">${esc(i.details)}</span></span></button>
 <button class="cg-more" data-open="${esc(i.id)}" aria-label="Details for ${esc(i.headline)}">Details</button></li>`).join('');
   announce(rows.length + (rows.length === 1 ? ' incident shown.' : ' incidents shown.'));
@@ -3406,7 +3406,7 @@ const announce = (() => { let last = ''; return m => { const l = $('#cgLive', S 
 
 function renderCards() {
   const c = $('#cgCards', S.root), top = filtered().slice(0, 6);
-  c.innerHTML = top.length ? top.map(i => `<a class="cg-cardl" href="#/claudia/${encodeURIComponent(i.id)}" data-open="${esc(i.id)}"><span class="h">${iconBadge(i.category)}<span>${esc(i.category)}</span><time datetime="${esc(N().dt(i.createdAt).toISOString())}">${esc(tm(i.createdAt))}</time></span><b>${esc(i.headline)}</b><span class="l">${esc(i.location)}</span>${i.demo ? '<span class="cg-tag demo" style="justify-self:start">Demo</span>' : ''}</a>`).join('')
+  c.innerHTML = top.length ? top.map(i => `<a class="cg-cardl" href="#/claudia/${encodeURIComponent(i.id)}" data-open="${esc(i.id)}"><span class="h">${iconBadge(i.category)}<span>${esc(i.sourceKind === 'FIELD' ? 'FIELD · ' + i.category : i.category)}</span><time datetime="${esc(N().dt(i.createdAt).toISOString())}">${esc(tm(i.createdAt))}</time></span><b>${esc(i.headline)}</b><span class="l">${esc(i.location)}</span>${i.demo ? '<span class="cg-tag demo" style="justify-self:start">Demo</span>' : ''}</a>`).join('')
     : '<p class="cg-note" style="margin:0">Nothing to show yet.</p>';
 }
 
@@ -3433,7 +3433,7 @@ function openDetail(id, opener) {
   if (!i) { N().toast('That incident is no longer on the wire.'); return; }
   S.openId = id; S.lastOpener = opener || document.activeElement;
   const osm = i.lat != null && i.lng != null ? `<a class="cg-btn sec" target="_blank" rel="noopener noreferrer" href="https://www.openstreetmap.org/?mlat=${i.lat}&mlon=${i.lng}#map=15/${i.lat}/${i.lng}">View on OpenStreetMap</a>` : '';
-  const m = N().modal(`<div class="cg-detail"><div class="cg-row-top" style="display:flex;gap:8px;flex-wrap:wrap">${catTag(i.category)}${stTag(i.status)}${demoTag(i)}</div><h2>${esc(i.headline)}</h2>
+  const m = N().modal(`<div class="cg-detail"><div class="cg-row-top" style="display:flex;gap:8px;flex-wrap:wrap">${catTag(i.category)}${i.sourceKind === 'FIELD' ? '<span class="cg-tag" style="--c:#39d98a">FIELD</span>' : ''}${stTag(i.status)}${demoTag(i)}</div><h2>${esc(i.headline)}</h2>
 ${i.demo ? '<p class="cg-warn" style="margin:8px 0">Demo entry. This is not a real incident.</p>' : ''}
 ${i.status === 'unverified' || i.status === 'developing' ? '<p style="color:#ffe19a;font-size:13px;margin:6px 0">Not fully confirmed. Details may change.</p>' : ''}
 <dl><dt>Time</dt><dd>${esc(N().dt(i.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }))}</dd><dt>Location</dt><dd>${esc(i.location)}</dd><dt>Zone</dt><dd>${esc(i.zone)}</dd>${i.units ? `<dt>Units</dt><dd>${esc(i.units)}</dd>` : ''}${i.talkgroup ? `<dt>Talkgroup</dt><dd>${esc(i.talkgroup)}</dd>` : ''}${i.author ? `<dt>Source</dt><dd>${esc(i.author)}</dd>` : ''}</dl>
