@@ -233,6 +233,9 @@ Deno.serve(async (req) => {
     return 'claudia-' + base + '-' + suffix;
   };
   const claudiaCategory = (report: any) => {
+    // Every report explicitly labeled FIELD belongs in the main News section.
+    // This takes precedence over incidental keywords in its headline or source URLs.
+    if (String(report.kind || '').trim().toUpperCase() === 'FIELD') return { section: 'news', topic: null };
     const title = String(report.headline || '').toLowerCase();
     const urls = (Array.isArray(report.sources) ? report.sources : []).map((s: any) => String(s?.url || '')).join(' ').toLowerCase();
     const text = title + ' ' + urls;
@@ -305,9 +308,26 @@ Deno.serve(async (req) => {
       });
     if (!candidates.length) return j({ ok: true, offset, scanned: reports.length, created: 0, skipped: reports.length, done: reports.length < limit });
     const slugFilter = candidates.map((p: any) => p.slug).join(',');
-    const existingR = await rest('news_posts?select=slug&slug=in.(' + encodeURIComponent(slugFilter) + ')');
+    const existingR = await rest('news_posts?select=slug,section&slug=in.(' + encodeURIComponent(slugFilter) + ')');
     if (!existingR.ok) return j({ error: 'claudia_archive_duplicate_check' }, 500);
-    const existing = new Set((await existingR.json()).map((p: any) => String(p.slug)));
+    const existingRows = await existingR.json();
+    const existingBySlug = new Map((existingRows || []).map((p: any) => [String(p.slug), p]));
+    const existing = new Set(existingBySlug.keys());
+
+    // Repair previously archived FIELD reports in place. Do not create duplicate posts.
+    let recategorized = 0;
+    for (const report of reports) {
+      if (String(report.kind || '').trim().toUpperCase() !== 'FIELD') continue;
+      const slug = claudiaSlug(report.headline, String(report.id));
+      const prior: any = existingBySlug.get(slug);
+      if (!prior || prior.section === 'news') continue;
+      const fixR = await rest('news_posts?slug=eq.' + encodeURIComponent(slug), {
+        method: 'PATCH', body: JSON.stringify({ section: 'news', topic: null }), prefer: 'return=minimal'
+      });
+      if (!fixR.ok) return j({ error: 'claudia_field_recategorize', slug }, 400);
+      recategorized++;
+    }
+
     const fresh = candidates.filter((p: any) => !existing.has(p.slug));
     let created = 0;
     if (fresh.length) {
@@ -318,7 +338,7 @@ Deno.serve(async (req) => {
       }
       created = (await saveR.json()).length;
     }
-    return j({ ok: true, offset, scanned: reports.length, created, skipped: reports.length - created, done: reports.length < limit, next_offset: offset + reports.length });
+    return j({ ok: true, offset, scanned: reports.length, created, recategorized, skipped: reports.length - created, done: reports.length < limit, next_offset: offset + reports.length });
   }
   if (a === 'publishClaudiaStory') {
     const reportId = String(b.report_id || '').trim();
