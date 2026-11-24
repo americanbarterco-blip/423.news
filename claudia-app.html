@@ -12,7 +12,7 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredIns
 document.getElementById('installBtn').onclick=async()=>{if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;};
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 const VOICE={rate:1,pitch:1.05};
-function clean(v){return String(v||'').replace(/<[^>]*>/g,'').replace(/\\s+/g,' ').trim();}
+function clean(v){return String(v||'').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();}
 function esc(v){return clean(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function pickVoice(lang){if(!('speechSynthesis'in window))return null;let voices=speechSynthesis.getVoices().filter(v=>new RegExp('^'+lang+'(-|_)','i').test(v.lang));if(!voices.length)return null;let stored=(localStorage.getItem(lang==='es'?'cgVoiceEs':'cgVoice')||'').toLowerCase();if(stored){let v=voices.find(v=>v.name.toLowerCase()===stored);if(v)return v;}
 let prefs=lang==='es'?[/paulina|monica|mónica|helena|sabina|elena|laura|lucia|lucía|natural/i,/google español|google espanol/i,/female|mujer/i]:[/aria|jenny|ava|emma|natural/i,/google us english/i,/samantha|allison|serena|karen|moira/i,/female|zira|susan/i];
