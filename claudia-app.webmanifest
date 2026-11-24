@@ -9,15 +9,15 @@
   "description": "Claudia: voice-first AI companion for regional news, weather, traffic and public-safety updates.",
   "icons": [
     {
-      "src": "/claudia-app-icon.svg",
+      "src": "/apple-touch-icon.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/claudia-app-icon.svg",
+      "src": "/apple-touch-icon.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
