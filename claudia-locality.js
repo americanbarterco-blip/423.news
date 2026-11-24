@@ -24,13 +24,15 @@
     var headline = String(report.headline || '');
     var summary = String(report.summary || '');
     var dateline = String(report.dateline || '');
+    var location = String(report.location || report.area || '');
+    var zone = String(report.zone || report.county || '');
     var tags = Array.isArray(report.tags) ? report.tags.join(' ') : String(report.tags || '');
     var sources = Array.isArray(report.sources) ? report.sources : [];
     /* Automated feed summaries often repeat the publisher name and a broad
        dateline. Neither is proof that the story itself is about the 423 area. */
     var placeholderSummary = /^.+ reports this story\. Claudia has not independently confirmed it; open the original report for the full details\.?$/i.test(summary.trim());
     var substantiveSummary = placeholderSummary ? '' : summary;
-    var storyText = headline + ' ' + substantiveSummary + ' ' + tags;
+    var storyText = headline + ' ' + substantiveSummary + ' ' + tags + ' ' + location + ' ' + zone;
     var explicitLocal = LOCAL_RE.test(storyText);
     var urls = sources.map(function (s) { return String((s && s.url) || ''); });
     var regionalSyndication = urls.some(function (u) { return NONLOCAL_ROUTE_RE.test(u); });
@@ -41,7 +43,7 @@
 
     /* Permit generic local service items only when both the dateline and
        the source's URL identify a local publisher/local-news section. */
-    var localDateline = LOCAL_DATELINE_RE.test(dateline);
+    var localDateline = LOCAL_DATELINE_RE.test(dateline) || LOCAL_DATELINE_RE.test(location) || LOCAL_DATELINE_RE.test(zone);
     var localPublisherSection = sources.some(function (s) {
       var parsed = getHostAndPath(s && s.url);
       return !!parsed && LOCAL_PUBLISHER_RE.test(parsed.hostname) && LOCAL_ROUTE_RE.test(parsed.pathname);
