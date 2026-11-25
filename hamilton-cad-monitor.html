@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hamilton County 911 CAD Monitor | Claudia Green</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+:root{color-scheme:dark;--bg:#07111b;--panel:#101e2c;--line:#293b4d;--muted:#9cb1c5;--text:#edf4fb;--cyan:#54d7f3;--amber:#ffbd59;--green:#58d6a2}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#10243a,var(--bg) 55%);color:var(--text);font:14px/1.5 system-ui,Arial,sans-serif}
+main{max-width:1200px;margin:auto;padding:16px}.head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+h1{font-size:clamp(19px,3vw,26px);margin:0}.sub,.muted{color:var(--muted);font-size:12px}
+.badge{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;padding:5px 9px;color:var(--amber);font-size:11px;font-weight:700}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.panel{background:linear-gradient(150deg,#14263a,#0e1a28);border:1px solid var(--line);border-radius:13px;padding:14px;margin-bottom:12px}
+.stats{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0}.stat{background:#081521;border:1px solid var(--line);border-radius:9px;padding:8px 12px;min-width:100px}.stat b{display:block;font-size:21px}.stat span{font-size:11px;color:var(--muted)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}select,button{border:1px solid #34516a;background:#10283b;color:var(--text);border-radius:8px;padding:9px 11px;font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:wait}
+.rows{display:grid;gap:8px}.incident{display:grid;grid-template-columns:95px 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);background:#091725;border-radius:10px;padding:10px 12px}
+.kind{color:var(--cyan);font-size:11px;font-weight:700;text-transform:uppercase}.agency{font-weight:650}.area{color:var(--muted);font-size:12px}.status{font-size:11px;border:1px solid #47627a;border-radius:20px;padding:3px 8px;white-space:nowrap}
+.empty{padding:20px;text-align:center;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}
+.note{font-size:12px;color:var(--muted);line-height:1.55}.source{color:var(--cyan);text-decoration:none}.source:hover{text-decoration:underline}
+@media(max-width:650px){main{padding:10px}.incident{grid-template-columns:1fr auto;gap:5px}.incident .kind{grid-column:1/-1}.incident .area{grid-column:1}.status{grid-column:2;grid-row:2}}
+</style>
+</head>
+<body>
+<main>
+ <div class="head"><div><h1>Hamilton County 9-1-1 · CAD Monitor</h1><div class="sub">Public active-incident listing · Supplemental scanner context</div></div><span class="badge" id="state"><i class="dot"></i> CONNECTING</span></div>
+ <section class="panel">
+  <div class="sub">CAD incident snapshot</div>
+  <div class="stats">
+   <div class="stat"><b id="total">—</b><span>Listed active incidents</span></div>
+   <div class="stat"><b id="law">—</b><span>Law</span></div>
+   <div class="stat"><b id="fire">—</b><span>Fire</span></div>
+   <div class="stat"><b id="ems">—</b><span>EMS</span></div>
+  </div>
+  <div class="controls">
+   <select id="type"><option value="">All types</option><option>Law</option><option>Fire</option><option>EMS</option><option>Road Closure</option></select>
+   <select id="area"><option value="">All areas</option></select>
+   <select id="statusFilter"><option value="">All statuses</option><option>Reported</option><option>Enroute</option><option>On Scene</option><option>Transporting</option><option>At Hospital</option></select>
+   <button id="refresh">↻ Refresh</button>
+  </div>
+  <div class="sub" id="updated" style="margin-top:10px">Waiting for source response…</div>
+ </section>
+ <section class="panel"><div class="rows" id="incidents"><div class="empty">Connecting to Hamilton County 9-1-1…</div></div></section>
+ <section class="panel note">
+  <b>Source and limitations:</b> This is a read-only view of the Hamilton County 9-1-1 public active-incidents page. The agency says its page is updated regularly from CAD and that not all incident types are displayed. This is not a complete dispatch feed, not radio audio, and not an emergency service. It does not show street addresses, event narratives, incident numbers, caller details, or personal identifiers. CAD status is not proof of cause, injury, fault, or final outcome. Verify important claims with the responsible agency before reporting.
+  <p><a class="source" href="https://www.hamiltontn911.gov/active-incidents.php" target="_blank" rel="noopener">Open official Hamilton County 9-1-1 incident page ↗</a></p>
+ </section>
+</main>
+<script>
+(function(){
+ const $=id=>document.getElementById(id);
+ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+ let records=[];
+ function render(){
+  const type=$("type").value,area=$("area").value,status=$("statusFilter").value;
+  const list=records.filter(x=>(!type||x.type===type)&&(!area||x.area===area)&&(!status||x.status===status));
+  $("incidents").innerHTML=list.length?list.map(x=>'<article class="incident"><div class="kind">'+esc(x.type)+'</div><div><div class="agency">'+esc(x.agency||"Agency not listed")+'</div><div class="area">'+esc(x.area||"Area not listed")+' · '+esc(x.created||"Time not listed")+'</div></div><span class="status">'+esc(x.status||"Status unavailable")+'</span></article>').join(""):'<div class="empty">No listed incidents match these filters.</div>';
+ }
+ async function load(){
+  $("refresh").disabled=true;$("state").innerHTML='<i class="dot"></i> CHECKING';$("updated").textContent="Checking official source…";
+  try{
+   const res=await fetch("/api/hamilton-cad",{cache:"no-store",headers:{Accept:"application/json"}});
+   const data=await res.json();
+   if(!res.ok||!data.source_available)throw new Error(data.message||"The official page did not provide a readable incident list.");
+   records=Array.isArray(data.incidents)?data.incidents:[];
+   $("total").textContent=records.length;
+   $("law").textContent=records.filter(x=>x.type==="Law").length;
+   $("fire").textContent=records.filter(x=>x.type==="Fire").length;
+   $("ems").textContent=records.filter(x=>x.type==="EMS").length;
+   const areas=[...new Set(records.map(x=>x.area).filter(Boolean))].sort();
+   const current=$("area").value;
+   $("area").innerHTML='<option value="">All areas</option>'+areas.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join("");
+   $("area").value=areas.includes(current)?current:"";
+   $("state").innerHTML='<i class="dot"></i> SOURCE RESPONDING';
+   $("updated").textContent="Retrieved "+new Date(data.fetched_at).toLocaleString()+" · Auto-refresh every 60 seconds";
+   render();
+  }catch(err){
+   $("state").innerHTML='<i class="dot"></i> SOURCE UNAVAILABLE';
+   $("updated").textContent=String(err.message||err);
+   $("incidents").innerHTML='<div class="empty">Could not retrieve a readable incident list. The official page may be temporarily unavailable or restricting automated access. No incidents are being inferred.</div>';
+   $("total").textContent="—";$("law").textContent="—";$("fire").textContent="—";$("ems").textContent="—";
+  }finally{$("refresh").disabled=false}
+ }
+ ["type","area","statusFilter"].forEach(id=>$(id).addEventListener("change",render));
+ $("refresh").addEventListener("click",load);
+ load();setInterval(load,60000);
+})();
+</script>
+</body></html>
