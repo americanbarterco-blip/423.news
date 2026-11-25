@@ -55,9 +55,17 @@
     setStatus("Claudia has been added to your home screen.");
   });
   downloadClaudia.addEventListener("click", async function () {
-    /* From 423.news, open Claudia's own installable app page first. */
+    /* From the installed 423.news PWA, hand off to Chrome using Android's
+       external-activity intent. This must happen synchronously in the tap handler. */
     if (!isClaudiaAppPage) {
-      window.location.href = "/claudia/index.html";
+      if (/android/i.test(navigator.userAgent) &&
+          (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true)) {
+        var target = "https://423.news/claudia/index.html";
+        var fallback = encodeURIComponent(target);
+        window.location.href = "intent://423.news/claudia/index.html#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + fallback + ";end";
+      } else {
+        window.location.href = "/claudia/index.html";
+      }
       return;
     }
     if (installPrompt) {
