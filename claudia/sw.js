@@ -1,5 +1,5 @@
-const CACHE='claudia-chat-v4';
-const SHELL=['./','./index.html','./manifest.webmanifest','./claudia-icon.svg','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/claudia-livekit.js','/offline.html'];
+const CACHE='claudia-chat-v5';
+const SHELL=['./','./index.html','./manifest.webmanifest','./claudia-icon.svg','./claudia-icon-192.png','./claudia-icon-512.png','/claudia-livekit.js','/offline.html'];
 /* Cache independently: a missing optional asset must not block installation. */
 self.addEventListener('install',event=>{
   event.waitUntil(
