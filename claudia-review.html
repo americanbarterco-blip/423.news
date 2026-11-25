@@ -4,7 +4,7 @@
 <style>
 :root{color-scheme:dark;--bg:#07101a;--panel:#101e2c;--border:#263b4f;--text:#eaf1f7;--muted:#a3b5c7;--orange:#ff6b1a;--green:#1e7852;--red:#b72e38}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui;padding:clamp(12px,3vw,24px)}main{max-width:1120px;margin:auto}
-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}.brand-access{all:unset;cursor:pointer;color:var(--text);font:inherit}.brand-access:focus-visible{outline:2px solid var(--orange);outline-offset:5px;border-radius:4px}
 h1{font-size:clamp(20px,3vw,30px);margin:0}h2{font-size:19px;margin:0 0 12px}h3{font-size:17px;margin:8px 0}
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
 .muted,small{color:var(--muted)}.badge{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:3px 9px;font-size:12px;margin:0 6px 6px 0}
@@ -17,9 +17,9 @@ input,textarea{width:100%;margin:6px 0 10px}textarea{min-height:80px}
 #status{color:#ffbd69;min-height:26px}.hidden{display:none!important}
 a{color:#82caff}video,img{max-width:100%;max-height:360px;border-radius:10px;margin-top:8px}
 </style></head><body><main>
-<header><h1>Claudia Green · Review Desk</h1><div><button id="reload" class="secondary">Refresh queue</button><button id="logout" class="secondary">Log out</button></div></header>
-<div class="panel"><div id="status">Private review console. Draft approval does not publish.</div><div class="tabs"><button id="draftTab" class="active">Article drafts</button><button id="mediaTab">Media review</button></div><div id="counts" class="muted"></div></div>
-<div id="login" class="panel hidden"><h2>Staff sign in</h2><input id="password" type="password" autocomplete="current-password" placeholder="423.news admin password"><button id="signIn">Sign in</button></div>
+<header><h1>Claudia Green · Review Desk</h1><div id="staffActions" class="hidden"><button id="reload" class="secondary">Refresh queue</button><button id="logout" class="secondary">Log out</button></div></header>
+<div class="panel"><div id="status">Private review console. Staff access is available only through the existing 423.news logo entry point. Draft approval does not publish.</div><div class="tabs"><button id="draftTab" class="active">Article drafts</button><button id="mediaTab">Media review</button></div><div id="counts" class="muted"></div></div>
+
 <div id="queue"></div></main>
 <script>
 (function(){
@@ -28,9 +28,9 @@ let token=sessionStorage.getItem('t423')||'',mode='drafts',drafts=[],media=[];
 const $=id=>document.getElementById(id);
 function status(t){$('status').textContent=t||''}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'": "&#39;"}[c]))}
-async function call(action,extra){try{const r=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action,token},extra||{}))});const j=await r.json();if(r.status===401){token='';sessionStorage.removeItem('t423');$('login').classList.remove('hidden');}return {ok:r.ok,j};}catch(e){return {ok:false,j:{error:'network'}}}}
-async function login(){const r=await call('login',{password:$('password').value});if(r.ok&&r.j.token){token=r.j.token;sessionStorage.setItem('t423',token);$('login').classList.add('hidden');$('password').value='';await load();}else status(r.j.error==='locked'?'Login temporarily locked. Try again later.':'Sign-in failed.')}
-async function load(){if(!token){$('login').classList.remove('hidden');return;}status('Loading private queue…');const r=await call('claudiaQueue');if(!r.ok){status('Unable to load queue. Check function deployment and permissions.');return;}drafts=r.j.drafts||[];media=r.j.media||[];render();status('Loaded review queue. Approval is editorial only; it does not publish.')}
+async function call(action,extra){try{const r=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action,token},extra||{}))});const j=await r.json();if(r.status===401&&action!=='login'){token='';sessionStorage.removeItem('t423');$('staffActions').classList.add('hidden');$('login').classList.add('hidden');$('queue').innerHTML='';status('Staff session expired. Return to 423.news and use the existing 423 logo access.');}return {ok:r.ok,j};}catch(e){return {ok:false,j:{error:'network'}}}}
+async function login(){const r=await call('login',{password:$('password').value});if(r.ok&&r.j.token){token=r.j.token;sessionStorage.setItem('t423',token);$('login').classList.add('hidden');$('staffActions').classList.remove('hidden');$('password').value='';await load();}else status(r.j.error==='locked'?'Login temporarily locked. Try again later.':'Sign-in failed.')}
+async function load(){if(!token){$('login').classList.add('hidden');$('staffActions').classList.add('hidden');return;}status('Loading private queue…');const r=await call('claudiaQueue');if(!r.ok){status('Unable to load queue. Check function deployment and permissions.');return;}drafts=r.j.drafts||[];media=r.j.media||[];render();status('Loaded review queue. Approval is editorial only; it does not publish.')}
 function switchMode(m){mode=m;$('draftTab').classList.toggle('active',m==='drafts');$('mediaTab').classList.toggle('active',m==='media');render()}
 function reviewDraft(id,s){const notes=prompt('Optional editor notes for this review:')||'';if(!confirm('Mark this draft '+s+'? This does not publish.'))return;status('Saving review…');call('claudiaDraftReview',{id,status:s,notes}).then(r=>{if(!r.ok)status('Review failed: '+(r.j.error||'unknown'));else{status('Draft marked '+s+'. Not published.');load();}})}
 function reviewMedia(id,s){if(!confirm('Mark this staged media '+s+'? This does not publish or attach it.'))return;status('Saving media review…');call('claudiaMediaReview',{id,status:s}).then(r=>{if(!r.ok)status('Review failed: '+(r.j.error||'unknown'));else{status('Media marked '+s+'. Still private.');load();}})}
@@ -38,7 +38,7 @@ function renderDrafts(){if(!drafts.length)return '<div class="panel">No drafts i
 function renderMedia(){if(!media.length)return '<div class="panel">No staged media items yet.</div>';return '<div class="grid">'+media.map(m=>'<article class="panel"><span class="badge">'+esc(m.status)+'</span><span class="badge">'+esc(m.media_type)+'</span><h3>'+esc(m.caption||'Uncaptioned media')+'</h3><p><b>Creator/credit:</b> '+esc(m.credit||'Missing')+'<br><b>Rights basis:</b> '+esc(m.rights_basis||'Missing')+'<br><b>Alt text:</b> '+esc(m.alt_text||'Missing')+'<br><b>Source:</b> '+(m.source_url?'<a href="'+esc(m.source_url)+'" target="_blank" rel="noopener">Open source</a>':'None')+'</p><p class="muted">'+esc(m.object_path)+' · '+esc(m.size_bytes||0)+' bytes</p><div><button onclick="reviewMedia(\''+esc(m.id)+'\',\'approved\')">Approve rights review</button><button class="reject" onclick="reviewMedia(\''+esc(m.id)+'\',\'rejected\')">Reject</button></div><small>Media approval does not attach or publish files.</small></article>').join('')+'</div>'}
 function render(){ $('counts').textContent='Drafts: '+drafts.length+' · Staged media: '+media.length;$('queue').innerHTML=mode==='drafts'?renderDrafts():renderMedia();}
 window.reviewDraft=reviewDraft;window.reviewMedia=reviewMedia;
-$('signIn').onclick=login;$('password').onkeydown=e=>{if(e.key==='Enter')login()};$('reload').onclick=load;$('draftTab').onclick=()=>switchMode('drafts');$('mediaTab').onclick=()=>switchMode('media');$('logout').onclick=()=>{token='';sessionStorage.removeItem('t423');$('login').classList.remove('hidden');$('queue').innerHTML='';status('Signed out.')};
-load();
+$('reload').onclick=load;$('draftTab').onclick=()=>switchMode('drafts');$('mediaTab').onclick=()=>switchMode('media');$('logout').onclick=()=>{token='';sessionStorage.removeItem('t423');$('staffActions').classList.add('hidden');$('login').classList.add('hidden');$('queue').innerHTML='';status('Signed out. Tap the Claudia Green logo/title to sign in again.')};
+if(token){$('staffActions').classList.remove('hidden');load();}else{ $('login').classList.add('hidden');$('staffActions').classList.add('hidden'); }
 })();
 </script></body></html>
