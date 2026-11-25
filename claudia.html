@@ -3087,18 +3087,12 @@ function toIncident(r) {
 }
 async function loadReports(limit) {
   const sb = CFG.supabase || {};
-  const take = Math.min(Math.max(Number(limit) || 50, 1), 200);
-  const filterLocal = rows => (rows || []).filter(row =>
-    window.ClaudiaLocality && window.ClaudiaLocality.isLocal(row)
-  );
-  const mergeUnique = rows => {
-    const seen = new Set();
-    return rows.filter(row => {
-      const key = String(row.headline || row.title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-      if (!key || seen.has(key)) return false;
-      seen.add(key); return true;
-    }).sort((a,b) => new Date(b.ts || b.created_at || b.published_at || 0) - new Date(a.ts || a.created_at || a.published_at || 0)).slice(0,take);
-  };
+  const take = Math.min(Math.max(Number(limit) || 200, 1), 1000);
+  // Claudia's wire is a news hub: show all published coverage, not only core-county items.
+  const filterLocal = rows => (rows || []);
+  const mergeUnique = rows => rows.slice()
+    .sort((a,b) => new Date(b.ts || b.created_at || b.published_at || 0) - new Date(a.ts || a.created_at || a.published_at || 0))
+    .slice(0,take);
   if (sb.url && sb.anonKey) {
     const fetchLimit = Math.min(take * 5, 1000);
     const headers = { apikey: sb.anonKey, Authorization: 'Bearer ' + sb.anonKey };
@@ -3113,8 +3107,8 @@ async function loadReports(limit) {
       return {
         id: row.id || row.slug || 'story-' + (row.title || ''),
         ts: row.created_at || row.published_at || row.updated_at || null,
-        kind: auto ? 'VERIFIED' : 'DESK',
-        confidence: auto ? 'confirmed' : 'developing',
+        kind: 'DESK',
+        confidence: 'developing',
         headline: row.title || 'Published newsroom story',
         summary: row.body || row.summary || '',
         tags: [row.section, row.topic, auto ? 'auto-published' : 'editorially-published'].filter(Boolean),
