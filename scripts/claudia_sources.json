@@ -26,6 +26,30 @@
       "enabled": true
     },
     {
+      "name": "Local 3 News Chattanooga - Website",
+      "type": "web",
+      "url": "https://www.local3news.com/local-news/",
+      "enabled": true
+    },
+    {
+      "name": "Local 3 News - YouTube Official Channel",
+      "type": "feed",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCZvWI9aiyzMp-osh-XbU7xA",
+      "enabled": true
+    },
+    {
+      "name": "Local 3 News - Instagram Public Profile (best effort)",
+      "type": "web",
+      "url": "https://www.instagram.com/local3news/",
+      "enabled": true
+    },
+    {
+      "name": "Local 3 News - Google News Discovery",
+      "type": "feed",
+      "url": "https://news.google.com/rss/search?q=site%3Alocal3news.com+%28Chattanooga+OR+Hamilton+County+OR+Cleveland+Tennessee+OR+Bradley+County%29&hl=en-US&gl=US&ceid=US%3Aen",
+      "enabled": true
+    },
+    {
       "name": "WTVC Local",
       "type": "feed",
       "url": "https://newschannel9.com/news/local.rss",
