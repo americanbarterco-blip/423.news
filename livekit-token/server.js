@@ -1,7 +1,7 @@
 import { AccessToken } from "livekit-server-sdk";
 import { RoomAgentDispatch, RoomConfiguration } from "@livekit/protocol";
 
-const ALLOWED_ORIGINS = new Set(["https://423.news", "https://www.423.news"]);
+const ALLOWED_ORIGINS = new Set(["https://423.news", "https://www.423.news", "https://claudia.423.news"]);
 
 function json(data, status = 200, origin = null) {
   const headers = { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" };
