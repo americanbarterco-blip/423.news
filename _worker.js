@@ -270,7 +270,9 @@ export default {
         "/index.html": "/claudia/index.html",
         "/manifest.webmanifest": "/claudia/manifest.webmanifest",
         "/sw.js": "/claudia/sw.js",
-        "/claudia-icon.svg": "/claudia/claudia-icon.svg"
+        "/claudia-icon.svg": "/claudia/claudia-icon.svg",
+        "/claudia-icon-192.png": "/claudia/claudia-icon-192.png",
+        "/claudia-icon-512.png": "/claudia/claudia-icon-512.png"
       };
       const assetPath = claudiaRootFiles[url.pathname] || url.pathname;
       const assetUrl = new URL(assetPath + url.search, url.origin);
