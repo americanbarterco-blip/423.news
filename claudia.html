@@ -3279,25 +3279,25 @@ function template() {
 <div id="cgLive" class="cg-sr" role="status" aria-live="polite"></div>
 <section class="cg-hero" aria-label="Claudia Green Live Wire">
   <div class="cg-hero-portrait"><img src="/claudia-app-icon.svg" alt="Claudia Green, 423.news newsroom assistant" width="258" height="194" fetchpriority="high"><video src="claudia-onair.mp4" poster="/claudia-app-icon.svg" autoplay muted loop playsinline preload="auto" aria-label="Claudia Green on camera, recorded video"></video><button type="button" class="cg-snd" aria-label="Enable Claudia Green voice">Enable voice</button><span class="cg-illus">AI · recorded</span></div>
-  <div class="cg-hero-copy"><div class="cg-hero-top"><span id="cgHeroPill">${pill()}</span><span class="cg-hero-wx" id="cgWx" hidden></span></div><h1>Claudia Green <span>Live Wire</span></h1><p class="cg-hero-tag">REAL REPORTS &bull; REAL INCIDENTS &bull; REAL TIME</p>${N().personaNote ? `<p class="cg-persona">${esc(N().personaNote)}</p>` : ''}<p style="margin:4px 0 0"><a href="index.html#/tip" style="display:inline-block;background:#1479ff;color:#fff;font-weight:800;font-size:13px;padding:8px 14px;border-radius:99px;text-decoration:none">Send Claudia a tip</a></p></div>
+  <div class="cg-hero-copy"><div class="cg-hero-top"><span id="cgHeroPill">${pill()}</span><span class="cg-hero-wx" id="cgWx" hidden></span></div><h1>Claudia Green <span>Live Wire</span></h1><p class="cg-hero-tag">LOCAL REPORTS &bull; VERIFIED SOURCES &bull; CONTINUOUS UPDATES</p>${N().personaNote ? `<p class="cg-persona">${esc(N().personaNote)}</p>` : ''}<p style="margin:4px 0 0"><a href="index.html#/tip" style="display:inline-block;background:#1479ff;color:#fff;font-weight:800;font-size:13px;padding:8px 14px;border-radius:99px;text-decoration:none">Send Claudia a tip</a></p></div>
   <div class="cg-hero-room"><img src="/claudia-app-icon.svg" alt="" width="350" height="166" loading="lazy">
     <div class="cg-hero-brand"><p>First to the call.<br>First to you.</p><b>423<i>.</i>NEWS</b></div></div>
 </section>
 <div class="cg-warn" id="cgDemo" hidden></div>
 <div class="cg-dash">
   <section class="cg-panel cg-feed" id="cgFeed" aria-labelledby="cgFeedH" aria-busy="true">
-    <div class="cg-ph"><div class="cg-ph-l"><span id="cgFeedPill">${pill()}</span><h2 id="cgFeedH">Incident Feed</h2></div>
+    <div class="cg-ph"><div class="cg-ph-l"><span id="cgFeedPill">${pill()}</span><h2 id="cgFeedH">Local &amp; Regional Wire Reports</h2></div>
       <div class="cg-feed-tools"><button class="cg-sw" id="cgAuto" role="switch" aria-checked="${P.auto}"><span>Auto refresh</span><span class="tr"></span></button>
       <button class="cg-iconbtn" id="cgRefresh" aria-label="Refresh now" title="Refresh now">${ico('refresh')}</button></div></div>
     <p class="cg-stamp" id="cgStamp" style="margin:-4px 0 8px">Waiting for first update&hellip;</p>
     <div class="cg-chips" id="cgChips" role="group" aria-label="Filter by category">${['All', 'Police', 'Fire', 'EMS', 'Traffic', 'Weather', 'Community'].map(c =>
       `<button class="cg-chip" data-cat="${c}" aria-pressed="${c === 'All'}">${c === 'All' ? '' : `<span style="color:${CAT[c].hex}">${ico(CAT[c].icon)}</span>`}${c}</button>`).join('')}</div>
-    <div class="cg-search"><input id="cgQ" type="search" placeholder="Search incidents" aria-label="Search incidents" autocomplete="off">
+    <div class="cg-search"><input id="cgQ" type="search" placeholder="Search wire reports" aria-label="Search wire reports" autocomplete="off">
       <select id="cgZone" aria-label="Coverage area"><option value="">All zones</option>${Object.keys(ZONE_CENTER).map(z => `<option>${esc(z)}</option>`).join('')}</select></div>
-    <ul class="cg-list" id="cgList" aria-label="Incidents"></ul>
+    <ul class="cg-list" id="cgList" aria-label="Wire reports"></ul>
   </section>
   <section class="cg-panel cg-map" id="cgMapPanel" aria-labelledby="cgMapH">
-    <div class="cg-ph"><h2 id="cgMapH">Live Incident Map</h2><button class="cg-iconbtn" id="cgFull" aria-label="Full screen map" title="Full screen" hidden>${ico('expand')}</button></div>
+    <div class="cg-ph"><h2 id="cgMapH">Report Map</h2><button class="cg-iconbtn" id="cgFull" aria-label="Full screen map" title="Full screen" hidden>${ico('expand')}</button></div>
     <div class="cg-map-box" id="cgMapBox"><div class="cg-leaf" id="cgLeaf"></div><p class="cg-mapnote" id="cgMapNote" hidden>These reports have no map coordinates, so they are listed in the feed and not plotted at a guessed position.</p><div class="cg-fb" id="cgFb" hidden></div>
       <div class="cg-zoom"><button id="cgZin" aria-label="Zoom in" disabled>${ico('plus')}</button><button id="cgZout" aria-label="Zoom out" disabled>${ico('minus')}</button><button id="cgReset" aria-label="Reset map view" title="Reset map view" disabled>${ico('reset')}</button></div></div>
     <div class="cg-legend" id="cgLegend">${['Police', 'Fire', 'EMS', 'Traffic', 'Weather'].map(c => `<span><i style="--c:${CAT[c].c}">${ico(CAT[c].icon)}</i>${c}</span>`).join('')}<span class="mapped" id="cgMapped"></span></div>
@@ -3315,7 +3315,7 @@ function template() {
       ${sw('voice', 'Voice announcements', 'Synthesized voice on this device')}
       ${sw('music', 'Background music', 'No music source is configured', true)}
       ${sw('announce', 'Auto announce new incidents', 'Needs voice announcements on')}
-      <div class="cg-speak"><button class="cg-btn" id="cgSay">${ico('mic')}Announce latest incident</button><button class="cg-btn sec" id="cgStop" disabled>Stop</button></div>
+      <div class="cg-speak"><button class="cg-btn" id="cgSay">${ico('mic')}Announce latest report</button><button class="cg-btn sec" id="cgStop" disabled>Stop</button></div>
       <p class="cg-voice-note">Announcements use your device&rsquo;s synthesized voice and the report text shown here. They are not live radio and not an official dispatch.</p>
     </section>
     <section class="cg-panel" id="cgActions" aria-labelledby="cgQaH"><h2 id="cgQaH">Quick Actions</h2>
@@ -3326,7 +3326,7 @@ function template() {
       <p class="cg-voice-note">External sites. Not 423.news partners.</p>
       <div class="cg-priv" style="margin-top:12px">${ico('shield')}<p>${N().readOnly ? 'Reports here follow the desk policy: no names and no street numbers. This is not an emergency service: call 911.' : 'Police report locations are shown without house numbers. Do not send names, phone numbers or home addresses. This is not an emergency service: call 911.'}</p></div></section>
   </div>
-  <section class="cg-panel cg-latest" aria-labelledby="cgLatH"><div class="cg-ph"><div class="cg-ph-l"><span style="color:var(--cg-muted);display:inline-flex;width:20px">${ico('clock')}</span><h2 id="cgLatH">Latest Incidents</h2></div></div><div class="cg-cards" id="cgCards"></div></section>
+  <section class="cg-panel cg-latest" aria-labelledby="cgLatH"><div class="cg-ph"><div class="cg-ph-l"><span style="color:var(--cg-muted);display:inline-flex;width:20px">${ico('clock')}</span><h2 id="cgLatH">Latest Wire Reports</h2></div></div><div class="cg-cards" id="cgCards"></div></section>
 </div>
 <div class="cg-more">
   <section class="cg-panel cg-studio" id="cgStudio" aria-labelledby="cgStudioH">
@@ -3392,14 +3392,14 @@ function renderFeed() {
     if (S.status === 'ok') {
       ul.innerHTML = stateBlock('<strong>No active reports right now</strong><span>Reports appear here when the Claudia Green desk publishes them.</span>' + (demoAllowed() ? '' : '<button class="cg-btn sec" id="cgDemoOn">Preview with demo data</button>'));
     } else ul.innerHTML = banner;
-    announce('No incidents to show.'); return;
+    announce('No wire reports to show.'); return;
   }
-  if (!rows.length) { ul.innerHTML = banner + stateBlock('<strong>No incidents match your filters</strong><button class="cg-btn sec" id="cgClear">Clear filters</button>'); announce('No incidents match the filters.'); return; }
+  if (!rows.length) { ul.innerHTML = banner + stateBlock('<strong>No reports match your filters</strong><button class="cg-btn sec" id="cgClear">Clear filters</button>'); announce('No reports match the filters.'); return; }
   ul.innerHTML = banner + rows.map(i => `<li class="cg-item" data-id="${esc(i.id)}" data-sel="${S.sel === i.id}">
 <button class="cg-row" data-pick="${esc(i.id)}" aria-pressed="${S.sel === i.id}">${iconBadge(i.category)}<span class="cg-row-main"><span class="cg-row-top"><time datetime="${esc(N().dt(i.createdAt).toISOString())}">${esc(tm(i.createdAt))}</time>${catTag(i.category)}${stTag(i.status)}${demoTag(i)}</span>
 <span class="t">${esc(i.headline)}</span><span class="loc">${esc(i.location)}${i.lat == null ? ' \u00b7 not on map' : ''}</span><span class="desc">${esc(i.details)}</span></span></button>
 <button class="cg-more" data-open="${esc(i.id)}" aria-label="Details for ${esc(i.headline)}">Details</button></li>`).join('');
-  announce(rows.length + (rows.length === 1 ? ' incident shown.' : ' incidents shown.'));
+  announce(rows.length + (rows.length === 1 ? ' report shown.' : ' reports shown.'));
 }
 const announce = (() => { let last = ''; return m => { const l = $('#cgLive', S && S.root); if (l && m !== last) { l.textContent = m; last = m; } }; })();
 
@@ -3429,7 +3429,7 @@ function cardHtml(i) {
 }
 function openDetail(id, opener) {
   const i = S.items.find(x => x.id === id);
-  if (!i) { N().toast('That incident is no longer on the wire.'); return; }
+  if (!i) { N().toast('That report is no longer on the wire.'); return; }
   S.openId = id; S.lastOpener = opener || document.activeElement;
   const osm = i.lat != null && i.lng != null ? `<a class="cg-btn sec" target="_blank" rel="noopener noreferrer" href="https://www.openstreetmap.org/?mlat=${i.lat}&mlon=${i.lng}#map=15/${i.lat}/${i.lng}">View on OpenStreetMap</a>` : '';
   const m = N().modal(`<div class="cg-detail"><div class="cg-row-top" style="display:flex;gap:8px;flex-wrap:wrap">${catTag(i.category)}${stTag(i.status)}${demoTag(i)}</div><h2>${esc(i.headline)}</h2>
@@ -3437,7 +3437,7 @@ ${i.demo ? '<p class="cg-warn" style="margin:8px 0">Demo entry. This is not a re
 ${i.status === 'unverified' || i.status === 'developing' ? '<p style="color:#ffe19a;font-size:13px;margin:6px 0">Not fully confirmed. Details may change.</p>' : ''}
 <dl><dt>Time</dt><dd>${esc(N().dt(i.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }))}</dd><dt>Location</dt><dd>${esc(i.location)}</dd><dt>Zone</dt><dd>${esc(i.zone)}</dd>${i.units ? `<dt>Units</dt><dd>${esc(i.units)}</dd>` : ''}${i.talkgroup ? `<dt>Talkgroup</dt><dd>${esc(i.talkgroup)}</dd>` : ''}${i.author ? `<dt>Source</dt><dd>${esc(i.author)}</dd>` : ''}</dl>
 <p>${esc(i.details)}</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="cg-btn" id="cgDSay">Read aloud</button>${i.demo ? '' : `<a class="cg-btn sec" href="report.html?id=${encodeURIComponent(i.id)}">Open full report</a>`}${osm}<button class="cg-btn sec" id="cgDClose">Close</button></div></div>`);
-  const dlg = m.firstChild; dlg.setAttribute('role', 'dialog'); dlg.setAttribute('aria-modal', 'true'); dlg.setAttribute('aria-label', 'Incident details');
+  const dlg = m.firstChild; dlg.setAttribute('role', 'dialog'); dlg.setAttribute('aria-modal', 'true'); dlg.setAttribute('aria-label', 'Report details');
   $('#cgDClose').onclick = () => N().closeM(); $('#cgDSay').onclick = () => speak(announceText(i, true));
   $('#cgDClose').focus();
   try { history.replaceState(null, '', '#/claudia/' + encodeURIComponent(id)); } catch { /* ignore */ }
@@ -3697,7 +3697,7 @@ function bind() {
       case 'cgFull': (document.fullscreenElement ? document.exitFullscreen() : $('#cgMapPanel', R).requestFullscreen()).catch(() => {}); break;
       case 'cgPlay': togglePlay(); break;
       case 'cgMute': P.muted = !P.muted; savePrefs(); applyVolume(); if (P.muted && canSpeak()) speechSynthesis.cancel(); break;
-      case 'cgSay': { const i = S.items.find(x => x.status !== 'resolved') || S.items[0]; if (!i) N().toast('No incidents to announce yet.'); else speak(announceText(i)); break; }
+      case 'cgSay': { const i = S.items.find(x => x.status !== 'resolved') || S.items[0]; if (!i) N().toast('No reports to announce yet.'); else speak(announceText(i)); break; }
       case 'cgStop': if (canSpeak()) speechSynthesis.cancel(); S.speaking = false; t.disabled = true; break;
       case 'cgAnn': announcementForm(); break;
       case 'cgAdd': reportForm(); break;
