@@ -51,7 +51,8 @@ Deno.serve(async (req) => {
     if (action === 'dashboard') {
       const names = ['ad_advertisers','ad_packages','ad_campaigns','ad_orders','ad_placements','ad_delivery_events'];
       const results = await Promise.all(names.map(async (name) => {
-        const r = await rest(`${name}?select=*&edition_id=eq.${enc(EDITION)}&order=created_at.desc&limit=5000`);
+        const order = name === 'ad_delivery_events' ? 'occurred_at' : 'created_at';
+        const r = await rest(`${name}?select=*&edition_id=eq.${enc(EDITION)}&order=${order}.desc&limit=5000`);
         if (!r.ok) throw new Error('database_read_' + name);
         return [name, await r.json()] as const;
       }));
