@@ -17,6 +17,7 @@
     #cg-3d video,#cg-3d img{height:100%;width:auto;max-width:100%;object-fit:contain;display:block}
     #cg-3d .cg-3d-msg{position:absolute;inset:auto 0 10px 0;text-align:center;font:600 12px system-ui;color:#35566b;pointer-events:none}
     #cg-livekit-note{font-size:11px;color:#9ba7b8;margin-top:12px}
+    #cg-download-claudia{display:block;width:100%;margin-top:12px;border:1px solid #258c67;border-radius:10px;padding:10px 12px;background:#123d32;color:#eafff5;font:700 13px system-ui;cursor:pointer}
   `;
   var style = document.createElement("style");
   style.textContent = css;
@@ -30,11 +31,39 @@
   var panel = document.createElement("section");
   panel.id = "cg-livekit-panel";
   panel.setAttribute("aria-label", "Talk with Claudia Green");
-  panel.innerHTML = '<div id="cg-3d" aria-label="Claudia Green video"><div class="cg-3d-msg">Loading Claudia…</div></div><div id="cg-livekit-header"><h2>Claudia Green</h2><button id="cg-livekit-close" type="button" aria-label="Close chat">✕</button></div><div>423.news virtual voice assistant</div><div id="cg-livekit-status" role="status">Ready when you are.</div><div id="cg-livekit-actions"><button class="primary" id="cg-livekit-start" type="button">Start voice chat</button><button id="cg-livekit-stop" type="button" disabled>End chat</button></div><div id="cg-livekit-note">Microphone access is required. Claudia is an AI assistant, not an emergency service.</div>';
+  panel.innerHTML = '<div id="cg-3d" aria-label="Claudia Green video"><div class="cg-3d-msg">Loading Claudia…</div></div><div id="cg-livekit-header"><h2>Claudia Green</h2><button id="cg-livekit-close" type="button" aria-label="Close chat">✕</button></div><div>423.news virtual voice assistant</div><div id="cg-livekit-status" role="status">Ready when you are.</div><div id="cg-livekit-actions"><button class="primary" id="cg-livekit-start" type="button">Start voice chat</button><button id="cg-livekit-stop" type="button" disabled>End chat</button></div><div id="cg-livekit-note">Microphone access is required. Claudia is an AI assistant, not an emergency service.</div><button id="cg-download-claudia" type="button">📲 Download Claudia</button>';
   document.body.appendChild(panel);
   var status = panel.querySelector("#cg-livekit-status");
   var close = panel.querySelector("#cg-livekit-close");
   close.addEventListener("click", function () { panel.style.display = "none"; launch.setAttribute("aria-expanded", "false"); });
+  var downloadClaudia = panel.querySelector("#cg-download-claudia");
+  var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  var installPrompt = null;
+  if (isStandalone) {
+    downloadClaudia.textContent = "📲 Install Claudia";
+    downloadClaudia.hidden = true;
+  }
+  window.addEventListener("beforeinstallprompt", function (event) {
+    if (!isStandalone) return;
+    event.preventDefault();
+    installPrompt = event;
+  });
+  downloadClaudia.addEventListener("click", async function () {
+    if (!isStandalone) {
+      window.location.href = "/claudia/index.html";
+      return;
+    }
+    if (installPrompt) {
+      var promptEvent = installPrompt;
+      installPrompt = null;
+      await promptEvent.prompt();
+      await promptEvent.userChoice;
+      return;
+    }
+    setStatus(/android/i.test(navigator.userAgent)
+      ? "To install Claudia, open Chrome's ⋮ menu and choose Install app or Add to Home screen."
+      : "To install Claudia, use your browser's Share or menu option and choose Add to Home Screen.");
+  });
   var start = panel.querySelector("#cg-livekit-start");
   var stop = panel.querySelector("#cg-livekit-stop");
   var room = null, busy = false, attachedAudio = [];
