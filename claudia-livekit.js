@@ -41,8 +41,8 @@
   var isClaudiaAppPage = /^\/claudia(?:\/|$)/.test(window.location.pathname);
   var isClaudiaStandalone = isClaudiaAppPage && isStandalone;
   var installPrompt = null;
-  /* The main 423.news PWA is also standalone; that must not hide Claudia's install link. */
-  if (isClaudiaStandalone) downloadClaudia.hidden = true;
+  /* Do not infer that Claudia is installed merely because 423.news is running standalone. */
+  downloadClaudia.hidden = false;
   window.addEventListener("beforeinstallprompt", function (event) {
     /* Only the /claudia/ page has Claudia's manifest. Never capture 423.news' install prompt. */
     if (!isClaudiaAppPage || isStandalone) return;
@@ -60,7 +60,6 @@
       window.location.href = "/claudia/index.html";
       return;
     }
-    if (isClaudiaStandalone) return;
     if (installPrompt) {
       var promptEvent = installPrompt;
       installPrompt = null;
@@ -74,9 +73,14 @@
       }
       return;
     }
-    setStatus(/android/i.test(navigator.userAgent)
-      ? "To install Claudia, open Chrome's ⋮ menu and choose Install app or Add to Home screen."
-      : "To install Claudia, use your browser's Share or menu option and choose Add to Home Screen.");
+    if (/android/i.test(navigator.userAgent)) {
+      setStatus("Opening Claudia in Chrome so Android can offer the separate app installation…");
+      /* An installed 423.news PWA cannot install another PWA from inside its own window.
+         Launch the same Claudia URL in Chrome, where Claudia's own manifest can be installed. */
+      window.location.href = "intent://423.news/claudia/index.html#Intent;scheme=https;package=com.android.chrome;end";
+      return;
+    }
+    setStatus("To install Claudia, use your browser's Share or menu option and choose Add to Home Screen.");
   });
   var start = panel.querySelector("#cg-livekit-start");
   var stop = panel.querySelector("#cg-livekit-stop");
