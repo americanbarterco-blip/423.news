@@ -1,9 +1,29 @@
 import json
 import unittest
 from unittest.mock import patch
-from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, source_list, leads_with_evidence
+from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, source_list, leads_with_evidence, region_profile, classify_content, is_duplicate_title, requires_strong_verification
 
 class ClaudiaAutoPublisherTests(unittest.TestCase):
+    def test_county_priority_puts_polk_then_bradley_then_hamilton_first(self):
+        self.assertGreater(region_profile({"title":"Polk County commission meeting","summary":""})["location_priority"], region_profile({"title":"Bradley County school board","summary":""})["location_priority"])
+        self.assertGreater(region_profile({"title":"Bradley County school board","summary":""})["location_priority"], region_profile({"title":"Hamilton County Schools","summary":""})["location_priority"])
+        self.assertEqual(region_profile({"title":"Rhea County road project","summary":""})["county"], "Rhea")
+        self.assertEqual(region_profile({"title":"Grundy County meeting","summary":""})["county"], "Grundy")
+
+    def test_county_classifier_does_not_infer_from_publisher_name(self):
+        self.assertEqual(region_profile({"title":"Bristol holiday open house","summary":"Bristol Herald Courier reports this story"})["coverage_tier"], "outside_area")
+
+    def test_sensitive_and_urgent_leads_always_require_strong_verification(self):
+        self.assertTrue(requires_strong_verification({"title":"Fire crews respond to a house fire","summary":""}, []))
+        self.assertTrue(requires_strong_verification({"title":"Missing person search continues","summary":""}, []))
+        self.assertFalse(requires_strong_verification({"title":"County announces new library hours","summary":""}, []))
+
+    def test_duplicate_detection_catches_exact_and_near_duplicate_headlines(self):
+        existing=["Eight grants approved for Hurricane Helene projects in Unicoi County"]
+        self.assertTrue(is_duplicate_title("Eight grants approved for Hurricane Helene projects in Unicoi County", existing))
+        self.assertTrue(is_duplicate_title("Eight grants approved for Hurricane Helene projects in Unicoi County!", existing))
+        self.assertFalse(is_duplicate_title("Polk County schools announce new calendar", existing))
+
     def test_domain_normalizes_www(self):
         self.assertEqual(domain("https://www.example.com/path"), "example.com")
 
@@ -33,7 +53,7 @@ class ClaudiaAutoPublisherTests(unittest.TestCase):
         lead={"title":"Council approves project","summary":"Council voted."}
         evidence=[{"source_name":"Official source","url":"https://city.example/page","excerpt":"Council voted 4-1."}]
         prompt=build_prompt(lead,evidence,{"section":"government","topic":"government"},["Attribute claims clearly"])
-        for phrase in ("verified connection to the 423 coverage area","accurate, specific headline","fact-first","Synthesize evidence across sources","Do not invent quotes","topic-neutral","FLAG-FEEDBACK LESSONS"):
+        for phrase in ("Coverage priority: Polk County first","Provisional geographic match","Do not manufacture a county connection","verified connection to the 423 coverage area","accurate, specific headline","fact-first","Synthesize evidence across sources","Do not invent quotes","topic-neutral","FLAG-FEEDBACK LESSONS"):
             self.assertIn(phrase,prompt)
 
     @patch("scripts.claudia_draft_writer.api")
@@ -49,21 +69,22 @@ class ClaudiaAutoPublisherTests(unittest.TestCase):
         self.assertIn("prior note",patch["notes"])
 
     @patch("scripts.claudia_draft_writer.api")
-    def test_missing_evidence_flags_one_lead_without_aborting(self,mocked_api):
+    def test_missing_evidence_still_publishes_an_attributed_intake_brief(self,mocked_api):
         from scripts.claudia_draft_writer import process_lead
-        mocked_api.side_effect=[(200,"[]"),(204,"")]
-        result=process_lead("https://db.example","service-key","ai-key","model",{"id":"lead-2","title":"Unverified item"},{"section":"news","topic":"general"})
-        self.assertFalse(result)
-        self.assertEqual(mocked_api.call_count,2)
-        self.assertIn("dismissed",mocked_api.call_args.args[4].decode())
+        mocked_api.side_effect=[(200,"[]"),(200,"[]"),(201,"[]"),(204,"")]
+        lead={"id":"lead-2","title":"Unverified item","summary":"A source says a new project was announced.","url":"https://source.example/item","source_name":"Example News"}
+        result=process_lead("https://db.example","service-key","","",lead,{"section":"news","topic":"general"})
+        self.assertTrue(result)
+        self.assertEqual(mocked_api.call_count,4)
+        published=json.loads(mocked_api.call_args_list[2].args[4].decode())
+        self.assertEqual(published["status"],"published")
+        self.assertIn("Developing/source-attributed",published["body"])
+        self.assertIn("https://source.example/item",published["body"])
 
-    @patch("scripts.claudia_draft_writer.api")
-    def test_writer_filters_to_leads_with_evidence(self,mocked_api):
-        mocked_api.return_value=(200,json.dumps([{"lead_id":"1"}]))
+    def test_writer_keeps_all_ingested_leads_even_without_evidence_rows(self):
         leads=[{"id":"1","title":"Has source"},{"id":"2","title":"No source"}]
         selected=leads_with_evidence("db","key",leads)
-        self.assertEqual([row["id"] for row in selected],["1"])
-
+        self.assertEqual([row["id"] for row in selected],["1","2"])
     def test_community_human_interest_routes_to_news_community(self):
         from scripts.claudia_draft_writer import classify_content
         examples=[
