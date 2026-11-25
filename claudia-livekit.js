@@ -60,12 +60,11 @@
     if (!isClaudiaAppPage) {
       if (/android/i.test(navigator.userAgent) &&
           (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true)) {
-        /* The 423.news PWA has scope "/" and therefore claims /claudia/ URLs.
-           An HTTPS fallback can reopen this same installed app. Use Chrome's
-           explicit Android navigation scheme with no same-domain fallback. */
-        var target = "https://423.news/claudia/index.html";
-        setStatus("Opening Claudia's install page in Chrome…");
-        window.location.href = "googlechrome://navigate?url=" + encodeURIComponent(target);
+        /* Force Android to open this URL in Chrome. Do not provide an HTTPS
+           browser_fallback_url: the installed 423.news PWA owns scope "/" and
+           would intercept that fallback, reopening itself instead of Chrome. */
+        setStatus("Launching Claudia's install page in Chrome…");
+        window.location.href = "intent://423.news/claudia/index.html#Intent;scheme=https;package=com.android.chrome;end";
       } else {
         window.location.href = "/claudia/index.html";
       }
