@@ -225,7 +225,6 @@ async function livekitToken(request, env) {
       roomJoin: true,
       room,
       canPublish: canPublishAudio,
-      canPublishSources: isVoice ? ["microphone"] : undefined,
       canSubscribe: true,
       canPublishData: isPublisher
     }
