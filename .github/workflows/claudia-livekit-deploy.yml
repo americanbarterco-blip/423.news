@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       operation:
-        description: "Create Claudia the first time, or deploy an update later"
+        description: "Create Claudia in the migration LiveKit project, or deploy an approved update"
         required: true
         type: choice
         options:
@@ -14,7 +14,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
   actions: read
 
 concurrency:
@@ -22,16 +21,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  create-agent:
-    if: github.event.inputs.operation == 'create'
+  reject-wrong-create-branch:
+    if: github.event.inputs.operation == 'create' && github.ref != 'refs/heads/fix/claudia-livekit-agent-create-workflow'
     runs-on: ubuntu-latest
     steps:
-      - name: Check out 423.news
+      - name: Stop unsafe create attempt
+        run: |
+          echo "::error::For the new 423.news LiveKit project, run CREATE only from the fix/claudia-livekit-agent-create-workflow branch."
+          exit 1
+
+  create-agent:
+    if: github.event.inputs.operation == 'create' && github.ref == 'refs/heads/fix/claudia-livekit-agent-create-workflow'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the migration branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: true
 
-      - name: Create and deploy Claudia Green to LiveKit Cloud
+      - name: Remove the incomplete config so LiveKit can generate a fresh agent ID
+        run: |
+          rm -f livekit-agent/livekit.toml
+          test ! -e livekit-agent/livekit.toml
+
+      - name: Create Claudia in the new LiveKit project
         uses: livekit/deploy-action@v2.12.2
         env:
           LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
@@ -43,25 +58,27 @@ jobs:
           OPERATION: create
           WORKING_DIRECTORY: livekit-agent
 
-      - name: Save LiveKit agent configuration in a pull request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          add-paths: livekit-agent/livekit.toml
-          branch: claudia-livekit-agent-config
-          delete-branch: false
-          title: "Add Claudia Green LiveKit agent configuration"
-          commit-message: "Add Claudia Green LiveKit agent configuration"
-          body: |
-            This pull request adds the LiveKit-generated configuration for Claudia Green.
-            The agent deployment is performed only when the manual workflow is run.
+      - name: Verify and save the generated agent ID on this migration branch
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          test -s livekit-agent/livekit.toml
+          grep -Eq '^[[:space:]]*id[[:space:]]*=' livekit-agent/livekit.toml || {
+            echo "::error::LiveKit did not write an agent ID to livekit-agent/livekit.toml."
+            exit 1
+          }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add livekit-agent/livekit.toml
+          git diff --cached --quiet && {
+            echo "::error::Generated LiveKit config has no changes to save."
+            exit 1
+          }
+          git commit -m "Save new Claudia LiveKit agent ID"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
-      - name: Check out the generated agent configuration
-        uses: actions/checkout@v4
-        with:
-          ref: claudia-livekit-agent-config
-
-      - name: Check that Claudia is running
+      - name: Confirm Claudia reaches Running
         uses: livekit/deploy-action@v2.12.2
         env:
           LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
@@ -73,7 +90,7 @@ jobs:
           TIMEOUT: 5m
 
   deploy-agent:
-    if: github.event.inputs.operation == 'deploy'
+    if: github.event.inputs.operation == 'deploy' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Check out 423.news
