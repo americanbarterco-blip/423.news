@@ -94,6 +94,7 @@ alter table public.news_ads add column if not exists edition_id text not null de
 alter table public.news_ads add column if not exists advertiser_id uuid references public.ad_advertisers(id) on delete set null;
 alter table public.news_ads add column if not exists campaign_id uuid references public.ad_campaigns(id) on delete set null;
 alter table public.news_ads add column if not exists disclosure text not null default 'Advertisement';
+alter table public.news_ads add column if not exists campaign_active boolean not null default true;
 
 create index if not exists ad_advertisers_edition_status_idx on public.ad_advertisers (edition_id, status, created_at desc);
 create index if not exists ad_campaigns_edition_status_idx on public.ad_campaigns (edition_id, status, starts_at, ends_at);
@@ -129,3 +130,14 @@ grant all on public.ad_advertisers, public.ad_packages, public.ad_campaigns,
 
 -- Public visitors can continue reading only eligible display ads through the existing RLS policy.
 -- The new advertiser, campaign, order and event tables are not exposed to public roles.
+
+-- Campaign approval is enforced by the existing public ad-read policy.
+-- Legacy ads without a campaign keep their current behavior.
+drop policy if exists news_ads_public_read on public.news_ads;
+create policy news_ads_public_read on public.news_ads for select to anon, authenticated
+  using (
+    active
+    and (starts_at is null or starts_at <= now())
+    and (ends_at is null or ends_at > now())
+    and (campaign_id is null or campaign_active)
+  );
