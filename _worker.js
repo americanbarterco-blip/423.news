@@ -330,7 +330,6 @@ const CLAUDIA_WIDGET_EXCLUDED_PATHS = new Set([
   "/claudia-app.html",
   "/claudia-workspace.html",
   "/claudia-free-source-monitor.html",
-  "/claudia-review.html",
   "/claudia-scanner.html",
   "/claudia/index.html"
 ]);
