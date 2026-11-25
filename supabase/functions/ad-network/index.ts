@@ -83,7 +83,20 @@ Deno.serve(async (req) => {
         internal_notes: text(b.internal_notes, 4000)
       };
       if (b.id && !uuid(b.id)) return json({ error: 'id' }, 400);
-      return json({ advertiser: await save('ad_advertisers', payload, b.id) });
+      const advertiser = await save('ad_advertisers', payload, b.id);
+      if (advertiser) {
+        const cr = await rest(`ad_campaigns?select=id,status&edition_id=eq.${enc(EDITION)}&advertiser_id=eq.${enc(advertiser.id)}`);
+        if (!cr.ok) throw new Error('campaign_sync_read');
+        const linked = await cr.json();
+        for (const campaign of linked) {
+          const gate = advertiser.status === 'approved' && campaign.status === 'active';
+          const sync = await rest(`news_ads?edition_id=eq.${enc(EDITION)}&campaign_id=eq.${enc(campaign.id)}`, {
+            method: 'PATCH', body: JSON.stringify({ campaign_active: gate })
+          });
+          if (!sync.ok) throw new Error('campaign_sync');
+        }
+      }
+      return json({ advertiser });
     }
 
     if (action === 'savePackage') {
@@ -121,7 +134,15 @@ Deno.serve(async (req) => {
         budget_cents: budget, sold_price_cents: sold, currency: /^[A-Z]{3}$/.test(String(b.currency || 'USD')) ? String(b.currency || 'USD') : 'USD',
         internal_notes: text(b.internal_notes, 4000)
       };
-      return json({ campaign: await save('ad_campaigns', payload, b.id) });
+      const campaign = await save('ad_campaigns', payload, b.id);
+      if (campaign) {
+        const gate = campaign.status === 'active' && advertiser.status === 'approved';
+        const sync = await rest(`news_ads?edition_id=eq.${enc(EDITION)}&campaign_id=eq.${enc(campaign.id)}`, {
+          method: 'PATCH', body: JSON.stringify({ campaign_active: gate })
+        });
+        if (!sync.ok) throw new Error('campaign_sync');
+      }
+      return json({ campaign });
     }
 
     if (action === 'saveOrder') {
@@ -144,11 +165,14 @@ Deno.serve(async (req) => {
       if (!uuid(ad_id) || !uuid(campaign_id)) return json({ error: 'link_fields' }, 400);
       const campaign = await readOne('ad_campaigns', campaign_id);
       if (!campaign) return json({ error: 'campaign_not_found' }, 404);
+      const advertiser = await readOne('ad_advertisers', campaign.advertiser_id);
+      if (!advertiser) return json({ error: 'advertiser_not_found' }, 404);
+      const campaignGate = campaign.status === 'active' && advertiser.status === 'approved';
       const adR = await rest(`news_ads?select=id,active&edition_id=eq.${enc(EDITION)}&id=eq.${enc(ad_id)}&limit=1`);
       if (!adR.ok) throw new Error('ad_read');
       if (!(await adR.json()).length) return json({ error: 'ad_not_found' }, 404);
       const update = await rest(`news_ads?id=eq.${enc(ad_id)}&edition_id=eq.${enc(EDITION)}`, {
-        method: 'PATCH', body: JSON.stringify({ campaign_id, advertiser_id: campaign.advertiser_id, edition_id: EDITION, disclosure: 'Advertisement' })
+        method: 'PATCH', body: JSON.stringify({ campaign_id, advertiser_id: campaign.advertiser_id, edition_id: EDITION, disclosure: 'Advertisement', campaign_active: campaignGate })
       });
       if (!update.ok) throw new Error('ad_link');
       return json({ ok: true });
