@@ -1,10 +1,38 @@
-const CACHE='claudia-chat-v2';
-const SHELL=['./','./manifest.webmanifest','./claudia-icon.svg','/apple-touch-icon.png','/claudia-livekit.js'];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('claudia-chat-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',e=>{
- const req=e.request,url=new URL(req.url);
- if(req.method!=='GET'||url.origin!==self.location.origin)return;
- if(url.pathname.includes('/voice/'))return;
- e.respondWith(fetch(req).then(res=>{if(res.ok&&res.type==='basic'){const copy=res.clone();caches.open(CACHE).then(c=>c.put(req,copy));}return res;}).catch(()=>caches.match(req).then(hit=>hit|| (req.mode==='navigate'?caches.match('./'):new Response('',{status:504}))));
+const CACHE='claudia-chat-v3';
+const SHELL=['./','./index.html','./manifest.webmanifest','./claudia-icon.svg','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/claudia-livekit.js','/offline.html'];
+/* Cache independently: a missing optional asset must not block installation. */
+self.addEventListener('install',event=>{
+  event.waitUntil(
+    caches.open(CACHE)
+      .then(cache=>Promise.all(SHELL.map(path=>cache.add(path).catch(()=>undefined))))
+      .then(()=>self.skipWaiting())
+  );
+});
+self.addEventListener('activate',event=>{
+  event.waitUntil(
+    caches.keys()
+      .then(keys=>Promise.all(keys.filter(key=>key.startsWith('claudia-chat-')&&key!==CACHE).map(key=>caches.delete(key))))
+      .then(()=>self.clients.claim())
+  );
+});
+self.addEventListener('fetch',event=>{
+  const request=event.request;
+  const url=new URL(request.url);
+  if(request.method!=='GET'||url.origin!==self.location.origin)return;
+  if(url.pathname.includes('/voice/')||url.pathname.startsWith('/api/'))return;
+  if(request.headers.has('range')||/\.(mp4|mp3|m4a|wav|ogg|webm)$/i.test(url.pathname))return;
+  event.respondWith(
+    fetch(request).then(response=>{
+      if(response.ok&&response.type==='basic'){
+        const copy=response.clone();
+        caches.open(CACHE).then(cache=>cache.put(request,copy));
+      }
+      return response;
+    }).catch(()=>caches.match(request).then(cached=>{
+      if(cached)return cached;
+      return request.mode==='navigate'
+        ? caches.match('./index.html').then(page=>page||caches.match('/offline.html'))
+        : new Response('',{status:504});
+    }))
+  );
 });
