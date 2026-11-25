@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
         for (const campaign of linked) {
           const gate = advertiser.status === 'approved' && campaign.status === 'active';
           const sync = await rest(`news_ads?edition_id=eq.${enc(EDITION)}&campaign_id=eq.${enc(campaign.id)}`, {
-            method: 'PATCH', body: JSON.stringify({ campaign_active: gate })
+            method: 'PATCH', body: JSON.stringify({ campaign_active: gate, starts_at: campaign.starts_at, ends_at: campaign.ends_at })
           });
           if (!sync.ok) throw new Error('campaign_sync');
         }
@@ -181,7 +181,7 @@ Deno.serve(async (req) => {
       if (!adR.ok) throw new Error('ad_read');
       if (!(await adR.json()).length) return json({ error: 'ad_not_found' }, 404);
       const update = await rest(`news_ads?id=eq.${enc(ad_id)}&edition_id=eq.${enc(EDITION)}`, {
-        method: 'PATCH', body: JSON.stringify({ campaign_id, advertiser_id: campaign.advertiser_id, edition_id: EDITION, disclosure: 'Advertisement', campaign_active: campaignGate })
+        method: 'PATCH', body: JSON.stringify({ campaign_id, advertiser_id: campaign.advertiser_id, edition_id: EDITION, disclosure: 'Advertisement', campaign_active: campaignGate, starts_at: campaign.starts_at, ends_at: campaign.ends_at })
       });
       if (!update.ok) throw new Error('ad_link');
       return json({ ok: true });
