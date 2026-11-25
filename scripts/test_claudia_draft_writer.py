@@ -69,21 +69,22 @@ class ClaudiaAutoPublisherTests(unittest.TestCase):
         self.assertIn("prior note",patch["notes"])
 
     @patch("scripts.claudia_draft_writer.api")
-    def test_missing_evidence_flags_one_lead_without_aborting(self,mocked_api):
+    def test_missing_evidence_still_publishes_an_attributed_intake_brief(self,mocked_api):
         from scripts.claudia_draft_writer import process_lead
-        mocked_api.side_effect=[(200,"[]"),(204,"")]
-        result=process_lead("https://db.example","service-key","ai-key","model",{"id":"lead-2","title":"Unverified item"},{"section":"news","topic":"general"})
-        self.assertFalse(result)
-        self.assertEqual(mocked_api.call_count,2)
-        self.assertIn("dismissed",mocked_api.call_args.args[4].decode())
+        mocked_api.side_effect=[(200,"[]"),(200,"[]"),(201,"[]"),(204,"")]
+        lead={"id":"lead-2","title":"Unverified item","summary":"A source says a new project was announced.","url":"https://source.example/item","source_name":"Example News"}
+        result=process_lead("https://db.example","service-key","","",lead,{"section":"news","topic":"general"})
+        self.assertTrue(result)
+        self.assertEqual(mocked_api.call_count,4)
+        published=json.loads(mocked_api.call_args_list[2].args[4].decode())
+        self.assertEqual(published["status"],"published")
+        self.assertIn("Developing/source-attributed",published["body"])
+        self.assertIn("https://source.example/item",published["body"])
 
-    @patch("scripts.claudia_draft_writer.api")
-    def test_writer_filters_to_leads_with_evidence(self,mocked_api):
-        mocked_api.return_value=(200,json.dumps([{"lead_id":"1"}]))
+    def test_writer_keeps_all_ingested_leads_even_without_evidence_rows(self):
         leads=[{"id":"1","title":"Has source"},{"id":"2","title":"No source"}]
         selected=leads_with_evidence("db","key",leads)
-        self.assertEqual([row["id"] for row in selected],["1"])
-
+        self.assertEqual([row["id"] for row in selected],["1","2"])
     def test_community_human_interest_routes_to_news_community(self):
         from scripts.claudia_draft_writer import classify_content
         examples=[
