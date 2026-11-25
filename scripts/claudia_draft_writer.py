@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Provider-independent evidence-gated auto-publishing for Claudia Green."""
 from __future__ import annotations
-import json, os, time, urllib.parse, urllib.request, urllib.error
+import json, os, re, time, urllib.parse, urllib.request, urllib.error
+from difflib import SequenceMatcher
 
 MAX_LEADS = 8
 MIN_DOMAINS = 2
@@ -28,6 +29,47 @@ URGENT = ("breaking", "developing", "shooting", "homicide", "fatal", "death", "m
 def _signal_hits(text, signals):
     return sum(1 for term in signals if term in text)
 
+COUNTY_SIGNALS = {
+    # Polk is deliberately first in the coverage hierarchy, followed by Bradley and Hamilton.
+    "Polk": ("polk county", "copper basin", "benton tn", "ducktown", "turtletown", "ocoee", "oecoe", "coker creek", "delano tn"),
+    "Bradley": ("bradley county", "cleveland tn", "charleston tn", "hopewell tn", "walker valley", "south cleveland"),
+    "Hamilton": ("hamilton county", "chattanooga", "ooltewah", "collegedale", "east ridge", "red bank tn", "signal mountain", "soddy-daisy", "hixson", "lookout mountain"),
+    "Rhea": ("rhea county", "dayton tn", "spring city tn", "graysville tn"),
+    "Grundy": ("grundy county", "altamont tn", "tracy city", "monteagle", "coalmont tn", "pelham tn"),
+}
+COUNTY_PRIORITY = {"Polk": 36, "Bradley": 34, "Hamilton": 32, "Rhea": 27, "Grundy": 25, "Regional": 10, "Outside": 0}
+
+def region_profile(lead):
+    text=(str(lead.get("title",""))+" "+str(lead.get("summary",""))).lower()
+    matches=[]
+    for county,signals in COUNTY_SIGNALS.items():
+        if any(signal in text for signal in signals):
+            matches.append(county)
+    county=max(matches,key=lambda name:COUNTY_PRIORITY[name]) if matches else None
+    if county:
+        return {"county":county,"coverage_tier":"priority_county","location_priority":COUNTY_PRIORITY[county]}
+    if any(term in text for term in ("423 region","423 area","southeast tennessee","southeastern tennessee","east tennessee","tennessee valley")):
+        return {"county":None,"coverage_tier":"regional","location_priority":COUNTY_PRIORITY["Regional"]}
+    return {"county":None,"coverage_tier":"outside_area","location_priority":COUNTY_PRIORITY["Outside"]}
+
+def normalized_title(value):
+    text=re.sub(r"[^a-z0-9]+"," ",str(value or "").lower()).strip()
+    return " ".join(text.split())
+
+def is_duplicate_title(title, existing_titles, threshold=0.92):
+    candidate=normalized_title(title)
+    if not candidate:return False
+    for existing in existing_titles:
+        other=normalized_title(existing)
+        if not other:continue
+        if candidate==other or SequenceMatcher(None,candidate,other).ratio()>=threshold:
+            return True
+    return False
+
+def fetch_recent_published_titles(base,key):
+    _,raw=api(base,key,"rest/v1/news_posts?select=title&status=eq.published&limit=300")
+    return [row.get("title","") for row in json.loads(raw) if row.get("title")]
+
 def classify_content(lead):
     text=(str(lead.get("title",""))+" "+str(lead.get("summary",""))).lower()
     section_scores={section:_signal_hits(text,terms) for section,terms in SECTION_SIGNALS.items()}
@@ -40,8 +82,9 @@ def classify_content(lead):
     else:
         topic={"schools":"education","sports":"sports","government":"government","outdoors":"outdoors"}[section]
 
-    # Priority remains impact-based but includes recency-neutral section context.
-    score={"news":50,"government":72,"schools":66,"sports":58,"outdoors":48}[section]
+    # Geographic priority is explicit: Polk, Bradley and Hamilton lead the desk.
+    region=region_profile(lead)
+    score={"news":50,"government":72,"schools":66,"sports":58,"outdoors":48}[section] + region["location_priority"]
     reasons=[]
     hits=[term for term in URGENT if term in text]
     if hits:
@@ -59,8 +102,9 @@ def classify_content(lead):
     if topic=="business" and section=="news":
         score+=2; reasons.append("business/economic story")
     score=min(100,score)
-    return {"section":section,"topic":topic,"priority_score":score,
-            "priority_reason":"; ".join(reasons) if reasons else "Section relevance and local-interest baseline"}
+    reasons.insert(0, region["county"] + " County coverage priority" if region["county"] else ("Wider 423 regional relevance" if region["coverage_tier"]=="regional" else "Outside core coverage; lower priority"))
+    return {"section":section,"topic":topic,"county":region["county"],"coverage_tier":region["coverage_tier"],"location_priority":region["location_priority"],"priority_score":score,
+            "priority_reason":"; ".join(reasons)}
 
 def section_guidance(section,topic):
     guidance={
@@ -90,6 +134,8 @@ def build_prompt(lead, evidence, classification, lessons=None):
     section=classification["section"];topic=classification["topic"]
     lessons_text = "\n".join("- " + str(item)[:1800] for item in (lessons or [])) or "No flag-feedback lessons stored."
     local_context = (
+        "Coverage priority: Polk County first, then Bradley and Hamilton, followed by Rhea and Grundy; other 423-area stories remain eligible at lower priority. "
+        "Do not manufacture a county connection from a publisher location or a vague regional dateline. "
         "Local relevance means a verified connection to the 423 coverage area, its residents, "
         "institutions, roads, services, or decisions. If evidence does not establish a local connection, "
         "do not invent one; explain the broader story plainly or choose a better-supported local angle."
@@ -274,7 +320,11 @@ def process_lead(base, key, ai_key, model, lead, classification, lessons=None, a
         print("Skipped lead %s: already auto-published; idempotency guard." % lead.get("id")); return False
     attempt_count=verification_attempts(base,key)
     starter_gate=attempt_count < 2
-    required_domains=1 if starter_gate else MIN_DOMAINS
+    lead_text=(str(lead.get("title",""))+" "+str(lead.get("summary",""))).lower()
+    sensitive=any(term in lead_text for term in ("shooting","homicide","murder","fatal","killed","death","missing person","amber alert","sexual assault","child abuse","domestic violence","officer involved","swatting","arrested","indicted","charged"))
+    # The onboarding single-source allowance never applies to sensitive or urgent public-safety claims.
+    required_domains=2 if sensitive else (1 if starter_gate else MIN_DOMAINS)
+    required_confidence=0.95 if sensitive else (0.75 if starter_gate else 0.90)
     if len(distinct_domains(evidence)) < required_domains:
         found=len(distinct_domains(evidence))
         flag_lead(base,key,lead,"Insufficient independent publisher evidence (requires %s distinct domain(s), found %s). Not published."%(required_domains,found))
@@ -319,11 +369,16 @@ def main():
     print("Flag-feedback lessons loaded: %s" % len(lessons))
     classified=[(classify_content(lead),lead) for lead in leads]
     classified.sort(key=lambda pair:(pair[0]["priority_score"],pair[1].get("discovered_at","")),reverse=True)
-    selected=[];section_counts={}
+    existing_titles=fetch_recent_published_titles(base,key)
+    selected=[];section_counts={};seen_titles=list(existing_titles)
     for classification,lead in classified:
+        if is_duplicate_title(lead.get("title",""),seen_titles):
+            flag_lead(base,key,lead,"Near-duplicate headline matches a recently published story or a higher-ranked lead. Retained for audit; not republished.")
+            continue
         section=classification["section"]
         if section_counts.get(section,0)>=3: continue
         selected.append((classification,lead));section_counts[section]=section_counts.get(section,0)+1
+        seen_titles.append(lead.get("title",""))
         if len(selected)>=MAX_LEADS:break
     created = 0
     for classification,lead in selected:
