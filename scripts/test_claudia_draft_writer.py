@@ -4,9 +4,13 @@ from unittest.mock import patch
 from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, source_list, leads_with_evidence, region_profile, classify_content, is_duplicate_title, requires_strong_verification
 
 class ClaudiaAutoPublisherTests(unittest.TestCase):
-    def test_county_priority_puts_polk_then_bradley_then_hamilton_first(self):
-        self.assertGreater(region_profile({"title":"Polk County commission meeting","summary":""})["location_priority"], region_profile({"title":"Bradley County school board","summary":""})["location_priority"])
-        self.assertGreater(region_profile({"title":"Bradley County school board","summary":""})["location_priority"], region_profile({"title":"Hamilton County Schools","summary":""})["location_priority"])
+    def test_bradley_and_polk_tie_for_top_priority_with_hamilton_second(self):
+        polk = region_profile({"title":"Polk County commission meeting","summary":""})
+        bradley = region_profile({"title":"Bradley County school board","summary":""})
+        hamilton = region_profile({"title":"Hamilton County Schools","summary":""})
+        self.assertEqual(polk["location_priority"], bradley["location_priority"])
+        self.assertGreater(bradley["location_priority"], hamilton["location_priority"])
+        self.assertGreater(polk["location_priority"], hamilton["location_priority"])
         self.assertEqual(region_profile({"title":"Rhea County road project","summary":""})["county"], "Rhea")
         self.assertEqual(region_profile({"title":"Grundy County meeting","summary":""})["county"], "Grundy")
 
@@ -53,7 +57,7 @@ class ClaudiaAutoPublisherTests(unittest.TestCase):
         lead={"title":"Council approves project","summary":"Council voted."}
         evidence=[{"source_name":"Official source","url":"https://city.example/page","excerpt":"Council voted 4-1."}]
         prompt=build_prompt(lead,evidence,{"section":"government","topic":"government"},["Attribute claims clearly"])
-        for phrase in ("Coverage priority: Polk County first","Provisional geographic match","Do not manufacture a county connection","verified connection to the 423 coverage area","accurate, specific headline","fact-first","Synthesize evidence across sources","Do not invent quotes","topic-neutral","FLAG-FEEDBACK LESSONS"):
+        for phrase in ("Coverage priority: Bradley and Polk Counties tied for first","Provisional geographic match","Do not manufacture a county connection","verified connection to the 423 coverage area","accurate, specific headline","fact-first","Synthesize evidence across sources","Do not invent quotes","topic-neutral","FLAG-FEEDBACK LESSONS"):
             self.assertIn(phrase,prompt)
 
     @patch("scripts.claudia_draft_writer.api")
