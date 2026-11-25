@@ -1,9 +1,24 @@
 import json
 import unittest
 from unittest.mock import patch
-from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, source_list, leads_with_evidence
+from scripts.claudia_draft_writer import domain, distinct_domains, eligible_evidence, parse_model_json, source_list, leads_with_evidence, region_profile, classify_content, is_duplicate_title
 
 class ClaudiaAutoPublisherTests(unittest.TestCase):
+    def test_county_priority_puts_polk_then_bradley_then_hamilton_first(self):
+        self.assertGreater(region_profile({"title":"Polk County commission meeting","summary":""})["location_priority"], region_profile({"title":"Bradley County school board","summary":""})["location_priority"])
+        self.assertGreater(region_profile({"title":"Bradley County school board","summary":""})["location_priority"], region_profile({"title":"Hamilton County Schools","summary":""})["location_priority"])
+        self.assertEqual(region_profile({"title":"Rhea County road project","summary":""})["county"], "Rhea")
+        self.assertEqual(region_profile({"title":"Grundy County meeting","summary":""})["county"], "Grundy")
+
+    def test_county_classifier_does_not_infer_from_publisher_name(self):
+        self.assertEqual(region_profile({"title":"Bristol holiday open house","summary":"Bristol Herald Courier reports this story"})["coverage_tier"], "outside_area")
+
+    def test_duplicate_detection_catches_exact_and_near_duplicate_headlines(self):
+        existing=["Eight grants approved for Hurricane Helene projects in Unicoi County"]
+        self.assertTrue(is_duplicate_title("Eight grants approved for Hurricane Helene projects in Unicoi County", existing))
+        self.assertTrue(is_duplicate_title("Eight grants approved for Hurricane Helene projects in Unicoi County!", existing))
+        self.assertFalse(is_duplicate_title("Polk County schools announce new calendar", existing))
+
     def test_domain_normalizes_www(self):
         self.assertEqual(domain("https://www.example.com/path"), "example.com")
 
@@ -33,7 +48,7 @@ class ClaudiaAutoPublisherTests(unittest.TestCase):
         lead={"title":"Council approves project","summary":"Council voted."}
         evidence=[{"source_name":"Official source","url":"https://city.example/page","excerpt":"Council voted 4-1."}]
         prompt=build_prompt(lead,evidence,{"section":"government","topic":"government"},["Attribute claims clearly"])
-        for phrase in ("verified connection to the 423 coverage area","accurate, specific headline","fact-first","Synthesize evidence across sources","Do not invent quotes","topic-neutral","FLAG-FEEDBACK LESSONS"):
+        for phrase in ("Coverage priority: Polk County first","Do not manufacture a county connection","verified connection to the 423 coverage area","accurate, specific headline","fact-first","Synthesize evidence across sources","Do not invent quotes","topic-neutral","FLAG-FEEDBACK LESSONS"):
             self.assertIn(phrase,prompt)
 
     @patch("scripts.claudia_draft_writer.api")
