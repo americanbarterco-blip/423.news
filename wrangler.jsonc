@@ -15,7 +15,15 @@
     "directory": ".",
     "binding": "ASSETS",
     "run_worker_first": [
-      "/sitemap.xml"
+      "/sitemap.xml",
+      "/",
+      "/index.html",
+      "/manifest.webmanifest",
+      "/sw.js",
+      "/claudia-icon.svg",
+      "/claudia-icon-192.png",
+      "/claudia-icon-512.png",
+      "/claudia-livekit.js"
     ]
   },
   "previews": {},
