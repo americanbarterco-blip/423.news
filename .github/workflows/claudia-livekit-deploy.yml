@@ -64,7 +64,7 @@ jobs:
         run: |
           set -euo pipefail
           test -s livekit-agent/livekit.toml
-          grep -Eq '^\\s*id\\s*=' livekit-agent/livekit.toml || {
+          grep -Eq '^[[:space:]]*id[[:space:]]*=' livekit-agent/livekit.toml || {
             echo "::error::LiveKit did not write an agent ID to livekit-agent/livekit.toml."
             exit 1
           }
