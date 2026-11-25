@@ -5,8 +5,10 @@
    window.ADS_CFG may still supply fallback ads: { ads:{top:[{img,href,alt}],...}, contactUrl } (https only). */
 (function () {
   'use strict';
-  var SB_URL = 'https://kdiwehqtezlhecxsoysj.supabase.co';
-  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE'; /* public anon key. Row Level Security returns only live ads. */
+  var SB_URL = (window.ADS_CFG && window.ADS_CFG.supabaseUrl) || 'https://kdiwehqtezlhecxsoysj.supabase.co';
+  var SB_KEY = (window.ADS_CFG && window.ADS_CFG.supabaseAnonKey) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE'; /* public anon key. RLS returns only live ads. */
+  var EDITION_ID = (window.ADS_CFG && window.ADS_CFG.editionId) || '423';
+  var EVENT_URL = SB_URL + '/functions/v1/ad-events';
   var CFG = Object.assign({ ads: { top: [], mid: [], bottom: [] }, contactUrl: 'mailto:ads@423.news' }, window.ADS_CFG || {});
   var SLOTS = ['top', 'mid', 'bottom'];
   var live = { top: [], mid: [], bottom: [] };
@@ -28,6 +30,13 @@
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function good(u) { return /^https:\/\//i.test(u || ''); }
+  function track(type, ad, slot) {
+    if (!ad || !ad.id || !ad.campaign_id || !window.fetch) return;
+    var key = window.crypto && crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+    fetch(EVENT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY },
+      body: JSON.stringify({ edition_id: EDITION_ID, ad_id: ad.id, campaign_id: ad.campaign_id, placement_key: slot, event_type: type, event_key: key }), keepalive: true
+    }).catch(function () { /* measurement must never interrupt ad delivery */ });
+  }
 
   var css = document.createElement('style');
   css.textContent =
@@ -41,7 +50,7 @@
     '.ad-box a.ad-ph{padding:20px;font-size:14px;font-weight:600}';
   document.head.appendChild(css);
 
-  function normal(a) { return { pages: a.pages || 'all', kind: a.kind === 'video' ? 'video' : 'image', img: a.image_url || a.img, href: a.href, alt: a.alt, w: a.max_width || 0, h: a.height || 0, fit: a.fit || 'contain', secs: Math.max(3, a.seconds || 20) }; }
+  function normal(a) { return { id: a.id, campaign_id: a.campaign_id, pages: a.pages || 'all', kind: a.kind === 'video' ? 'video' : 'image', img: a.image_url || a.img, href: a.href, alt: a.alt, w: a.max_width || 0, h: a.height || 0, fit: a.fit || 'contain', secs: Math.max(3, a.seconds || 20) }; }
   function list(name) {
     var l = live[name].length ? live[name] : ((CFG.ads || {})[name] || []).map(normal);
     return l.filter(function (a) { return a && good(a.img) && good(a.href) && here(a); });
@@ -62,6 +71,9 @@
       ? '<video src="' + esc(a.img) + '" autoplay muted loop playsinline preload="metadata" aria-label="' + esc(a.alt || 'Advertisement') + '" style="display:block;max-width:100%;' + (a.w ? 'width:' + a.w + 'px;' : 'width:100%;') + (a.h ? 'height:' + a.h + 'px;object-fit:' + a.fit + ';' : 'height:auto;') + '"></video>'
       : '<img src="' + esc(a.img) + '" alt="' + esc(a.alt || 'Advertisement') + '" style="' + style + '" loading="lazy">';
     box.innerHTML = '<a href="' + esc(a.href) + '" target="_blank" rel="sponsored noopener noreferrer">' + media + '</a>';
+    var link = box.querySelector('a');
+    if (link) link.addEventListener('click', function () { track('click', a, name); });
+    track('impression', a, name);
     if (l.length > 1) timers[name] = setTimeout(function () { if (el.isConnected) paint(el); }, a.secs * 1000);
   }
   function make(name) {
