@@ -127,6 +127,7 @@ revoke all on public.ad_advertisers, public.ad_packages, public.ad_campaigns,
 grant all on public.ad_advertisers, public.ad_packages, public.ad_campaigns,
   public.ad_orders, public.ad_placements, public.ad_delivery_events
   to service_role;
+grant usage, select on sequence public.ad_delivery_events_id_seq to service_role;
 
 -- Public visitors can continue reading only eligible display ads through the existing RLS policy.
 -- The new advertiser, campaign, order and event tables are not exposed to public roles.
