@@ -55,7 +55,97 @@ Deno.serve(async (req) => {
   if (!await valid(b.token)) return j({ error: 'auth' }, 401);
   const tables = (Deno.env.get('ADMIN_TABLES') || DEFAULT_TABLES).split(',').map(s => s.trim()).filter(s => /^[a-z0-9_]+$/.test(s));
   for (const t of ['news_ads', 'news_ad_settings']) if (!tables.includes(t)) tables.push(t);
-  if (a === 'gamehubStats') {\n    const r = await fetch(`${URL_}/rest/v1/rpc/gamehub_admin_stats`, { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: '{}' });\n    if (!r.ok) return j({ error: 'stats' }, 502);\n    return j(await r.json());\n  }\n  if (a === 'tables') return j({ tables });
+  if (a === 'gamehubStats') {\n    const r = await fetch(`${URL_}/rest/v1/rpc/gamehub_admin_stats`, { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: '{}' });\n    if (!r.ok) return j({ error: 'stats' }, 502);\n    return j(await r.json());\n  }\n  if (a === 'regionalCoverageStats') {
+    const specs = [
+      ['leads', 'claudia_story_leads?select=id,title,summary,source_name,source_url,status,discovered_at&order=discovered_at.desc&limit=5000'],
+      ['posts', 'news_posts?select=id,title,body,section,status,created_at,updated_at&status=eq.published&order=created_at.desc&limit=5000'],
+      ['tasks', 'claudia_research_tasks?select=id,title,task_type,status,priority,created_at,updated_at&order=created_at.desc&limit=5000'],
+      ['evidence', 'claudia_story_evidence?select=id,lead_id,source_name,observed_at&order=observed_at.desc&limit=5000'],
+      ['drafts', 'claudia_story_drafts?select=id,title,status,verification_status,source_count,created_at,published_at&order=created_at.desc&limit=5000']
+    ] as const;
+    const results = await Promise.all(specs.map(async ([key, path]) => {
+      try { const response = await rest(path); return { key, ok: response.ok, rows: response.ok ? await response.json() : [] }; }
+      catch (_) { return { key, ok: false, rows: [] }; }
+    }));
+    const data: Record<string, any[]> = {};
+    const availability: Record<string, boolean> = {};
+    for (const item of results) { data[item.key] = item.rows; availability[item.key] = item.ok; }
+    const countyNames = ['Bradley','Polk','Hamilton','Rhea','Grundy'];
+    const patterns: Record<string, RegExp> = {
+      Bradley: /bradley county|cleveland\s*,?\s*tn|cleveland tennessee|charleston tn|hopewell tn|walker valley|south cleveland/i,
+      Polk: /polk county|copper basin|benton\s*,?\s*tn|ducktown|turtletown|ocoee|coker creek|delano tn/i,
+      Hamilton: /hamilton county|chattanooga|ooltewah|collegedale|east ridge|red bank|signal mountain|soddy-daisy|hixson|lookout mountain/i,
+      Rhea: /rhea county|dayton\s*,?\s*tn|spring city|graysville tn/i,
+      Grundy: /grundy county|altamont|tracy city|monteagle|coalmont|pelham tn/i
+    };
+    const countyOf = (row: any) => {
+      const text = [row.title,row.summary,row.body,row.source_name,row.source_url].filter(Boolean).join(' ');
+      return countyNames.find(name => patterns[name].test(text)) || 'Regional / unassigned';
+    };
+    const since = (days: number) => Date.now() - days * 86400000;
+    const recent = (row: any, days: number, field: string) => {
+      const stamp = Date.parse(row[field] || '');
+      return Number.isFinite(stamp) && stamp >= since(days);
+    };
+    const counts: Record<string, any> = {};
+    for (const county of countyNames) {
+      const leads = data.leads.filter((row: any) => countyOf(row) === county);
+      const posts = data.posts.filter((row: any) => countyOf(row) === county);
+      const tasks = data.tasks.filter((row: any) => countyOf(row) === county);
+      counts[county] = {
+        leads_total: leads.length,
+        leads_7d: leads.filter((row: any) => recent(row,7,'discovered_at')).length,
+        leads_30d: leads.filter((row: any) => recent(row,30,'discovered_at')).length,
+        published_total: posts.length,
+        published_7d: posts.filter((row: any) => recent(row,7,'created_at')).length,
+        published_30d: posts.filter((row: any) => recent(row,30,'created_at')).length,
+        tasks_open: tasks.filter((row: any) => ['queued','in_progress','blocked'].includes(row.status)).length
+      };
+    }
+    const sources = new Map<string, any>();
+    for (const row of data.leads) {
+      const name = String(row.source_name || 'Unknown source');
+      const existing = sources.get(name);
+      if (!existing || Date.parse(row.discovered_at || '') > Date.parse(existing.last_seen || '')) {
+        sources.set(name, { name, last_seen: row.discovered_at || null, leads_total: 0, leads_7d: 0, leads_30d: 0 });
+      }
+      const item = sources.get(name); item.leads_total++;
+      if (recent(row,7,'discovered_at')) item.leads_7d++;
+      if (recent(row,30,'discovered_at')) item.leads_30d++;
+    }
+    const openTasks = data.tasks.filter((row: any) => ['queued','in_progress','blocked'].includes(row.status));
+    const publishedDrafts = data.drafts.filter((row: any) => row.status === 'published');
+    return j({
+      generated_at: new Date().toISOString(),
+      availability,
+      counts,
+      totals: {
+        leads_total: data.leads.length,
+        leads_7d: data.leads.filter((row: any) => recent(row,7,'discovered_at')).length,
+        leads_30d: data.leads.filter((row: any) => recent(row,30,'discovered_at')).length,
+        published_total: data.posts.length,
+        published_7d: data.posts.filter((row: any) => recent(row,7,'created_at')).length,
+        published_30d: data.posts.filter((row: any) => recent(row,30,'created_at')).length,
+        open_tasks: openTasks.length,
+        evidence_records: data.evidence.length,
+        drafts_published: publishedDrafts.length,
+        sources_with_ingested_leads: sources.size
+      },
+      tasks: {
+        queued: data.tasks.filter((row: any) => row.status === 'queued').length,
+        in_progress: data.tasks.filter((row: any) => row.status === 'in_progress').length,
+        blocked: data.tasks.filter((row: any) => row.status === 'blocked').length,
+        completed: data.tasks.filter((row: any) => row.status === 'completed').length
+      },
+      sources: [...sources.values()].sort((a,b) => String(b.last_seen||'').localeCompare(String(a.last_seen||''))).slice(0,100),
+      recent_leads: data.leads.slice(0,12).map((row: any) => ({
+        title: row.title, source_name: row.source_name, source_url: row.source_url,
+        status: row.status, discovered_at: row.discovered_at, county: countyOf(row)
+      })),
+      limits: { leads: data.leads.length >= 5000, posts: data.posts.length >= 5000, tasks: data.tasks.length >= 5000 }
+    });
+  }
+  if (a === 'tables') return j({ tables });
   if (a === 'change') {
     const nw = String(b.next || '');
     if (nw.length < 10) return j({ error: 'short' }, 400);
