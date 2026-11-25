@@ -94,7 +94,7 @@ alter table public.news_ads add column if not exists edition_id text not null de
 alter table public.news_ads add column if not exists advertiser_id uuid references public.ad_advertisers(id) on delete set null;
 alter table public.news_ads add column if not exists campaign_id uuid references public.ad_campaigns(id) on delete set null;
 alter table public.news_ads add column if not exists disclosure text not null default 'Advertisement';
-alter table public.news_ads add column if not exists campaign_active boolean not null default true;
+alter table public.news_ads add column if not exists campaign_active boolean not null default false;
 
 create index if not exists ad_advertisers_edition_status_idx on public.ad_advertisers (edition_id, status, created_at desc);
 create index if not exists ad_campaigns_edition_status_idx on public.ad_campaigns (edition_id, status, starts_at, ends_at);
