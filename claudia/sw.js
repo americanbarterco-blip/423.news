@@ -1,6 +1,6 @@
 const CACHE='claudia-chat-v5';
 const SHELL=['./','./index.html','./manifest.webmanifest','./claudia-icon.svg','./claudia-icon-192.png','./claudia-icon-512.png','/claudia-livekit.js','/offline.html'];
-/* Cache independently: an optional asset must not block installation. */
+/* Cache independently: a missing optional asset must not block installation. */
 self.addEventListener('install',event=>{
   event.waitUntil(
     caches.open(CACHE)
@@ -31,7 +31,7 @@ self.addEventListener('fetch',event=>{
     }).catch(()=>caches.match(request).then(cached=>{
       if(cached)return cached;
       return request.mode==='navigate'
-        ? caches.match('./index.html').then(page=>page||new Response('Claudia is offline.',{status:503,headers:{'Content-Type':'text/plain; charset=utf-8'}}))
+        ? caches.match('./index.html').then(page=>page||caches.match('/offline.html'))
         : new Response('',{status:504});
     }))
   );
