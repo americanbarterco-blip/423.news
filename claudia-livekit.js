@@ -74,10 +74,17 @@
       return;
     }
     if (/android/i.test(navigator.userAgent)) {
-      setStatus("Opening Claudia in Chrome so Android can offer the separate app installation…");
-      /* An installed 423.news PWA cannot install another PWA from inside its own window.
-         Launch the same Claudia URL in Chrome, where Claudia's own manifest can be installed. */
-      window.location.href = "intent://423.news/claudia/index.html#Intent;scheme=https;package=com.android.chrome;end";
+      setStatus("Opening Claudia in Chrome. If Chrome does not open, use the browser menu to install Claudia.");
+      /* Launch the Android intent from a real link activation in a new browsing context.
+         Navigating the current standalone PWA directly to an intent URL can be ignored by Android. */
+      var installLink = document.createElement("a");
+      installLink.href = "intent://423.news/claudia/index.html#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=https%3A%2F%2F423.news%2Fclaudia%2Findex.html;end";
+      installLink.target = "_blank";
+      installLink.rel = "noopener";
+      installLink.style.display = "none";
+      document.body.appendChild(installLink);
+      installLink.click();
+      window.setTimeout(function () { installLink.remove(); }, 1500);
       return;
     }
     setStatus("To install Claudia, use your browser's Share or menu option and choose Add to Home Screen.");
