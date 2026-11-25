@@ -170,7 +170,7 @@ async function livekitToken(request, env) {
   const url = new URL(request.url);
   const role = url.searchParams.get("role") || "listener";
   const room = url.searchParams.get("room") || "claudia-desk";
-  if (!["listener", "publisher", "probe"].includes(role)) {
+  if (!["listener", "voice", "publisher", "probe"].includes(role)) {
     return jsonResponse({ error: "invalid_role" }, 400);
   }
   if (!/^[a-zA-Z0-9_-]{1,64}$/.test(room)) {
@@ -214,6 +214,8 @@ async function livekitToken(request, env) {
   }
 
   const isPublisher = role === "publisher";
+  const isVoice = role === "voice";
+  const canPublishAudio = isPublisher || isVoice;
   const token = await signJwt({
     iss: apiKey,
     sub: (isPublisher ? "claudia-desk-" : "423-news-listener-") + crypto.randomUUID(),
@@ -222,7 +224,8 @@ async function livekitToken(request, env) {
     video: {
       roomJoin: true,
       room,
-      canPublish: isPublisher,
+      canPublish: canPublishAudio,
+      canPublishSources: isVoice ? ["microphone"] : undefined,
       canSubscribe: true,
       canPublishData: isPublisher
     }
