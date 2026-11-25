@@ -2,6 +2,8 @@
    LiveKit API credentials remain server-side in Cloudflare Worker secrets. */
 (function () {
   "use strict";
+  if (window.__CG_LIVEKIT_INITIALIZED) return;
+  window.__CG_LIVEKIT_INITIALIZED = true;
   var TOKEN_ENDPOINT = "https://voice-api.423.news/getToken";
   var css = `
     #cg-livekit-launch{position:fixed;right:18px;bottom:86px;z-index:9998;border:1px solid #e8392f;border-radius:999px;background:#171b24;color:#fff;padding:12px 17px;font:700 13px system-ui;box-shadow:0 8px 28px #0008;cursor:pointer}
