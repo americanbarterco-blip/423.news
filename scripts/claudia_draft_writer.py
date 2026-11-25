@@ -353,7 +353,7 @@ def process_lead(base, key, ai_key, model, lead, classification, lessons=None, a
     sensitive=requires_strong_verification(lead,evidence)
     verification=None
     draft=None
-    if ai_key and model:
+    if ai_key and ai_base_url and model:
         try:
             draft=call_openai(model,ai_key,lead,evidence,classification,lessons,ai_base_url)
             if evidence:
@@ -399,7 +399,7 @@ def main():
         print("Draft writer skipped: Supabase credentials missing."); return
     # If AI is unavailable, Claudia still publishes source-attributed intake briefs.\n    _, raw = api(base,key,"rest/v1/claudia_story_leads?status=in.(new,researching)&select=id,title,summary,url,source_name,discovered_at&order=discovered_at.desc&limit=1000")
     leads=leads_with_evidence(base,key,json.loads(raw))
-    print("Writer evidence-backed lead selection: %s" % len(leads))
+    print("Writer ingested lead queue: %s" % len(leads))
     lessons=load_flag_lessons(base,key)
     print("Flag-feedback lessons loaded: %s" % len(lessons))
     classified=[(classify_content(lead),lead) for lead in leads]
