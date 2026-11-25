@@ -52,6 +52,18 @@ def region_profile(lead):
         return {"county":None,"coverage_tier":"regional","location_priority":COUNTY_PRIORITY["Regional"]}
     return {"county":None,"coverage_tier":"outside_area","location_priority":COUNTY_PRIORITY["Outside"]}
 
+SENSITIVE_SIGNALS = (
+    "shooting", "homicide", "murder", "fatal", "killed", "death", "missing person",
+    "amber alert", "sexual assault", "child abuse", "domestic violence", "officer involved",
+    "swatting", "arrested", "indicted", "charged", "fire", "crash", "collision",
+    "rescue", "evacuation", "emergency", "injury", "storm warning", "tornado",
+    "flood", "school threat", "hazmat", "overdose"
+)
+
+def requires_strong_verification(lead,evidence=()):
+    text=(str(lead.get("title",""))+" "+str(lead.get("summary",""))+" "+" ".join(str(item.get("excerpt","")) for item in evidence)).lower()
+    return any(term in text for term in SENSITIVE_SIGNALS)
+
 def normalized_title(value):
     text=re.sub(r"[^a-z0-9]+"," ",str(value or "").lower()).strip()
     return " ".join(text.split())
@@ -132,6 +144,7 @@ def build_prompt(lead, evidence, classification, lessons=None):
             n, item.get("source_name", "Unknown"), item.get("url", ""),
             item.get("excerpt", "")[:MAX_EXCERPT], item.get("reliability_notes", "")))
     section=classification["section"];topic=classification["topic"]
+    geographic_match=classification.get("county") or ("wider 423 region" if classification.get("coverage_tier")=="regional" else "not established")
     lessons_text = "\n".join("- " + str(item)[:1800] for item in (lessons or [])) or "No flag-feedback lessons stored."
     local_context = (
         "Coverage priority: Polk County first, then Bradley and Hamilton, followed by Rhea and Grundy; other 423-area stories remain eligible at lower priority. "
@@ -320,8 +333,7 @@ def process_lead(base, key, ai_key, model, lead, classification, lessons=None, a
         print("Skipped lead %s: already auto-published; idempotency guard." % lead.get("id")); return False
     attempt_count=verification_attempts(base,key)
     starter_gate=attempt_count < 2
-    lead_text=(str(lead.get("title",""))+" "+str(lead.get("summary",""))).lower()
-    sensitive=any(term in lead_text for term in ("shooting","homicide","murder","fatal","killed","death","missing person","amber alert","sexual assault","child abuse","domestic violence","officer involved","swatting","arrested","indicted","charged"))
+    sensitive=requires_strong_verification(lead,evidence)
     # The onboarding single-source allowance never applies to sensitive or urgent public-safety claims.
     required_domains=2 if sensitive else (1 if starter_gate else MIN_DOMAINS)
     required_confidence=0.95 if sensitive else (0.75 if starter_gate else 0.90)
