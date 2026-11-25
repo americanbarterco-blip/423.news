@@ -3,6 +3,12 @@
   "name": "423-news",
   "compatibility_date": "2026-11-12",
   "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "claudia.423.news/*",
+      "zone_name": "423.news"
+    }
+  ],
   "triggers": { "crons": ["*/30 * * * *"] },
   "preview_urls": true,
   "assets": {
