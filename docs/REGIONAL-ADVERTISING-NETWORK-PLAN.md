@@ -1,6 +1,6 @@
 # Regional Advertising Network — Implementation Plan
 
-Status: preview design and repository audit. No production code, database, credentials, billing, or deployment changes are included in this document.
+Status: Phase 1 preview implementation is committed to `feature/regional-advertising-network-preview`. The migration and Edge Functions are staged in GitHub only; they have not been applied to Supabase or deployed. Production data, credentials, billing, and live campaigns have not been changed.
 
 ## Goal
 
@@ -27,11 +27,12 @@ This existing system must be extended, not replaced blindly. Preserve the curren
 
 The existing implementation is a publisher-controlled ad rotator, not yet a complete advertising business platform.
 
-- Ad rows are not yet demonstrably edition-scoped.
-- The browser script contains a hard-coded 423 Supabase project URL and public key.
+- Existing ad rows are being extended with edition, advertiser, campaign, disclosure, and campaign-approval fields. The first deployment remains edition 423; future editions must use their own Supabase project and trusted `AD_EDITION_ID` configuration.
+- `ads.js` now supports edition-specific Supabase URL/key overrides through `window.ADS_CFG`, while preserving the current 423 defaults.
 - There is no verified end-to-end inventory of which English and Spanish routes load the ad script.
-- The current ad schema does not provide a full advertiser, campaign, package, order, invoice, payment, or contract model.
-- No trustworthy impression/click reporting pipeline or advertiser-facing performance dashboard was identified in the inspected files.
+- A staff-managed advertiser, campaign, package, order, and placement model is now staged in `supabase/ads-network-setup.sql`. The existing `news_ads` rows remain the serving creatives to preserve the working Ads tab.
+- A private staff dashboard is staged at `ad-network-admin.html`; it reuses the existing admin session and supports advertiser approval, campaign management, order records, packages, and linking existing ads to campaigns.
+- A privacy-minimized event collector and client-side impression/click instrumentation are staged. The dashboard currently reports recorded event totals, not unique reach; rate limiting, long-term aggregation, and operational load testing remain before public launch.
 - There is no self-service advertiser account/approval workflow.
 - No billing or payment integration is authorized for this work.
 - Existing video-break settings are not yet proven to be consistently scoped per edition.
@@ -49,15 +50,15 @@ Do not copy 423.news advertiser records, private campaign information, customer 
 
 ### Core data model
 
-Introduce versioned migrations for these concepts, designed so existing `news_ads` can be migrated safely:
+Introduce versioned schema changes, designed so existing `news_ads` can be migrated safely. The current preview schema includes:
 
 - `ad_advertisers`: business/organization profile, contact and approval status.
 - `ad_campaigns`: advertiser, edition, campaign name, objective, status, start/end, approval and internal notes.
-- `ad_creatives`: image/video assets, destination URL, alt text, disclosure label, creative approval state.
+- Existing `news_ads` rows remain the image/video creative and placement-delivery records; the preview adds campaign/advertiser linkage and a disclosure field rather than creating a duplicate creative store.
 - `ad_placements`: edition-specific inventory key, page/section targeting, dimensions, format and availability.
 - `ad_orders`: sold package, price, currency, service period, insertion-order/contract reference and fulfillment status.
 - `ad_delivery_events`: privacy-minimized impression and click events, deduplication key, timestamp, edition, campaign, creative and placement.
-- `ad_daily_metrics`: server-side aggregated counts for reporting; do not expose raw visitor identifiers to advertisers.
+- Daily aggregate metrics are a later hardening step; the preview dashboard currently summarizes the stored event rows.
 - `ad_packages`: configurable products such as island/county sponsorship, section sponsor, featured business, and display inventory.
 
 Use foreign keys, indexes, constraints, retention rules, and RLS policies. Keep payment credentials out of the database and never store card numbers. Do not mark an order paid based solely on a browser callback.
@@ -97,11 +98,20 @@ Pricing should be tested with actual local advertiser conversations and delivery
 
 ## Rollout phases
 
-### Phase 0 — Audit and protect (this PR)
+### Phase 0 — Audit and protect (complete in this preview)
 
 - Document the existing 423 ad implementation and its gaps.
-- Keep this work on a preview branch.
+- Keep all changes on `feature/regional-advertising-network-preview`.
 - Do not modify production data or enable new ad placements.
+
+### Phase 1 — Staff-managed advertising foundation (preview code staged)
+
+- `supabase/ads-network-setup.sql` adds edition-scoped advertisers, packages, campaigns, orders, placements, and delivery events; it extends `news_ads` without deleting existing rows.
+- `supabase/functions/ad-network/index.ts` provides staff-session-protected operations and enforces edition scope.
+- `supabase/functions/ad-events/index.ts` validates ad/campaign/placement eligibility and records privacy-minimized impressions/clicks with event-key deduplication.
+- `ad-network-admin.html` provides staff advertiser, campaign, order, package, and inventory-link management.
+- `ads.js` accepts edition-specific Supabase settings and records events for campaign-linked ads; legacy ads continue to work without campaign links.
+- The SQL has not been applied and the functions have not been deployed. Run them only after review and explicit approval.
 
 ### Phase 1 — Shared schema and edition-aware delivery
 
@@ -111,18 +121,19 @@ Pricing should be tested with actual local advertiser conversations and delivery
 - Add automated checks for all intended English/Spanish routes.
 - Add an 808 configuration with no copied 423 advertiser data.
 
-### Phase 2 — Campaign operations and reporting
+### Phase 2 — Hardening and verification (remaining)
 
-- Staff advertiser/campaign management.
-- Approval, disclosure, scheduling, pause/resume and audit history.
-- Privacy-minimized impression/click events and aggregated reports.
-- Reporting tests for edition isolation and campaign ownership.
+- Add rate limiting and stronger bot/fraud filtering to the public event collector.
+- Add daily aggregation, campaign-level CTR and date-range reports; current preview shows event totals only.
+- Add audit history and explicit campaign change logs.
+- Add automated tests for RLS, edition isolation, campaign ownership, dates, and ad disclosure.
+- Verify every English and Spanish route and the existing live-video commercial-break flow after deployment.
 
-### Phase 3 — Sales and advertiser experience
+### Phase 3 — Sales and advertiser experience (remaining)
 
-- Public advertiser inquiry flow.
-- Package catalog and media specifications.
-- Advertiser dashboard limited to their own campaigns.
+- Public advertiser inquiry flow and advertiser self-service dashboard.
+- Package catalog and media specifications for prospective advertisers.
+- Advertiser reporting limited to their own campaigns.
 - Optional billing integration only after separate approval and provider selection.
 
 ### Phase 4 — Network reporting
@@ -144,8 +155,8 @@ Pricing should be tested with actual local advertiser conversations and delivery
 
 ## Non-goals for this phase
 
-- No merge or deployment.
-- No production database migration.
+- No merge or production deployment.
+- No production database migration has been applied; the setup SQL is staged for review only.
 - No automatic signup or billing activation.
 - No third-party ad-network account creation.
 - No changes to Claudia, OpenAI, Deepgram, Inworld, newsroom publishing, or regional source ingestion.
