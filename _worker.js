@@ -304,6 +304,7 @@ export default {
        worker and install scope cannot capture Claudia install flow. The
        custom domain claudia.423.news must point to this Worker in Cloudflare. */
     if (url.hostname === "claudia.423.news") {
+      if (url.pathname === "/api/livekit-token") return livekitToken(request, env);
       const claudiaRootFiles = {
         "/": "/claudia/index.html",
         "/index.html": "/claudia/index.html",
