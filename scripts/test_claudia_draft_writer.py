@@ -57,7 +57,7 @@ class ClaudiaAutoPublisherTests(unittest.TestCase):
         lead={"title":"Council approves project","summary":"Council voted."}
         evidence=[{"source_name":"Official source","url":"https://city.example/page","excerpt":"Council voted 4-1."}]
         prompt=build_prompt(lead,evidence,{"section":"government","topic":"government"},["Attribute claims clearly"])
-        for phrase in ("Coverage priority: Bradley and Polk Counties tied for first","Provisional geographic match","Do not manufacture a county connection","verified connection to the 423 coverage area","accurate, specific headline","fact-first","Synthesize evidence across sources","Do not invent quotes","topic-neutral","FLAG-FEEDBACK LESSONS"):
+        for phrase in ("Coverage priority: Bradley and Polk Counties are tied for first","Provisional geographic match","Do not manufacture a county connection","verified connection to the 423 coverage area","accurate, specific headline","fact-first","Synthesize evidence across sources","Do not invent quotes","topic-neutral","FLAG-FEEDBACK LESSONS"):
             self.assertIn(phrase,prompt)
 
     @patch("scripts.claudia_draft_writer.api")
