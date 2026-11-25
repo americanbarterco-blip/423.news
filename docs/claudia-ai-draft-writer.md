@@ -26,7 +26,7 @@ The workflow sets the 423.news Supabase URL and the configured Cloudflare Worker
 
 ## Geographic ranking, deduplication and Live Wire integration
 
-- Rank county-connected leads with Polk first, then Bradley and Hamilton, followed by Rhea and Grundy. Wider 423-area and outside-area items remain eligible at lower priority; the publisher's location alone never establishes local relevance.
+- Rank county-connected leads with Bradley and Polk tied for first, then Hamilton as a strong second, followed by Rhea and Grundy. Wider 423-area and outside-area items remain eligible at lower priority; the publisher's location alone never establishes local relevance.
 - Before drafting, compare normalized titles against recent published stories and higher-ranked leads. Exact and near-identical headlines are retained in the lead audit trail but are not published again.
 - Sensitive or urgent public-safety material uses a stricter gate even during onboarding: at least two distinct source domains and a 0.95 factual-confidence score, with unsupported or conflicting claims held out of publication. A domain count is not, by itself, proof of independent ownership or corroboration.
 - The public Claudia Live Wire combines published news_reports with eligible published news_posts. Automatically published posts are labeled as verified; other published posts are not automatically upgraded to verified. The wire describes these items as reports, not as live CAD incidents.
