@@ -1,3 +1,4 @@
+import re
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -15,9 +16,24 @@ class IndexNowDeploymentTests(unittest.TestCase):
         self.assertEqual(KEY_FILE.stem, key)
         self.assertRegex(key, r"^[a-f0-9]{32}$")
 
-    def test_cloudflare_deploy_triggers_for_text_assets(self):
+    def test_cloudflare_deploy_triggers_on_every_main_push(self):
         workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("      - '**/*.txt'", workflow)
+        push_match = re.search(
+            r"(?m)^  push:\s*\n((?:^ {4,}.*\n)*)",
+            workflow,
+        )
+        self.assertIsNotNone(push_match, "Cloudflare workflow must define a push trigger")
+        push_config = push_match.group(1)
+        self.assertRegex(
+            push_config,
+            r"(?m)^    branches:\s*\[main\]\s*$",
+            "Cloudflare deployment must run for pushes to main",
+        )
+        self.assertNotRegex(
+            push_config,
+            r"(?m)^    paths(?:-ignore)?:",
+            "Cloudflare deployment must not filter out text-asset changes",
+        )
 
     def test_sitemap_lists_unique_clean_canonical_urls(self):
         ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
