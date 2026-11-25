@@ -63,8 +63,18 @@
         /* Force Android to open this URL in Chrome. Do not provide an HTTPS
            browser_fallback_url: the installed 423.news PWA owns scope "/" and
            would intercept that fallback, reopening itself instead of Chrome. */
-        setStatus("Launching Claudia's install page in Chrome…");
-        window.location.href = "intent://423.news/claudia/index.html#Intent;scheme=https;package=com.android.chrome;end";
+        setStatus("Opening Claudia's install page in Chrome…");
+        /* Open the external browser in a new browsing context. Navigating the
+           current standalone PWA to an intent URI can be swallowed by its shell. */
+        var chromeLink = document.createElement("a");
+        chromeLink.href = "intent://423.news/claudia/index.html#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;end";
+        chromeLink.target = "_blank";
+        chromeLink.rel = "noopener";
+        chromeLink.style.position = "fixed";
+        chromeLink.style.left = "-10000px";
+        document.body.appendChild(chromeLink);
+        chromeLink.click();
+        window.setTimeout(function () { chromeLink.remove(); }, 2000);
       } else {
         window.location.href = "/claudia/index.html";
       }
@@ -84,17 +94,17 @@
       return;
     }
     if (/android/i.test(navigator.userAgent)) {
-      setStatus("Opening Claudia in Chrome. If Chrome does not open, use the browser menu to install Claudia.");
-      /* Launch the Android intent from a real link activation in a new browsing context.
-         Navigating the current standalone PWA directly to an intent URL can be ignored by Android. */
+      setStatus("Opening Claudia's install page in Chrome…");
+      /* No same-origin browser fallback: it is inside the root 423.news PWA scope. */
       var installLink = document.createElement("a");
-      installLink.href = "intent://423.news/claudia/index.html#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=https%3A%2F%2F423.news%2Fclaudia%2Findex.html;end";
+      installLink.href = "intent://423.news/claudia/index.html#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;end";
       installLink.target = "_blank";
       installLink.rel = "noopener";
-      installLink.style.display = "none";
+      installLink.style.position = "fixed";
+      installLink.style.left = "-10000px";
       document.body.appendChild(installLink);
       installLink.click();
-      window.setTimeout(function () { installLink.remove(); }, 1500);
+      window.setTimeout(function () { installLink.remove(); }, 2000);
       return;
     }
     setStatus("To install Claudia, use your browser's Share or menu option and choose Add to Home Screen.");
