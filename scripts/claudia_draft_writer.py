@@ -30,14 +30,14 @@ def _signal_hits(text, signals):
     return sum(1 for term in signals if term in text)
 
 COUNTY_SIGNALS = {
-    # Polk is deliberately first in the coverage hierarchy, followed by Bradley and Hamilton.
+    # Bradley and Polk share the top coverage tier; Hamilton is the strong second priority.
     "Polk": ("polk county", "copper basin", "benton tn", "ducktown", "turtletown", "ocoee", "oecoe", "coker creek", "delano tn"),
     "Bradley": ("bradley county", "cleveland tn", "charleston tn", "hopewell tn", "walker valley", "south cleveland"),
     "Hamilton": ("hamilton county", "chattanooga", "ooltewah", "collegedale", "east ridge", "red bank tn", "signal mountain", "soddy-daisy", "hixson", "lookout mountain"),
     "Rhea": ("rhea county", "dayton tn", "spring city tn", "graysville tn"),
     "Grundy": ("grundy county", "altamont tn", "tracy city", "monteagle", "coalmont tn", "pelham tn"),
 }
-COUNTY_PRIORITY = {"Polk": 36, "Bradley": 34, "Hamilton": 32, "Rhea": 27, "Grundy": 25, "Regional": 10, "Outside": 0}
+COUNTY_PRIORITY = {"Polk": 36, "Bradley": 36, "Hamilton": 32, "Rhea": 27, "Grundy": 25, "Regional": 10, "Outside": 0}
 
 def region_profile(lead):
     text=(str(lead.get("title",""))+" "+str(lead.get("summary",""))).lower()
@@ -94,7 +94,7 @@ def classify_content(lead):
     else:
         topic={"schools":"education","sports":"sports","government":"government","outdoors":"outdoors"}[section]
 
-    # Geographic priority is explicit: Polk, Bradley and Hamilton lead the desk.
+    # Geographic priority is explicit: Bradley and Polk are tied at the top; Hamilton is a strong second.
     region=region_profile(lead)
     score={"news":50,"government":72,"schools":66,"sports":58,"outdoors":48}[section] + region["location_priority"]
     reasons=[]
@@ -147,7 +147,7 @@ def build_prompt(lead, evidence, classification, lessons=None):
     geographic_match=classification.get("county") or ("wider 423 region" if classification.get("coverage_tier")=="regional" else "not established")
     lessons_text = "\n".join("- " + str(item)[:1800] for item in (lessons or [])) or "No flag-feedback lessons stored."
     local_context = (
-        "Coverage priority: Polk County first, then Bradley and Hamilton, followed by Rhea and Grundy; other 423-area stories remain eligible at lower priority. "
+        "Coverage priority: Bradley and Polk Counties are tied for first, Hamilton County is a strong second, followed by Rhea and Grundy; other 423-area stories remain eligible at lower priority. "
         "Do not manufacture a county connection from a publisher location or a vague regional dateline. "
         "Local relevance means a verified connection to the 423 coverage area, its residents, "
         "institutions, roads, services, or decisions. If evidence does not establish a local connection, "
