@@ -429,6 +429,10 @@ export default {
     if (url.pathname === "/api/livekit-token") {
       return livekitToken(request, env);
     }
+
+    if (url.pathname === "/claudia-review.html") {
+      return new Response("Not Found", { status: 404 });
+    }
     if (url.pathname !== "/sitemap.xml" || request.method !== "GET") {
       const response = await env.ASSETS.fetch(request);
       return injectClaudiaWidgets(response, url);
