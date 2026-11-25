@@ -3095,17 +3095,45 @@ async function loadReports(limit) {
   const take = Math.min(Math.max(Number(limit) || 50, 1), 200);
   const filterLocal = rows => (rows || []).filter(row =>
     window.ClaudiaLocality && window.ClaudiaLocality.isLocal(row)
-  ).slice(0, take);
+  );
+  const mergeUnique = rows => {
+    const seen = new Set();
+    return rows.filter(row => {
+      const key = String(row.headline || row.title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      if (!key || seen.has(key)) return false;
+      seen.add(key); return true;
+    }).sort((a,b) => new Date(b.ts || b.created_at || b.published_at || 0) - new Date(a.ts || a.created_at || a.published_at || 0)).slice(0,take);
+  };
   if (sb.url && sb.anonKey) {
-    const fetchLimit = Math.min(take * 4, 800);
-    const r = await fetch(sb.url.replace(/\/$/, '') + '/rest/v1/news_reports?select=*&published=eq.true&order=ts.desc&limit=' + fetchLimit, { headers: { apikey: sb.anonKey, Authorization: 'Bearer ' + sb.anonKey }, cache: 'no-store' });
-    if (!r.ok) throw new Error('The reports database answered ' + r.status + '.');
-    return filterLocal(await r.json());
+    const fetchLimit = Math.min(take * 5, 1000);
+    const headers = { apikey: sb.anonKey, Authorization: 'Bearer ' + sb.anonKey };
+    const reportsRequest = fetch(sb.url.replace(/\/$/, '') + '/rest/v1/news_reports?select=*&published=eq.true&order=ts.desc&limit=' + fetchLimit, { headers, cache: 'no-store' })
+      .then(r => { if (!r.ok) throw new Error('The reports database answered ' + r.status + '.'); return r.json(); });
+    const storiesRequest = fetch(sb.url.replace(/\/$/, '') + '/rest/v1/news_posts?select=*&status=eq.published&limit=' + fetchLimit, { headers, cache: 'no-store' })
+      .then(r => { if (!r.ok) throw new Error('The published story database answered ' + r.status + '.'); return r.json(); })
+      .catch(e => { console.warn('Claudia auto-published story feed unavailable:', e.message); return []; });
+    const results = await Promise.all([reportsRequest, storiesRequest]);
+    const publishedStories = (results[1] || []).map(row => {
+      const auto = String(row.slug || '').startsWith('claudia-auto-');
+      return {
+        id: row.id || row.slug || 'story-' + (row.title || ''),
+        ts: row.created_at || row.published_at || row.updated_at || null,
+        kind: auto ? 'VERIFIED' : 'DESK',
+        confidence: auto ? 'confirmed' : 'developing',
+        headline: row.title || 'Published newsroom story',
+        summary: row.body || row.summary || '',
+        tags: [row.section, row.topic, auto ? 'auto-published' : 'editorially-published'].filter(Boolean),
+        category: row.section || 'news',
+        location: row.location || row.dateline || '',
+        sources: []
+      };
+    });
+    return mergeUnique(filterLocal([...(results[0] || []), ...publishedStories]));
   }
   const r = await fetch('feed.json', { cache: 'no-store' });
   if (!r.ok) throw new Error('Could not read feed.json (' + r.status + ').');
   const d = await r.json();
-  return filterLocal(d.reports || []);
+  return mergeUnique(filterLocal(d.reports || []));
 }
 async function api(path) {
   if (path.startsWith('/wire')) { const n = Number((path.match(/limit=(\d+)/) || [])[1]) || 50; return { items: (await loadReports(n)).map(toIncident) }; }
