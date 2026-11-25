@@ -24,7 +24,7 @@ The dashboard calls the existing authenticated Supabase `admin` Edge Function us
 - `claudia_story_evidence`: evidence-record count.
 - `claudia_story_drafts`: published draft count.
 
-The configured source inventory is loaded from `scripts/claudia_sources.json`. Source inventory and source activity are intentionally shown as different measures.
+The configured source inventory is published as the safe, public `claudia-sources.json` asset (mirrored from `scripts/claudia_sources.json`, which is excluded from public asset uploads). Keep the public inventory synchronized when the private discovery configuration changes. Source inventory and source activity are intentionally shown as different measures.
 
 ## Metric definitions and limitations
 
