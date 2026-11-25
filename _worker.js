@@ -123,6 +123,94 @@ async function buildSitemap(staticXml, env) {
 }
 
 
+function decodeCadText(value) {
+  return String(value || "")
+    .replace(/<script\\b[\\s\\S]*?<\\/script>/gi, " ")
+    .replace(/<style\\b[\\s\\S]*?<\\/style>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .replace(/&amp;/gi, "&").replace(/&quot;|&#34;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">")
+    .replace(/&#(\\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/\\s+/g, " ").trim();
+}
+
+function parseHamiltonCad(html) {
+  const rows = [...String(html || "").matchAll(/<tr\\b[^>]*>([\\s\\S]*?)<\\/tr>/gi)];
+  let columns = null;
+  const incidents = [];
+  const knownAreas = new Set(["Collegedale", "Chattanooga", "East Ridge", "Hamilton County", "Red Bank", "Signal Mountain", "Soddy-Daisy"]);
+  const knownAgencies = new Set([
+    "Collegedale Police Department", "Chattanooga Police Department", "East Ridge Police Department",
+    "Hamilton County Sheriff's Office", "Red Bank Police Department", "Signal Mountain Police Department",
+    "Chattanooga Fire Department", "East Ridge Fire Department", "Red Bank Fire Department",
+    "Hamilton County (Volunteer) Fire & Rescue", "Signal Mountain Fire Department",
+    "Hamilton County EMS", "Soddy-Daisy Fire Department", "Soddy-Daisy Police Department"
+  ]);
+  const statusMap = { R: "Reported", E: "Enroute", OS: "On Scene", T: "Transporting", H: "At Hospital" };
+  for (const match of rows) {
+    const cells = [...match[1].matchAll(/<t[dh]\\b[^>]*>([\\s\\S]*?)<\\/t[dh]>/gi)].map(m => decodeCadText(m[1]));
+    if (!cells.length) continue;
+    const normalized = cells.map(x => x.toLowerCase());
+    if (normalized.includes("type") && normalized.includes("status") && normalized.includes("agency")) {
+      columns = {};
+      normalized.forEach((name, i) => { if (["type", "status", "time created", "agency", "area"].includes(name)) columns[name] = i; });
+      continue;
+    }
+    if (!columns || cells.length <= Math.max(columns.type ?? 0, columns.status ?? 0, columns.agency ?? 0)) continue;
+    const rawType = cells[columns.type] || "";
+    const rawStatus = cells[columns.status] || "";
+    const rawAgency = cells[columns.agency] || "";
+    const rawArea = cells[columns.area] || "";
+    const type = ["Law", "Fire", "EMS", "Road Closure"].find(x => x.toLowerCase() === rawType.toLowerCase());
+    const status = statusMap[rawStatus.toUpperCase()] || ["Reported", "Enroute", "On Scene", "Transporting", "At Hospital"].find(x => x.toLowerCase() === rawStatus.toLowerCase());
+    const agency = [...knownAgencies].find(x => x.toLowerCase() === rawAgency.toLowerCase());
+    const area = [...knownAreas].find(x => x.toLowerCase() === rawArea.toLowerCase());
+    const created = columns["time created"] != null ? (cells[columns["time created"]] || "").slice(0, 40) : "";
+    if (!type || !status || !agency) continue;
+    incidents.push({ type, status, agency, area: area || "", created });
+    if (incidents.length >= 150) break;
+  }
+  return { header_found: !!columns, incidents };
+}
+
+async function hamiltonCad(request) {
+  if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405);
+  const sourceUrl = "https://www.hamiltontn911.gov/active-incidents.php";
+  try {
+    const upstream = await fetch(sourceUrl, {
+      redirect: "follow",
+      signal: AbortSignal.timeout(12000),
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; 423NewsClaudia/1.0; +https://423.news)",
+        "Accept": "text/html,application/xhtml+xml"
+      }
+    });
+    if (!upstream.ok) return jsonResponse({
+      source_available: false, message: "Hamilton County 9-1-1 returned HTTP " + upstream.status,
+      source_url: sourceUrl, fetched_at: new Date().toISOString()
+    }, 502);
+    const html = await upstream.text();
+    const parsed = parseHamiltonCad(html);
+    if (!parsed.header_found) return jsonResponse({
+      source_available: false,
+      message: "The official page did not expose a readable incident table. It may be showing a session gate or changing its page format.",
+      source_url: sourceUrl, fetched_at: new Date().toISOString(), incidents: []
+    }, 503);
+    return jsonResponse({
+      source_available: true, source_url: sourceUrl, fetched_at: new Date().toISOString(),
+      source_note: "Public CAD snapshot; not all incident types are displayed.",
+      incidents: parsed.incidents
+    });
+  } catch (error) {
+    return jsonResponse({
+      source_available: false, message: "Could not retrieve Hamilton County 9-1-1: " + String(error && error.message || error),
+      source_url: sourceUrl, fetched_at: new Date().toISOString()
+    }, 502);
+  }
+}
+
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -338,7 +426,7 @@ export default {
     if (url.pathname.startsWith("/api/arcade/")) {
       return handleArcadeStripe(request, env, url.pathname);
     }
-    if (url.pathname === "/api/livekit-token") {
+    if (url.pathname === "/api/hamilton-cad") return hamiltonCad(request);\n    if (url.pathname === "/api/livekit-token") {
       return livekitToken(request, env);
     }
     if (url.pathname !== "/sitemap.xml" || request.method !== "GET") {
