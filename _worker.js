@@ -330,7 +330,6 @@ const CLAUDIA_WIDGET_EXCLUDED_PATHS = new Set([
   "/claudia-app.html",
   "/claudia-workspace.html",
   "/claudia-free-source-monitor.html",
-  "/claudia-review.html",
   "/claudia-scanner.html",
   "/claudia/index.html"
 ]);
@@ -429,6 +428,10 @@ export default {
     if (url.pathname === "/api/hamilton-cad") return hamiltonCad(request);
     if (url.pathname === "/api/livekit-token") {
       return livekitToken(request, env);
+    }
+
+    if (url.pathname === "/claudia-review.html") {
+      return new Response("Not Found", { status: 404 });
     }
     if (url.pathname !== "/sitemap.xml" || request.method !== "GET") {
       const response = await env.ASSETS.fetch(request);
