@@ -12,17 +12,14 @@ from datetime import datetime, timezone, timedelta
 from typing import Any
 
 from livekit import agents
-from livekit.agents import Agent, AgentServer, AgentSession, RunContext, function_tool
-from livekit.plugins import deepgram, inworld, openai
+from livekit.agents import Agent, AgentServer, AgentSession, RunContext, function_tool, inference
 from claudia_memory import recall as memory_recall, save_memory as memory_save
 from claudia_public_search import search_sources as public_source_search
 
 server = AgentServer()
 
 # Optional model override for evaluation. Default preserves the currently deployed model.
-CLAUDIA_LLM_MODEL = os.getenv("CLAUDIA_LLM_MODEL", "gpt-4.1-mini").strip() or "gpt-4.1-mini"
-# Preserve compatibility with the former LiveKit Inference model ID if this variable is already set.
-CLAUDIA_LLM_MODEL = CLAUDIA_LLM_MODEL.removeprefix("openai/")
+CLAUDIA_LLM_MODEL = os.getenv("CLAUDIA_LLM_MODEL", "openai/gpt-4.1-mini").strip() or "openai/gpt-4.1-mini"
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://kdiwehqtezlhecxsoysj.supabase.co").rstrip("/")
 # This is the public anon key already used by the 423.news website. RLS remains in force.
@@ -602,12 +599,10 @@ For public research results, clearly label them as leads and not verified facts;
 
 @server.rtc_session(agent_name="claudia-green")
 async def claudia_green(ctx: agents.JobContext):
-    # Direct provider plugins bill the owner's provider accounts, not LiveKit Inference.
-    # Required LiveKit Agent secrets: OPENAI_API_KEY, DEEPGRAM_API_KEY, INWORLD_API_KEY.
     session = AgentSession(
-        stt=deepgram.STT(model="nova-3", language="multi"),
-        llm=openai.responses.LLM(model=CLAUDIA_LLM_MODEL),
-        tts=inworld.TTS(model="inworld-tts-2", voice="Ashley"),
+        stt=inference.STT(model="deepgram/nova-3", language="multi"),
+        llm=inference.LLM(model=CLAUDIA_LLM_MODEL),
+        tts=inference.TTS(model="inworld/inworld-tts-2", voice="Ashley"),
     )
     assistant = ClaudiaGreen()
     await session.start(room=ctx.room, agent=assistant)
