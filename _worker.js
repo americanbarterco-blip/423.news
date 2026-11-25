@@ -426,7 +426,8 @@ export default {
     if (url.pathname.startsWith("/api/arcade/")) {
       return handleArcadeStripe(request, env, url.pathname);
     }
-    if (url.pathname === "/api/hamilton-cad") return hamiltonCad(request);\n    if (url.pathname === "/api/livekit-token") {
+    if (url.pathname === "/api/hamilton-cad") return hamiltonCad(request);
+    if (url.pathname === "/api/livekit-token") {
       return livekitToken(request, env);
     }
     if (url.pathname !== "/sitemap.xml" || request.method !== "GET") {
