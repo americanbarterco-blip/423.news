@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
   try {
     const action = String(body.action || '');
     if (action === 'dashboard') {
-      const names = ['ad_advertisers','ad_packages','ad_campaigns','ad_orders','ad_placements','ad_delivery_events'];
+      const names = ['ad_advertisers','ad_packages','ad_campaigns','ad_orders','ad_placements'];
       const results = await Promise.all(names.map(async (name) => {
         const order = name === 'ad_delivery_events' ? 'occurred_at' : 'created_at';
         const r = await rest(`${name}?select=*&edition_id=eq.${enc(EDITION)}&order=${order}.desc&limit=5000`);
@@ -57,13 +57,22 @@ Deno.serve(async (req) => {
         return [name, await r.json()] as const;
       }));
       const data: Record<string, any[]> = Object.fromEntries(results);
+      const countEvents = async (type: string) => {
+        const r = await rest(`ad_delivery_events?select=id&edition_id=eq.${enc(EDITION)}&event_type=eq.${enc(type)}`, {
+          method: 'HEAD', headers: { Prefer: 'count=exact' }
+        });
+        if (!r.ok) throw new Error('event_count');
+        const range = r.headers.get('content-range') || '';
+        const total = Number(range.split('/')[1]);
+        return Number.isFinite(total) ? total : 0;
+      };
+      const [impressions, clicks] = await Promise.all([countEvents('impression'), countEvents('click')]);
       const adsR = await rest(`news_ads?select=id,title,slot,kind,active,starts_at,ends_at,campaign_id,advertiser_id&edition_id=eq.${enc(EDITION)}&order=created_at.desc&limit=500`);
       if (!adsR.ok) throw new Error('database_read_ads');
       data.news_ads = await adsR.json();
-      const events = data.ad_delivery_events || [];
       const metrics = {
-        impressions: events.filter((e) => e.event_type === 'impression').length,
-        clicks: events.filter((e) => e.event_type === 'click').length,
+        impressions,
+        clicks,
         campaigns: data.ad_campaigns.length,
         activeCampaigns: data.ad_campaigns.filter((c) => c.status === 'active').length,
         advertisers: data.ad_advertisers.length,
