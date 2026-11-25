@@ -380,7 +380,7 @@ def main():
     lessons=load_flag_lessons(base,key)
     print("Flag-feedback lessons loaded: %s" % len(lessons))
     classified=[(classify_content(lead),lead) for lead in leads]
-    classified.sort(key=lambda pair:(pair[0]["priority_score"],pair[1].get("discovered_at","")),reverse=True)
+    classified.sort(key=lambda pair:(pair[0]["priority_score"],pair[0]["location_priority"],pair[1].get("discovered_at","")),reverse=True)
     existing_titles=fetch_recent_published_titles(base,key)
     selected=[];section_counts={};seen_titles=list(existing_titles)
     for classification,lead in classified:
