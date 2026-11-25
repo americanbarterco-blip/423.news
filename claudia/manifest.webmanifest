@@ -5,24 +5,15 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": [
-    "standalone"
-  ],
+  "display_override": ["standalone"],
   "orientation": "portrait",
   "background_color": "#07131f",
   "theme_color": "#07131f",
   "description": "A standalone voice-only chat app for Claudia Green, your 423-area news companion.",
   "icons": [
-    {
-      "src": "/claudia-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
+    {"src": "/claudia-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/claudia-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "/claudia-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}
   ],
-  "categories": [
-    "news",
-    "weather",
-    "utilities"
-  ]
+  "categories": ["news", "weather", "utilities"]
 }
