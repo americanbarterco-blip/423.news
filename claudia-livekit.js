@@ -55,19 +55,10 @@
     setStatus("Claudia has been added to your home screen.");
   });
   downloadClaudia.addEventListener("click", async function () {
-    /* From the installed 423.news PWA, hand off to Chrome using Android's
-       external-activity intent. This must happen synchronously in the tap handler. */
+    /* Cross to Claudia's independent origin. This leaves the 423.news PWA
+       scope entirely and avoids Android intent-scheme handoff failures. */
     if (!isClaudiaAppPage) {
-      if (/android/i.test(navigator.userAgent) &&
-          (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true)) {
-        /* Force Android to open this URL in Chrome. Do not provide an HTTPS
-           browser_fallback_url: the installed 423.news PWA owns scope "/" and
-           would intercept that fallback, reopening itself instead of Chrome. */
-        setStatus("Launching Claudia's install page in Chrome…");
-        window.location.href = "intent://423.news/claudia/index.html#Intent;scheme=https;package=com.android.chrome;end";
-      } else {
-        window.location.href = "/claudia/index.html";
-      }
+      window.location.href = "https://claudia.423.news/";
       return;
     }
     if (installPrompt) {
@@ -83,21 +74,15 @@
       }
       return;
     }
-    if (/android/i.test(navigator.userAgent)) {
-      setStatus("Opening Claudia in Chrome. If Chrome does not open, use the browser menu to install Claudia.");
-      /* Launch the Android intent from a real link activation in a new browsing context.
-         Navigating the current standalone PWA directly to an intent URL can be ignored by Android. */
-      var installLink = document.createElement("a");
-      installLink.href = "intent://423.news/claudia/index.html#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=https%3A%2F%2F423.news%2Fclaudia%2Findex.html;end";
-      installLink.target = "_blank";
-      installLink.rel = "noopener";
-      installLink.style.display = "none";
-      document.body.appendChild(installLink);
-      installLink.click();
-      window.setTimeout(function () { installLink.remove(); }, 1500);
+    if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
+      setStatus("In Safari, tap Share, choose Add to Home Screen, then tap Add.");
       return;
     }
-    setStatus("To install Claudia, use your browser's Share or menu option and choose Add to Home Screen.");
+    if (/android/i.test(navigator.userAgent)) {
+      setStatus("In Chrome, tap the menu (⋮), choose Install app or Add to Home screen, and confirm.");
+      return;
+    }
+    setStatus("Use your browser menu and choose Install Claudia or Add to Home Screen.");
   });
   var start = panel.querySelector("#cg-livekit-start");
   var stop = panel.querySelector("#cg-livekit-stop");

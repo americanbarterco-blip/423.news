@@ -1,9 +1,9 @@
 {
   "name": "Claudia Green — Voice Companion",
   "short_name": "Claudia",
-  "id": "/claudia/index.html",
-  "start_url": "/claudia/index.html",
-  "scope": "/claudia/",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "display_override": [
     "standalone"
@@ -14,7 +14,7 @@
   "description": "A standalone voice-only chat app for Claudia Green, your 423-area news companion.",
   "icons": [
     {
-      "src": "./claudia-icon.svg",
+      "src": "/claudia-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"

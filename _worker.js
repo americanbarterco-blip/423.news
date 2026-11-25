@@ -260,6 +260,37 @@ export default {
   },
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    /* Claudia is served on its own origin so the 423.news root PWA service
+       worker and install scope cannot capture Claudia install flow. The
+       custom domain claudia.423.news must point to this Worker in Cloudflare. */
+    if (url.hostname === "claudia.423.news") {
+      const claudiaRootFiles = {
+        "/": "/claudia/index.html",
+        "/index.html": "/claudia/index.html",
+        "/manifest.webmanifest": "/claudia/manifest.webmanifest",
+        "/sw.js": "/claudia/sw.js",
+        "/claudia-icon.svg": "/claudia/claudia-icon.svg"
+      };
+      const assetPath = claudiaRootFiles[url.pathname] || url.pathname;
+      const assetUrl = new URL(assetPath + url.search, url.origin);
+      const assetRequest = new Request(assetUrl.toString(), request);
+      const response = await env.ASSETS.fetch(assetRequest);
+      if (url.pathname === "/" || url.pathname === "/index.html") {
+        const headers = new Headers(response.headers);
+        headers.set("Cache-Control", "no-store");
+        headers.set("X-Robots-Tag", "noindex, nofollow");
+        return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+      }
+      if (url.pathname === "/sw.js") {
+        const headers = new Headers(response.headers);
+        headers.set("Cache-Control", "no-cache");
+        headers.set("Service-Worker-Allowed", "/");
+        return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+      }
+      return response;
+    }
+
     if (url.pathname.startsWith("/api/arcade/")) {
       return handleArcadeStripe(request, env, url.pathname);
     }
