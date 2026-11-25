@@ -415,7 +415,7 @@ def main():
         except Exception as exc:
             print("Lead processing failed: %s: %s" % (type(exc).__name__,exc))
         time.sleep(0.25)
-    print("Writer run complete. Provider: Cloudflare Workers AI (%s). Auto-published %s verified articles; factual exceptions are held." % (model,created))
+    print("Writer run complete. AI provider: %s. Auto-published %s items; source status and sensitivity flags are visible in each story." % (model if ai_key else "unavailable; source-brief fallback",created))
 
 
 if __name__ == "__main__":
