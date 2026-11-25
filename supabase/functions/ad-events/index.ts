@@ -3,7 +3,6 @@
 const URL_ = Deno.env.get('SUPABASE_URL')!;
 const KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const EDITION = (Deno.env.get('AD_EDITION_ID') || '423').trim();
-const ANON = Deno.env.get('SUPABASE_ANON_KEY') || '';
 const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'content-type, authorization, apikey', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Content-Type': 'application/json' };
 const json = (v: unknown, s = 200) => new Response(JSON.stringify(v), { status: s, headers });
 const enc = (v: unknown) => encodeURIComponent(String(v ?? ''));
@@ -28,13 +27,13 @@ Deno.serve(async (req) => {
   const placement_key = String(b.placement_key || ''), event_type = String(b.event_type || '');
   if (!uuid(ad_id) || !uuid(campaign_id) || !uuid(event_key) || !/^[a-z0-9_-]{1,80}$/.test(placement_key) || !['impression','click'].includes(event_type)) return json({ error: 'fields' }, 400);
   const [adR, campaignR, placementR] = await Promise.all([
-    rest(`news_ads?select=id,campaign_id,edition_id,active,starts_at,ends_at&edition_id=eq.${enc(EDITION)}&id=eq.${enc(ad_id)}&limit=1`),
+    rest(`news_ads?select=id,campaign_id,edition_id,slot,active,starts_at,ends_at&edition_id=eq.${enc(EDITION)}&id=eq.${enc(ad_id)}&limit=1`),
     rest(`ad_campaigns?select=id,edition_id,status,starts_at,ends_at&edition_id=eq.${enc(EDITION)}&id=eq.${enc(campaign_id)}&limit=1`),
     rest(`ad_placements?select=placement_key,active&edition_id=eq.${enc(EDITION)}&placement_key=eq.${enc(placement_key)}&limit=1`)
   ]);
   if (!adR.ok || !campaignR.ok || !placementR.ok) return json({ error: 'lookup' }, 503);
   const [ad, campaign, placement] = [(await adR.json())[0], (await campaignR.json())[0], (await placementR.json())[0]];
-  if (!ad || !campaign || !placement || ad.campaign_id !== campaign_id || !ad.active || !placement.active || campaign.status !== 'active') return json({ error: 'not_deliverable' }, 409);
+  if (!ad || !campaign || !placement || ad.campaign_id !== campaign_id || ad.slot !== placement_key || !ad.active || !placement.active || campaign.status !== 'active') return json({ error: 'not_deliverable' }, 409);
   const now = Date.now();
   for (const item of [ad, campaign]) {
     if (item.starts_at && new Date(item.starts_at).getTime() > now) return json({ error: 'not_started' }, 409);
