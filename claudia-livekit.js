@@ -38,7 +38,7 @@
   close.addEventListener("click", function () { panel.style.display = "none"; launch.setAttribute("aria-expanded", "false"); });
   var downloadClaudia = panel.querySelector("#cg-download-claudia");
   var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-  var isClaudiaAppPage = /^\\/claudia(?:\\/|$)/.test(window.location.pathname);
+  var isClaudiaAppPage = /^\/claudia(?:\/|$)/.test(window.location.pathname);
   var isClaudiaStandalone = isClaudiaAppPage && isStandalone;
   var installPrompt = null;
   /* The main 423.news PWA is also standalone; that must not hide Claudia's install link. */
