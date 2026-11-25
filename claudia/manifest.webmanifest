@@ -1,8 +1,8 @@
 {
   "name": "Claudia Green — Voice Companion",
   "short_name": "Claudia",
-  "id": "/claudia/",
-  "start_url": "/claudia/",
+  "id": "/claudia/index.html",
+  "start_url": "/claudia/index.html",
   "scope": "/claudia/",
   "display": "standalone",
   "display_override": [
