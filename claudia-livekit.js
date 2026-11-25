@@ -4,7 +4,7 @@
   "use strict";
   if (window.__CG_LIVEKIT_INITIALIZED) return;
   window.__CG_LIVEKIT_INITIALIZED = true;
-  var TOKEN_ENDPOINT = "/api/livekit-token?role=listener";
+  var TOKEN_ENDPOINT = "/api/livekit-token?role=voice";
   var css = `
     #cg-livekit-launch{position:fixed;right:18px;bottom:86px;z-index:9998;border:1px solid #e8392f;border-radius:999px;background:#171b24;color:#fff;padding:12px 17px;font:700 13px system-ui;box-shadow:0 8px 28px #0008;cursor:pointer}
     #cg-livekit-panel{position:fixed;right:18px;bottom:142px;z-index:9999;width:min(340px,calc(100vw - 36px));max-height:calc(100dvh - 170px);overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;padding:18px;border:1px solid #354052;border-radius:16px;background:#101722;color:#f3eee4;box-shadow:0 18px 50px #000a;font:14px/1.5 system-ui;display:none}
