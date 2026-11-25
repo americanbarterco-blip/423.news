@@ -193,9 +193,40 @@
                       : '<p class="muted" style="margin-bottom:26px">No games on right now. <a href="#/scores" style="text-decoration:underline">See scores, video and headlines →</a></p>');
 
       /* Claudia Green's reports now live in the merged card at the top of the home page (home-live.js). */
-      if (news.length > 4) {
-        out += '<div class="sech"><h2>Latest</h2><a href="#/news">More news →</a></div><div class="g4">' + news.slice(4, 8).map(tile).join('') + '</div>';
-        if (news.length > 8) out += '<div class="lower panel pad" style="margin-bottom:26px"><div style="grid-column:1/-1"><h2 class="sm">More stories</h2>' + news.slice(8, 16).map(mini).join('') + '</div></div>';
+      var archivedSlugs = news.map(function (p) { return String(p.slug || ''); });
+      var latestItems = news.slice(4, 16).map(function (post) {
+        return {
+          stamp: new Date(post.created_at || 0).getTime() || 0,
+          tile: tile(post),
+          mini: mini(post)
+        };
+      });
+      var recentField = wire.filter(function (report) {
+        if (String(report.kind || '').trim().toUpperCase() !== 'FIELD') return false;
+        var suffix = String(report.id || '').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(-16);
+        return !suffix || !archivedSlugs.some(function (slug) {
+          return slug.slice(-suffix.length - 1) === '-' + suffix;
+        });
+      }).map(function (report) {
+        var stamp = new Date(report.ts || 0).getTime() || 0;
+        var title = esc(report.headline || '423 area field report');
+        var url = 'report.html?id=' + encodeURIComponent(report.id);
+        var when = esc(ago(report.ts));
+        var place = esc(report.dateline || '423 Area');
+        return {
+          stamp: stamp,
+          tile: '<a class="tile" href="' + url + '"><span class="badge">FIELD · NEWS</span><h3>' + title + '</h3><p class="muted">' + place + ' · ' + when + '</p></a>',
+          mini: '<a class="mini" href="' + url + '"><div><span class="badge">FIELD · NEWS</span><h3>' + title + '</h3><p class="muted">' + place + ' · ' + when + '</p></div></a>'
+        };
+      });
+      latestItems = latestItems.concat(recentField).sort(function (x, y) { return y.stamp - x.stamp; });
+      if (latestItems.length) {
+        out += '<div class="sech"><h2>Latest</h2><a href="#/news">More news →</a></div><div class="g4">' +
+          latestItems.slice(0, 4).map(function (item) { return item.tile; }).join('') + '</div>';
+        if (latestItems.length > 4) {
+          out += '<div class="lower panel pad" style="margin-bottom:26px"><div style="grid-column:1/-1"><h2 class="sm">More stories</h2>' +
+            latestItems.slice(4, 12).map(function (item) { return item.mini; }).join('') + '</div></div>';
+        }
       }
       if (cls.length) out += '<div class="sech"><h2>Classifieds</h2><a href="#/classifieds">See all →</a></div><div class="g4">' + cls.map(tile).join('') + '</div>';
       out += comm.length ? citizenMini(comm) : '<div class="sech"><h2>citizen423report</h2><a href="#/community">Join in →</a></div><p class="muted" style="margin-bottom:26px">No posts yet. <a href="#/community" style="text-decoration:underline">Be the first to post →</a></p>';

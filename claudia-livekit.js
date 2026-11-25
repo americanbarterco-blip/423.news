@@ -5,7 +5,7 @@
   var TOKEN_ENDPOINT = "https://voice-api.423.news/getToken";
   var css = `
     #cg-livekit-launch{position:fixed;right:18px;bottom:86px;z-index:9998;border:1px solid #e8392f;border-radius:999px;background:#171b24;color:#fff;padding:12px 17px;font:700 13px system-ui;box-shadow:0 8px 28px #0008;cursor:pointer}
-    #cg-livekit-panel{position:fixed;right:18px;bottom:142px;z-index:9999;width:min(340px,calc(100vw - 36px));padding:18px;border:1px solid #354052;border-radius:16px;background:#101722;color:#f3eee4;box-shadow:0 18px 50px #000a;font:14px/1.5 system-ui;display:none}
+    #cg-livekit-panel{position:fixed;right:18px;bottom:142px;z-index:9999;width:min(340px,calc(100vw - 36px));max-height:calc(100dvh - 170px);overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;padding:18px;border:1px solid #354052;border-radius:16px;background:#101722;color:#f3eee4;box-shadow:0 18px 50px #000a;font:14px/1.5 system-ui;display:none}
     #cg-livekit-panel h2{font:700 19px Georgia,serif;margin:0 0 6px}
     #cg-livekit-header{display:flex;align-items:center;justify-content:space-between;gap:10px}
     #cg-livekit-close{border:1px solid #596579;border-radius:8px;padding:6px 10px;background:#202b3a;color:#fff;font-weight:700;cursor:pointer}
@@ -31,7 +31,7 @@
   var panel = document.createElement("section");
   panel.id = "cg-livekit-panel";
   panel.setAttribute("aria-label", "Talk with Claudia Green");
-  panel.innerHTML = '<div id="cg-3d" aria-label="Claudia Green video"><div class="cg-3d-msg">Loading Claudia…</div></div><div id="cg-livekit-header"><h2>Claudia Green</h2><button id="cg-livekit-close" type="button" aria-label="Close chat">✕</button></div><div>423.news virtual voice assistant</div><div id="cg-livekit-status" role="status">Ready when you are.</div><div id="cg-livekit-actions"><button class="primary" id="cg-livekit-start" type="button">Start voice chat</button><button id="cg-livekit-stop" type="button" disabled>End chat</button></div><div id="cg-livekit-note">Microphone access is required. Claudia is an AI assistant, not an emergency service.</div><button id="cg-download-claudia" type="button">📲 Download Claudia</button>';
+  panel.innerHTML = '<div id="cg-3d" aria-label="Claudia Green video"><div class="cg-3d-msg">Loading Claudia…</div></div><div id="cg-livekit-header"><h2>Claudia Green</h2><button id="cg-livekit-close" type="button" aria-label="Close chat">✕</button></div><div>423.news virtual voice assistant</div><div id="cg-livekit-status" role="status">Ready when you are.</div><div id="cg-livekit-actions"><button class="primary" id="cg-livekit-start" type="button">Start voice chat</button><button id="cg-livekit-stop" type="button" disabled>End chat</button></div><button id="cg-download-claudia" type="button">📲 Download Claudia</button><div id="cg-livekit-note">Microphone access is required. Claudia is an AI assistant, not an emergency service.</div>';
   document.body.appendChild(panel);
   var status = panel.querySelector("#cg-livekit-status");
   var close = panel.querySelector("#cg-livekit-close");
@@ -39,25 +39,29 @@
   var downloadClaudia = panel.querySelector("#cg-download-claudia");
   var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
   var installPrompt = null;
-  if (isStandalone) {
-    downloadClaudia.textContent = "📲 Install Claudia";
-    downloadClaudia.hidden = true;
-  }
+  if (isStandalone) downloadClaudia.hidden = true;
   window.addEventListener("beforeinstallprompt", function (event) {
-    if (!isStandalone) return;
+    if (isStandalone) return;
     event.preventDefault();
     installPrompt = event;
   });
+  window.addEventListener("appinstalled", function () {
+    downloadClaudia.hidden = true;
+    setStatus("Claudia has been added to your home screen.");
+  });
   downloadClaudia.addEventListener("click", async function () {
-    if (!isStandalone) {
-      window.location.href = "/claudia/index.html";
-      return;
-    }
+    if (isStandalone) return;
     if (installPrompt) {
       var promptEvent = installPrompt;
       installPrompt = null;
       await promptEvent.prompt();
-      await promptEvent.userChoice;
+      var choice = await promptEvent.userChoice;
+      if (choice && choice.outcome === "accepted") {
+        downloadClaudia.hidden = true;
+        setStatus("Claudia is being installed.");
+      } else {
+        setStatus("Installation was not completed. You can try again from your browser menu.");
+      }
       return;
     }
     setStatus(/android/i.test(navigator.userAgent)
