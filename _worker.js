@@ -125,19 +125,19 @@ async function buildSitemap(staticXml, env) {
 
 function decodeCadText(value) {
   return String(value || "")
-    .replace(/<script\\b[\\s\\S]*?<\\/script>/gi, " ")
-    .replace(/<style\\b[\\s\\S]*?<\\/style>/gi, " ")
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]*>/g, " ")
     .replace(/&nbsp;|&#160;/gi, " ")
     .replace(/&amp;/gi, "&").replace(/&quot;|&#34;/gi, '"')
     .replace(/&#39;|&apos;/gi, "'").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">")
-    .replace(/&#(\\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
     .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
-    .replace(/\\s+/g, " ").trim();
+    .replace(/\s+/g, " ").trim();
 }
 
 function parseHamiltonCad(html) {
-  const rows = [...String(html || "").matchAll(/<tr\\b[^>]*>([\\s\\S]*?)<\\/tr>/gi)];
+  const rows = [...String(html || "").matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)];
   let columns = null;
   const incidents = [];
   const knownAreas = new Set(["Collegedale", "Chattanooga", "East Ridge", "Hamilton County", "Red Bank", "Signal Mountain", "Soddy-Daisy"]);
@@ -150,7 +150,7 @@ function parseHamiltonCad(html) {
   ]);
   const statusMap = { R: "Reported", E: "Enroute", OS: "On Scene", T: "Transporting", H: "At Hospital" };
   for (const match of rows) {
-    const cells = [...match[1].matchAll(/<t[dh]\\b[^>]*>([\\s\\S]*?)<\\/t[dh]>/gi)].map(m => decodeCadText(m[1]));
+    const cells = [...match[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(m => decodeCadText(m[1]));
     if (!cells.length) continue;
     const normalized = cells.map(x => x.toLowerCase());
     if (normalized.includes("type") && normalized.includes("status") && normalized.includes("agency")) {
