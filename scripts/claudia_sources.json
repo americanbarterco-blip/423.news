@@ -26,6 +26,18 @@
       "enabled": true
     },
     {
+      "name": "WDEF News 12 Chattanooga - Website",
+      "type": "web",
+      "url": "https://www.wdef.com/news/",
+      "enabled": true
+    },
+    {
+      "name": "WDEF News 12 - RSS Feed",
+      "type": "feed",
+      "url": "https://www.wdef.com/feed/",
+      "enabled": true
+    },
+    {
       "name": "Local 3 News Chattanooga - Website",
       "type": "web",
       "url": "https://www.local3news.com/local-news/",
