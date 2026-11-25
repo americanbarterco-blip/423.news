@@ -38,19 +38,29 @@
   close.addEventListener("click", function () { panel.style.display = "none"; launch.setAttribute("aria-expanded", "false"); });
   var downloadClaudia = panel.querySelector("#cg-download-claudia");
   var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  var isClaudiaAppPage = /^\/claudia(?:\/|$)/.test(window.location.pathname);
+  var isClaudiaStandalone = isClaudiaAppPage && isStandalone;
   var installPrompt = null;
-  if (isStandalone) downloadClaudia.hidden = true;
+  /* The main 423.news PWA is also standalone; that must not hide Claudia's install link. */
+  if (isClaudiaStandalone) downloadClaudia.hidden = true;
   window.addEventListener("beforeinstallprompt", function (event) {
-    if (isStandalone) return;
+    /* Only the /claudia/ page has Claudia's manifest. Never capture 423.news' install prompt. */
+    if (!isClaudiaAppPage || isStandalone) return;
     event.preventDefault();
     installPrompt = event;
   });
   window.addEventListener("appinstalled", function () {
+    if (!isClaudiaAppPage) return;
     downloadClaudia.hidden = true;
     setStatus("Claudia has been added to your home screen.");
   });
   downloadClaudia.addEventListener("click", async function () {
-    if (isStandalone) return;
+    /* From 423.news, open Claudia's own installable app page first. */
+    if (!isClaudiaAppPage) {
+      window.location.href = "/claudia/index.html";
+      return;
+    }
+    if (isClaudiaStandalone) return;
     if (installPrompt) {
       var promptEvent = installPrompt;
       installPrompt = null;
