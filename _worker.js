@@ -246,8 +246,8 @@ const CLAUDIA_WIDGET_EXCLUDED_PATHS = new Set([
 ]);
 
 function injectClaudiaWidgets(response, url) {
-  const contentType = response.headers.get("content-type") || "";
-  if (!response.ok || !/text\\/html/i.test(contentType) ||
+  const contentType = (response.headers.get("content-type") || "").toLowerCase();
+  if (!response.ok || contentType.indexOf("text/html") === -1 ||
       CLAUDIA_WIDGET_EXCLUDED_PATHS.has(url.pathname) ||
       url.pathname.startsWith("/claudia/")) return response;
 
@@ -256,9 +256,9 @@ function injectClaudiaWidgets(response, url) {
   return new HTMLRewriter()
     .on("script[src]", {
       element(element) {
-        const src = element.getAttribute("src") || "";
-        if (/(^|\\/)claudia-livekit\\.js([?#]|$)/i.test(src)) hasLivekit = true;
-        if (/(^|\\/)claudia-media-widget\\.js([?#]|$)/i.test(src)) hasMediaWidget = true;
+        const src = (element.getAttribute("src") || "").split("?")[0].split("#")[0].toLowerCase();
+        if (src.endsWith("claudia-livekit.js")) hasLivekit = true;
+        if (src.endsWith("claudia-media-widget.js")) hasMediaWidget = true;
       }
     })
     .on("body", {
