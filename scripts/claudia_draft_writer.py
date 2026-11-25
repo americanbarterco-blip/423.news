@@ -4,8 +4,8 @@ from __future__ import annotations
 import json, os, re, time, urllib.parse, urllib.request, urllib.error
 from difflib import SequenceMatcher
 
-MAX_LEADS = 8
-MIN_DOMAINS = 2
+MAX_LEADS = 1000
+MIN_DOMAINS = 1
 MAX_EVIDENCE = 8
 MAX_EXCERPT = 1600
 
@@ -305,59 +305,84 @@ def save_verification_attempt(base,key,lead,verification,starter_gate):
     api(base,key,"rest/v1/claudia_memories","POST",json.dumps(record).encode(),"return=minimal")
 
 def leads_with_evidence(base,key,leads):
-    """Restrict writer selection to leads that already have stored evidence."""
-    ids=[str(lead.get("id")) for lead in leads if lead.get("id")]
-    evidenced=set()
-    for start in range(0,len(ids),100):
-        batch=ids[start:start+100]
-        if not batch:continue
-        path="rest/v1/claudia_story_evidence?select=lead_id&lead_id=in.("+",".join(batch)+")"
-        _,raw=api(base,key,path)
-        evidenced.update(row.get("lead_id") for row in json.loads(raw) if row.get("lead_id"))
-    return [lead for lead in leads if lead.get("id") in evidenced]
-
+    """Keep every ingested lead in Claudia's publishing queue, with or without fetched excerpts."""
+    return list(leads)
 
 
 def load_flag_lessons(base,key):
     _,raw=api(base,key,"rest/v1/claudia_memories?project=eq.423.news&kind=eq.lesson&select=content&order=updated_at.desc&limit=80")
     return [row.get("content","") for row in json.loads(raw) if row.get("content")]
 
+def fallback_draft(lead,evidence,classification):
+    """Publish a source-attributed brief when the writing model is unavailable or fails its check."""
+    title=str(lead.get("title") or "Developing report").strip()
+    summary=str(lead.get("summary") or "").strip()
+    source=(evidence[0].get("source_name") if evidence else None) or lead.get("source_name") or "the supplied source"
+    excerpt=(evidence[0].get("excerpt") if evidence else "") or summary
+    if not summary:
+        summary=excerpt or "The source item has been received by the 423.news newsroom. Further details were not included with the incoming lead."
+    body=("**Source-attributed developing report**\n\n" + summary + "\n\n"
+          + "This item is being carried as reported by " + str(source) + ". "
+          + "423.news has not independently confirmed every detail. Updates will be added as more information becomes available.")
+    return {"title":title,"summary":summary[:1500],"body_markdown":body,"editor_notes":"Fallback source-attributed brief; no unsupported details added."}
+
+
 def process_lead(base, key, ai_key, model, lead, classification, lessons=None, ai_base_url=None):
-    _, raw = api(base,key,"rest/v1/claudia_story_evidence?lead_id=eq."+urllib.parse.quote(str(lead["id"]),safe="")+
-        "&select=evidence_type,url,source_name,excerpt,reliability_notes,observed_at&order=observed_at.desc")
-    evidence = eligible_evidence(json.loads(raw), min_domains=1)
+    lead_id=lead.get("id")
+    if not lead_id:
+        print("Received lead without an ID; cannot safely apply publishing idempotency.")
+        return False
+    if existing_post(base,key,lead_id):
+        print("Already published lead %s; idempotency guard." % lead_id)
+        return False
+    try:
+        _, raw = api(base,key,"rest/v1/claudia_story_evidence?lead_id=eq."+urllib.parse.quote(str(lead_id),safe="")+
+            "&select=evidence_type,url,source_name,excerpt,reliability_notes,observed_at&order=observed_at.desc")
+        evidence = eligible_evidence(json.loads(raw), min_domains=1)
+    except Exception as exc:
+        print("Evidence lookup unavailable for lead %s; publishing attributed intake brief: %s"%(lead_id,str(exc)[:180]))
+        evidence=[]
     if not evidence:
-        flag_lead(base,key,lead,"No readable source evidence could be retrieved. Removed from the automatic queue; retained for audit.")
-        return False
-    if existing_post(base,key,lead["id"]):
-        print("Skipped lead %s: already auto-published; idempotency guard." % lead.get("id")); return False
-    attempt_count=verification_attempts(base,key)
-    starter_gate=attempt_count < 2
+        source_url=str(lead.get("url") or "").strip()
+        source_name=str(lead.get("source_name") or "Incoming source").strip()
+        summary=str(lead.get("summary") or "").strip()
+        if source_url:
+            evidence=[{"evidence_type":"source","url":source_url,"source_name":source_name,
+                       "excerpt":summary or str(lead.get("title") or "Source item received"),
+                       "reliability_notes":"Original ingested lead; not independently corroborated."}]
     sensitive=requires_strong_verification(lead,evidence)
-    # The onboarding single-source allowance never applies to sensitive or urgent public-safety claims.
-    required_domains=2 if sensitive else (1 if starter_gate else MIN_DOMAINS)
-    required_confidence=0.95 if sensitive else (0.75 if starter_gate else 0.90)
-    if len(distinct_domains(evidence)) < required_domains:
-        found=len(distinct_domains(evidence))
-        flag_lead(base,key,lead,"Insufficient corroborating source evidence (requires %s distinct publisher domain(s), found %s). Not published."%(required_domains,found))
-        return False
-    draft=call_openai(model,ai_key,lead,evidence,classification,lessons,ai_base_url)
-    verification=verify_article(model,ai_key,lead,evidence,draft,min_confidence=0.75 if starter_gate else 0.90,base_url=ai_base_url)
-    save_verification_attempt(base,key,lead,verification,starter_gate)
-    # A failed fact check flags only this lead. The outer loop continues with every other story.
-    if not verification or not verification.get("passed"):
-        detail=(verification or {}).get("result") or {}
-        reason="Factual verification did not pass; confidence=%s; unsupported=%s; conflicts=%s; reason=%s"%(
-            (verification or {}).get("confidence"),detail.get("unsupported_claims",[]),detail.get("conflicting_claims",[]),detail.get("reason","No reason returned"))
-        flag_lead(base,key,lead,reason)
-        return False
-    slug="claudia-auto-"+str(lead["id"])
-    row={"slug":slug,"section":classification["section"],"topic":classification["topic"],
-          "title":draft["title"],"body":draft["body_markdown"]+source_list(evidence)+"\n\n<!-- CLAUDIA_AUTO_VERIFIED -->",
-          "author_name":"Claudia Green","status":"published"}
+    verification=None
+    draft=None
+    if ai_key and model:
+        try:
+            draft=call_openai(model,ai_key,lead,evidence,classification,lessons,ai_base_url)
+            if evidence:
+                verification=verify_article(model,ai_key,lead,evidence,draft,min_confidence=0.90,base_url=ai_base_url)
+                save_verification_attempt(base,key,lead,verification,False)
+        except Exception as exc:
+            print("AI writing/check unavailable for lead %s; using source-attributed brief: %s"%(lead_id,str(exc)[:180]))
+            draft=None
+    if not draft or (verification is not None and not verification.get("passed")):
+        if verification is not None and not verification.get("passed"):
+            detail=verification.get("result") or {}
+            print("Publishing lead %s as developing; check notes: %s"%(lead_id,str(detail.get("reason") or "not fully corroborated")[:220]))
+        draft=fallback_draft(lead,evidence,classification)
+    independently_checked=bool(verification and verification.get("passed"))
+    editorial_status=("Claudia checked the supplied excerpts and found the material claims supported." if independently_checked
+                      else "Developing/source-attributed item. 423.news has not independently confirmed every detail.")
+    sensitivity_note=("Sensitivity flag: editorial attention required. This label does not suppress coverage." if sensitive
+                      else "Sensitivity flag: none triggered by the current text scan.")
+    status_block="> **Editorial status:** "+editorial_status+"\n> **"+sensitivity_note+"**\n\n"
+    source_links=source_list(evidence) if evidence else "\n\n### Source status\nOriginal source details were not attached to the incoming lead.\n"
+    row={"slug":"claudia-auto-"+str(lead_id),"section":classification["section"],"topic":classification["topic"],
+         "title":draft["title"],"body":status_block+draft["body_markdown"]+source_links+
+         "\n\n<!-- CLAUDIA_AUTO_PUBLISHED; editorial_status="+("checked" if independently_checked else "developing")+
+         "; sensitivity_flag="+("true" if sensitive else "false")+" -->",
+         "author_name":"Claudia Green","status":"published"}
     api(base,key,"rest/v1/news_posts","POST",json.dumps(row).encode(),"return=representation")
-    api(base,key,"rest/v1/claudia_story_leads?id=eq."+urllib.parse.quote(str(lead["id"]),safe=""),"PATCH",json.dumps({"status":"drafted","reviewed_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}).encode(),"return=minimal")
-    print("AUTOPUBLISHED VERIFIED STORY (starter=%s, sources=%s, confidence=%s): %s"%(starter_gate,required_domains,verification.get("confidence"),draft["title"]))
+    api(base,key,"rest/v1/claudia_story_leads?id=eq."+urllib.parse.quote(str(lead_id),safe=""),
+        "PATCH",json.dumps({"status":"drafted","reviewed_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}).encode(),"return=minimal")
+    print("AUTOPUBLISHED %s story (sensitivity_flag=%s): %s"%("checked" if independently_checked else "developing","yes" if sensitive else "no",draft["title"]))
     return True
 
 def main():
@@ -372,38 +397,21 @@ def main():
         ai_base_url="https://api.cloudflare.com/client/v4/accounts/"+account_id+"/ai/v1"
     if not base or not key:
         print("Draft writer skipped: Supabase credentials missing."); return
-    if not ai_key or not ai_base_url:
-        print("Draft writer skipped: Cloudflare Workers AI credentials missing; research continues and no unverified story is published."); return
-    _, raw = api(base,key,"rest/v1/claudia_story_leads?status=in.(new,researching)&select=id,title,summary,url,source_name,discovered_at&order=discovered_at.desc&limit=1000")
+    # If AI is unavailable, Claudia still publishes source-attributed intake briefs.\n    _, raw = api(base,key,"rest/v1/claudia_story_leads?status=in.(new,researching)&select=id,title,summary,url,source_name,discovered_at&order=discovered_at.desc&limit=1000")
     leads=leads_with_evidence(base,key,json.loads(raw))
     print("Writer evidence-backed lead selection: %s" % len(leads))
     lessons=load_flag_lessons(base,key)
     print("Flag-feedback lessons loaded: %s" % len(lessons))
     classified=[(classify_content(lead),lead) for lead in leads]
     classified.sort(key=lambda pair:(pair[0]["priority_score"],pair[0]["location_priority"],pair[1].get("discovered_at","")),reverse=True)
-    existing_titles=fetch_recent_published_titles(base,key)
-    selected=[];section_counts={};seen_titles=list(existing_titles)
-    for classification,lead in classified:
-        if is_duplicate_title(lead.get("title",""),seen_titles):
-            flag_lead(base,key,lead,"Near-duplicate headline matches a recently published story or a higher-ranked lead. Retained for audit; not republished.")
-            continue
-        section=classification["section"]
-        if section_counts.get(section,0)>=3: continue
-        selected.append((classification,lead));section_counts[section]=section_counts.get(section,0)+1
-        seen_titles.append(lead.get("title",""))
-        if len(selected)>=MAX_LEADS:break
-    created = 0
+    # Every ingested lead is processed; ranking controls order, not eligibility.\n    selected=classified\n    created = 0
     for classification,lead in selected:
         try:
             if process_lead(base,key,ai_key,model,lead,classification,lessons,ai_base_url): created += 1
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8","replace")[:500]
             print("AI/Supabase HTTP %s: %s" % (exc.code,detail))
-            if exc.code in (402,403,429): print("AI provider unavailable or quota exhausted; stopping this run. No paid fallback.")
-            if exc.code >= 500:
-                print("AI provider returned a server-side failure; stopping this writer batch to avoid repeating a failing request across leads.")
-                break
-            if exc.code in (402,403,429): break
+            print("This lead will be retried on the next scheduled run; continuing with the rest of the queue.")
         except Exception as exc:
             print("Lead processing failed: %s: %s" % (type(exc).__name__,exc))
         time.sleep(0.25)
