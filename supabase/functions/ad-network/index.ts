@@ -137,8 +137,10 @@ Deno.serve(async (req) => {
       const budget = b.budget_cents === '' || b.budget_cents == null ? null : money(b.budget_cents);
       const sold = b.sold_price_cents === '' || b.sold_price_cents == null ? null : money(b.sold_price_cents);
       if ((b.budget_cents != null && b.budget_cents !== '' && budget == null) || (b.sold_price_cents != null && b.sold_price_cents !== '' && sold == null)) return json({ error: 'campaign_amount' }, 400);
+      const package_id = uuid(b.package_id) ? b.package_id : null;
+      if (package_id && !(await readOne('ad_packages', package_id))) return json({ error: 'package_not_found' }, 404);
       const payload = {
-        advertiser_id, package_id: uuid(b.package_id) ? b.package_id : null, name, objective: text(b.objective, 500),
+        advertiser_id, package_id, name, objective: text(b.objective, 500),
         status, starts_at: start ? start.toISOString() : null, ends_at: end ? end.toISOString() : null,
         budget_cents: budget, sold_price_cents: sold, currency: /^[A-Z]{3}$/.test(String(b.currency || 'USD')) ? String(b.currency || 'USD') : 'USD',
         internal_notes: text(b.internal_notes, 4000)
@@ -159,11 +161,13 @@ Deno.serve(async (req) => {
       if (!uuid(advertiser_id) || !uuid(campaign_id)) return json({ error: 'order_fields' }, 400);
       const [advertiser, campaign] = await Promise.all([readOne('ad_advertisers', advertiser_id), readOne('ad_campaigns', campaign_id)]);
       if (!advertiser || !campaign || campaign.advertiser_id !== advertiser_id) return json({ error: 'order_relationship' }, 409);
+      const package_id = uuid(b.package_id) ? b.package_id : null;
+      if (package_id && !(await readOne('ad_packages', package_id))) return json({ error: 'package_not_found' }, 404);
       const amount = money(b.amount_cents);
       if (amount == null) return json({ error: 'amount' }, 400);
       const status = ['quoted','contracted','invoiced','paid','fulfilled','cancelled'].includes(b.status) ? b.status : 'quoted';
       if (b.id && !uuid(b.id)) return json({ error: 'id' }, 400);
-      const payload = { advertiser_id, campaign_id, package_id: uuid(b.package_id) ? b.package_id : null, amount_cents: amount,
+      const payload = { advertiser_id, campaign_id, package_id, amount_cents: amount,
         currency: /^[A-Z]{3}$/.test(String(b.currency || 'USD')) ? String(b.currency || 'USD') : 'USD',
         status, reference_note: text(b.reference_note, 1000) };
       return json({ order: await save('ad_orders', payload, b.id) });
