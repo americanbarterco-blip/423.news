@@ -231,6 +231,45 @@ async function livekitToken(request, env) {
   return jsonResponse({ token, url: livekitUrl, room, role });
 }
 
+
+const CLAUDIA_WIDGET_EXCLUDED_PATHS = new Set([
+  "/404.html",
+  "/admin.html",
+  "/translation-admin.html",
+  "/offline.html",
+  "/claudia-app.html",
+  "/claudia-workspace.html",
+  "/claudia-free-source-monitor.html",
+  "/claudia-review.html",
+  "/claudia-scanner.html",
+  "/claudia/index.html"
+]);
+
+function injectClaudiaWidgets(response, url) {
+  const contentType = (response.headers.get("content-type") || "").toLowerCase();
+  if (!response.ok || contentType.indexOf("text/html") === -1 ||
+      CLAUDIA_WIDGET_EXCLUDED_PATHS.has(url.pathname) ||
+      url.pathname.startsWith("/claudia/")) return response;
+
+  let hasLivekit = false;
+  let hasMediaWidget = false;
+  return new HTMLRewriter()
+    .on("script[src]", {
+      element(element) {
+        const src = (element.getAttribute("src") || "").split("?")[0].split("#")[0].toLowerCase();
+        if (src.endsWith("claudia-livekit.js")) hasLivekit = true;
+        if (src.endsWith("claudia-media-widget.js")) hasMediaWidget = true;
+      }
+    })
+    .on("body", {
+      end(element) {
+        if (!hasLivekit) element.append('<script src="/claudia-livekit.js" defer></script>', { html: true });
+        if (!hasMediaWidget) element.append('<script src="/claudia-media-widget.js" defer></script>', { html: true });
+      }
+    })
+    .transform(response);
+}
+
 export default {
   async scheduled(event, env, ctx) {
     const secret = env.SPANISH_AUTO_TRANSLATE_SECRET || "";
@@ -300,7 +339,8 @@ export default {
       return livekitToken(request, env);
     }
     if (url.pathname !== "/sitemap.xml" || request.method !== "GET") {
-      return env.ASSETS.fetch(request);
+      const response = await env.ASSETS.fetch(request);
+      return injectClaudiaWidgets(response, url);
     }
 
     const cacheKey = new Request(SITE_ORIGIN + "/sitemap.xml", { method: "GET" });
