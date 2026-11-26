@@ -13,14 +13,14 @@ from typing import Any
 
 from livekit import agents
 from livekit.agents import Agent, AgentServer, AgentSession, RunContext, function_tool
-from livekit.plugins import deepgram, google, inworld
+from livekit.plugins import deepgram, inworld
+from livekit.agents import llm
 from claudia_memory import recall as memory_recall, save_memory as memory_save
 from claudia_public_search import search_sources as public_source_search
 
 server = AgentServer()
 
-# Gemini Developer API free-tier model. No paid OpenAI API dependency.
-CLAUDIA_GEMINI_MODEL = os.getenv("CLAUDIA_GEMINI_MODEL", "gemini-3.5-flash").strip() or "gemini-3.5-flash"
+# Claudia's local decision engine uses deterministic intent routing; no hosted LLM is required.
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://kdiwehqtezlhecxsoysj.supabase.co").rstrip("/")
 # This is the public anon key already used by the 423.news website. RLS remains in force.
@@ -168,6 +168,117 @@ You are not a human reporter, dispatcher, or emergency service. For immediate da
 For public research results, clearly label them as leads and not verified facts; open and corroborate original sources before reporting allegations or publishing. You can also explain 423.news sections: local news, sports, schools, outdoors, classifieds, community, government, weather, traffic, events, alerts, and the Spanish edition.
 """,
         )
+
+    async def on_user_turn_completed(self, turn_ctx: llm.ChatContext, new_message: llm.ChatMessage) -> None:
+        """Run Claudia's local intent router; never call a hosted language model."""
+        spoken = (new_message.text_content or "").strip()
+        if not spoken:
+            raise llm.StopResponse()
+
+        lowered = spoken.lower()
+        area = next((name for name in (
+            "cleveland", "chattanooga", "athens", "dayton", "etowah",
+            "polk county", "knoxville", "morristown", "johnson city",
+            "kingsport", "bristol"
+        ) if name in lowered), "Cleveland")
+
+        tool_name = None
+        arguments: dict[str, str] = {}
+        if any(word in lowered for word in ("weather", "forecast", "temperature", "rain", "snow")):
+            tool_name, arguments = "get_local_weather", {"area": area}
+        elif any(word in lowered for word in ("traffic", "accident", "road condition", "jam", "road closed")):
+            tool_name, arguments = "get_423_traffic_incidents", {"area": area}
+        elif any(word in lowered for word in ("road alert", "road alerts", "closure alert")):
+            tool_name, arguments = "get_423_road_alerts", {"area": area}
+        elif any(word in lowered for word in ("sports", "score", "scores", "game", "games", "schedule")):
+            tool_name, arguments = "get_423_sports_scores", {}
+        elif any(word in lowered for word in ("scanner", "radio feed", "scanner status")):
+            tool_name, arguments = "get_scanner_status", {}
+        elif any(word in lowered for word in ("latest news", "headlines", "what's happening", "what is happening", "news today")):
+            topic = next((t for t in ("sports", "schools", "outdoors", "government", "community") if t in lowered), "all")
+            tool_name, arguments = "get_latest_423_news", {"topic": topic}
+        elif any(word in lowered for word in ("search", "look up", "research", "find sources")):
+            tool_name, arguments = "search_423_public_sources", {"query": spoken, "area": area}
+        elif any(word in lowered for word in ("site health", "website health", "check 423.news")):
+            tool_name, arguments = "get_423_site_health", {}
+        
+        if tool_name:
+            try:
+                call = llm.FunctionToolCall(
+                    name=tool_name,
+                    arguments=json.dumps(arguments),
+                    call_id="claudia-local-" + str(int(datetime.now(timezone.utc).timestamp() * 1000)),
+                )
+                result = await llm.execute_function_call(call, llm.ToolContext(self.tools))
+                answer = self._local_summarize(tool_name, result.raw_output)
+            except Exception as exc:
+                answer = "I couldn't complete that lookup just now. The service returned " + type(exc).__name__ + "."
+        elif any(word in lowered for word in ("how are you", "how's it going", "how are things")):
+            answer = "I'm here and ready to help with 423.news. My speech recognition is working, and I can look up local information using the connected newsroom services."
+        elif any(word in lowered for word in ("what can you do", "help", "what do you know")):
+            answer = "I can check published 423.news headlines, local weather and official alerts, traffic incidents, road alerts, local sports, scanner feed configuration, public research leads, and basic 423.news site health. Ask for one of those and name a city when it matters."
+        elif "company script" in lowered or "system prompt" in lowered:
+            answer = "That means the operating instructions that define my role, newsroom standards, safety limits, and the services I can use. I can explain my capabilities, but I don't expose private credentials or internal security settings."
+        elif any(word in lowered for word in ("hello", "hi", "hey", "good morning", "good afternoon", "good evening")):
+            answer = "Hello, I'm Claudia Green with 423.news. What would you like to know about the 423 area?"
+        else:
+            answer = "I heard you. I use a local command-and-intent system rather than a general-purpose AI model, so I may need a more specific request. Try asking for local news, weather, traffic, road alerts, sports scores, scanner status, or a public-source search."
+        await self.session.say(answer)
+        raise llm.StopResponse()
+
+    @staticmethod
+    def _local_summarize(tool_name: str, raw: Any) -> str:
+        if not isinstance(raw, str):
+            raw = json.dumps(raw, ensure_ascii=False)
+        try:
+            data = json.loads(raw)
+        except Exception:
+            return raw[:900]
+        if tool_name == "get_local_weather":
+            current = data.get("current") or {}
+            if not current:
+                return str(data.get("message") or "I couldn't verify the current weather.")
+            area = data.get("area", "the selected area")
+            temp = current.get("temperature_2m")
+            feels = current.get("apparent_temperature")
+            wind = current.get("wind_speed_10m")
+            line = f"For {area}, it is {temp} degrees Fahrenheit"
+            if feels is not None: line += f", feels like {feels}"
+            if wind is not None: line += f", with wind around {wind} miles per hour"
+            alerts = data.get("official_alerts") or []
+            line += "."
+            if alerts: line += " The National Weather Service lists " + "; ".join(str(a.get("headline") or a.get("event") or "an active alert") for a in alerts[:2]) + "."
+            elif data.get("alert_feed_available"): line += " No active NWS alerts were returned for this point."
+            else: line += " The official alert feed could not be checked."
+            return line
+        if tool_name == "get_423_traffic_incidents":
+            if data.get("available") is False: return "The 423.news traffic snapshot is unavailable. I can't confirm that roads are clear."
+            items = data.get("incidents") or []
+            stamp = data.get("traffic_snapshot_updated_at")
+            if not items: return f"The latest cached 423.news TomTom snapshot returned no incidents around {data.get('area', 'the selected area')}. That does not prove every road is clear. Snapshot time: {stamp or 'not supplied'}."
+            details = "; ".join(f"{x.get('type', 'Incident')} near {x.get('from') or x.get('road') or x.get('area_hub', 'the area')}" for x in items[:3])
+            return f"The cached 423.news traffic snapshot lists {data.get('incident_count', len(items))} incidents. {details}. Snapshot time: {stamp or 'not supplied'}. It refreshes about hourly, not second by second."
+        if tool_name == "get_423_road_alerts":
+            alerts = data.get("alerts") or []
+            if not alerts: return "I found no currently published 423.news road alerts for that selection. This is the site's alert list, not a complete traffic feed."
+            return "423.news currently lists " + str(len(alerts)) + " road alerts. " + "; ".join(str(x.get("title") or x.get("body") or "Road alert") for x in alerts[:3])
+        if tool_name == "get_latest_423_news":
+            items = data.get("items") or []
+            if not items: return "I couldn't find published stories in the selected 423.news feed."
+            return "Here are the latest published 423.news items: " + "; ".join(str(x.get("title") or "Untitled story") for x in items[:4])
+        if tool_name == "get_423_sports_scores":
+            games = data.get("games") or []
+            if not games: return "I couldn't find current or upcoming games in the 423.news scores database."
+            return "The 423.news scores feed returned " + str(len(games)) + " games. " + "; ".join(f"{g.get('away_name', 'Away')} {g.get('away_score', '')}, {g.get('home_name', 'Home')} {g.get('home_score', '')}, {g.get('status', 'status unavailable')}" for g in games[:3])
+        if tool_name == "get_scanner_status":
+            feeds = data.get("feeds") or []
+            return f"The 423.news configuration lists {len(feeds)} scanner feeds. This is configuration metadata only; it does not confirm that audio is streaming or being monitored."
+        if tool_name == "get_423_site_health":
+            findings = data.get("findings") or []
+            return "The 423.news public-site check completed. " + ("Findings: " + "; ".join(findings[:4]) if findings else "No route or sitemap problems were reported by this check.")
+        if tool_name == "search_423_public_sources":
+            return "The public-source search completed. Treat results as unverified leads, not confirmed news. Ask me to inspect a specific original source before relying on it. " + raw[:500]
+        return raw[:700]
 
     @function_tool()
     async def search_423_public_sources(self, context: RunContext, query: str, area: str = "423 region") -> str:
@@ -565,18 +676,15 @@ For public research results, clearly label them as leads and not verified facts;
 
 @server.rtc_session(agent_name="claudia-green-preview")
 async def claudia_green(ctx: agents.JobContext):
-    # Gemini Developer API free tier is used for the LLM; no OpenAI key is required.
-    # Required LiveKit Agent secrets: GOOGLE_API_KEY, DEEPGRAM_API_KEY, INWORLD_API_KEY.
+    # No hosted LLM: Claudia routes transcripts locally and speaks through the configured TTS.
     session = AgentSession(
         stt=deepgram.STT(model="nova-3", language="multi"),
-        llm=google.LLM(model=CLAUDIA_GEMINI_MODEL),
+        llm=None,
         tts=inworld.TTS(model="inworld-tts-2", voice="Ashley"),
     )
     assistant = ClaudiaGreen()
     await session.start(room=ctx.room, agent=assistant)
-    await session.generate_reply(
-        instructions="Greet the visitor as Claudia Green, the 423.news virtual voice assistant. Explain briefly that you can search public news and Reddit for recent story leads, search YouTube when configured, look up published 423.news stories, local sports, TomTom traffic incidents, 423.news road alerts, scanner connection status, and local weather for a selected city. Ask how you can help."
-    )
+    await session.say("Hello, I'm Claudia Green, the 423.news virtual voice assistant. I can help with local news, weather, traffic, road alerts, sports, and public-source research. What can I look up for you?")
 
 
 if __name__ == "__main__":
