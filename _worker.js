@@ -193,40 +193,58 @@ function parseHamiltonCad(html) {
 async function hamiltonCad(request) {
   if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405);
   const sourceUrl = "https://www.hamiltontn911.gov/active-incidents.php";
+  const apiUrl = "https://hc911server.com/api/calls";
   try {
-    const upstream = await fetch(sourceUrl, {
+    const upstream = await fetch(apiUrl, {
+      method: "GET",
       redirect: "follow",
       signal: AbortSignal.timeout(12000),
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; 423NewsClaudia/1.0; +https://423.news)",
-        "Accept": "text/html,application/xhtml+xml"
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "X-Frontend-Auth": "my-secure-token",
+        "Origin": "https://www.hamiltontn911.gov",
+        "User-Agent": "Mozilla/5.0 (compatible; 423NewsClaudia/1.0; +https://423.news)"
       }
     });
     if (!upstream.ok) return jsonResponse({
-      source_available: false, message: "Hamilton County 9-1-1 returned HTTP " + upstream.status,
-      source_url: sourceUrl, fetched_at: new Date().toISOString()
+      source_available: false,
+      message: "Hamilton County's public CAD data endpoint returned HTTP " + upstream.status + ".",
+      source_url: sourceUrl, fetched_at: new Date().toISOString(), incidents: []
     }, 502);
-    const html = await upstream.text();
-    if (/sorry for the interruption|limited session time|continue viewing/i.test(html)) return jsonResponse({
+    const payload = await upstream.json();
+    if (!Array.isArray(payload)) return jsonResponse({
       source_available: false,
-      message: "Hamilton County 9-1-1 returned its 15-minute session interstitial instead of the incident list. No incidents were inferred.",
+      message: "Hamilton County's CAD endpoint returned an unexpected response format.",
       source_url: sourceUrl, fetched_at: new Date().toISOString(), incidents: []
     }, 503);
-    const parsed = parseHamiltonCad(html);
-    if (!parsed.header_found) return jsonResponse({
-      source_available: false,
-      message: "The official page did not expose a readable incident table. Its page format or access session may have changed.",
-      source_url: sourceUrl, fetched_at: new Date().toISOString(), incidents: []
-    }, 503);
+    const incidents = payload
+      .filter(item => item && typeof item === "object" && String(item.type || "").toUpperCase() !== "PERBURN")
+      .map(item => {
+        const agencyType = String(item.agency_type || "").trim();
+        const type = ({ Law: "Law", Fire: "Fire", EMS: "EMS", HC911: "Law" })[agencyType] || "Law";
+        const created = String(item.creation || "").slice(0, 40);
+        const status = String(item.status || "Status unavailable").slice(0, 40);
+        const agency = String(item.jurisdiction || "Agency not listed").slice(0, 100);
+        const event = String(item.type_description || item.type || "Incident details not listed").slice(0, 160);
+        // Do not expose street-level address, cross streets, incident IDs, or medical narratives.
+        const area = [item.city, item.state].filter(Boolean).join(", ").slice(0, 80);
+        return { type, status, agency, area, event, created };
+      })
+      .filter(item => item.agency && item.event)
+      .slice(0, 150);
     return jsonResponse({
-      source_available: true, source_url: sourceUrl, fetched_at: new Date().toISOString(),
-      source_note: "Public CAD snapshot; not all incident types are displayed.",
-      incidents: parsed.incidents
+      source_available: true,
+      source_url: sourceUrl,
+      fetched_at: new Date().toISOString(),
+      source_note: "Read-only snapshot of the public Hamilton County CAD feed. Not all incident types are displayed; EMS details may be restricted.",
+      incidents
     });
   } catch (error) {
     return jsonResponse({
-      source_available: false, message: "Could not retrieve Hamilton County 9-1-1: " + String(error && error.message || error),
-      source_url: sourceUrl, fetched_at: new Date().toISOString()
+      source_available: false,
+      message: "Could not retrieve Hamilton County public CAD data: " + String(error && error.message || error),
+      source_url: sourceUrl, fetched_at: new Date().toISOString(), incidents: []
     }, 502);
   }
 }
