@@ -1,24 +1,26 @@
 # Claudia Green — isolated direct-provider preview
 
-This directory is a separate LiveKit agent build for testing the direct OpenAI, Deepgram, and Inworld providers.
+This directory is a separate LiveKit agent build for testing Claudia with Google Gemini's Developer API free tier.
 
 - Dispatch name: `claudia-green-preview`
 - Region: `us-east`
-- OpenAI Responses API: `gpt-4.1-mini`
+- LLM: Gemini Developer API, `gemini-3.5-flash` (free tier where available)
 - Deepgram STT: `nova-3`, multilingual mode
 - Inworld TTS: `inworld-tts-2`, voice `Ashley`
 
-This directory intentionally has no `livekit.toml` yet. The manual preview workflow creates a new LiveKit agent and opens a pull request containing its newly generated configuration. Merge that configuration-only pull request into `preview/claudia-direct-provider-migration` before using the workflow's `deploy` operation.
+The LLM no longer depends on an OpenAI API key or OpenAI API credits. Create a Google AI Studio API key and configure it as `GOOGLE_API_KEY` in both the LiveKit preview agent Secrets and the GitHub Actions repository secrets.
+
+**Free-tier limitation:** Google applies model, project, and rate limits. This avoids OpenAI charges but does not provide unlimited requests or guaranteed uptime. Keep the Google project on its free tier and do not enable paid billing if a hard $0 ceiling is required. Google states that free-tier content may be used to improve its products; do not send sensitive/private user data through this model.
 
 Required repository Actions secrets:
 - `LIVEKIT_URL`
 - `LIVEKIT_API_KEY`
 - `LIVEKIT_API_SECRET`
-- `OPENAI_API_KEY`
+- `GOOGLE_API_KEY`
 - `DEEPGRAM_API_KEY`
 - `INWORLD_API_KEY`
 
-The workflow passes provider keys directly to the newly created preview agent. The Inworld credential must be used exactly as generated; it is already Base64 encoded.
+The workflow passes provider keys to the separate preview agent only.
 
 Safety:
 - Do not run the existing production LiveKit deployment workflows for this preview.
