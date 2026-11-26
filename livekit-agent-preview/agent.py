@@ -15,7 +15,6 @@ from typing import Any
 from livekit import agents
 from livekit.agents import Agent, AgentServer, AgentSession, RunContext, function_tool
 from livekit.plugins import deepgram, inworld, openai
-from livekit.agents import llm
 from claudia_memory import recall as memory_recall, save_memory as memory_save
 from claudia_public_search import search_sources as public_source_search
 
