@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import json
+import logging
 import math
 import os
 import re
@@ -17,6 +18,7 @@ from claudia_memory import recall as memory_recall, save_memory as memory_save
 from claudia_public_search import search_sources as public_source_search
 
 server = AgentServer()
+logger = logging.getLogger("claudia.traffic")
 
 # Optional model override for evaluation. Default preserves the currently deployed model.
 CLAUDIA_LLM_MODEL = os.getenv("CLAUDIA_LLM_MODEL", "openai/gpt-4.1-mini").strip() or "openai/gpt-4.1-mini"
@@ -229,7 +231,7 @@ For public research results, clearly label them as leads and not verified facts;
 
     @function_tool()
     async def get_423_traffic_incidents(self, context: RunContext, area: str = "Cleveland") -> str:
-        """Look up TomTom traffic incidents cached by the existing 423.news traffic service. Area may be Cleveland, Chattanooga, Athens, Knoxville, Morristown, Johnson City, Kingsport, Bristol, or All 423."""
+        """Look up the cached TomTom traffic incidents served by 423.news; this is not second-by-second traffic flow."""
         try:
             key = (area or "cleveland").strip().lower()
             if key in {"all", "all 423", "423", "423 area"}:
@@ -248,14 +250,18 @@ For public research results, clearly label them as leads and not verified facts;
                 selected = [match]
 
             payload = await _json("https://traffic.423.news/")
+            if not isinstance(payload, dict):
+                raise TypeError("traffic service response must be a JSON object")
             data = payload.get("data") or {}
+            if not isinstance(data, dict):
+                raise TypeError("traffic service data field must be an object")
             if not payload.get("updated") or not data:
                 errors = payload.get("errors") or {}
                 return json.dumps({
                     "source": "423.news TomTom traffic service",
                     "available": False,
                     "updated": payload.get("updated"),
-                    "errors": errors,
+                    "errors": errors if isinstance(errors, (dict, list, str)) else {},
                     "message": "The traffic service has no current incident snapshot. Do not infer that roads are clear.",
                 }, ensure_ascii=False)
 
@@ -266,47 +272,74 @@ For public research results, clearly label them as leads and not verified facts;
                 14: "Broken down vehicle",
             }
             severe_categories = {1, 5, 6, 7, 8, 11}
-            found = []
-            unlocated = 0
+            found, unlocated, malformed = [], 0, 0
             bounds_by_hub = []
             for hub_name, (lat, lon) in selected:
                 dlat = 12 / 111
                 dlon = dlat / max(0.2, math.cos(lat * math.pi / 180))
                 bounds_by_hub.append((hub_name, (lon - dlon, lat - dlat, lon + dlon, lat + dlat)))
-            raw_incidents = []
+
             for source_city, city_data in data.items():
-                raw_incidents.extend((source_city, incident) for incident in (city_data or {}).get("incidents", []))
-            for source_city, incident in raw_incidents:
-                props = incident.get("properties") or {}
-                event = (props.get("events") or [{}])[0] or {}
-                category = props.get("iconCategory", event.get("iconCategory", 0))
-                geometry = incident.get("geometry") or {}
-                coords = geometry.get("coordinates")
-                point = coords[0] if geometry.get("type") == "LineString" and coords else coords
-                if not point or len(point) < 2 or not isinstance(point[0], (int, float)):
-                    unlocated += 1
+                if not isinstance(city_data, dict):
+                    malformed += 1
                     continue
-                ilon, ilat = point[0], point[1]
-                matched_hub = next((name for name, bounds in bounds_by_hub
-                                    if bounds[0] <= ilon <= bounds[2] and bounds[1] <= ilat <= bounds[3]), None)
-                if not matched_hub:
+                city_incidents = city_data.get("incidents") or []
+                if not isinstance(city_incidents, list):
+                    malformed += 1
                     continue
-                road_numbers = props.get("roadNumbers") or []
-                road = ", ".join(road_numbers) if road_numbers else None
-                found.append({
-                    "area_hub": matched_hub,
-                    "source_city": source_city,
-                    "type": type_names.get(category, "Incident"),
-                    "description": event.get("description") or type_names.get(category, "Incident"),
-                    "severe": category in severe_categories or (props.get("magnitudeOfDelay") or 0) >= 3,
-                    "delay_seconds": props.get("delay"),
-                    "length_meters": props.get("length"),
-                    "from": props.get("from") or road,
-                    "to": props.get("to"),
-                    "road": road,
-                    "latitude": ilat,
-                    "longitude": ilon,
-                })
+                for incident in city_incidents:
+                    if not isinstance(incident, dict):
+                        malformed += 1
+                        continue
+                    props = incident.get("properties")
+                    if not isinstance(props, dict):
+                        props = {}
+                    events = props.get("events") or []
+                    event = events[0] if isinstance(events, list) and events else {}
+                    if not isinstance(event, dict):
+                        event = {}
+                    category = props.get("iconCategory", event.get("iconCategory", 0))
+                    try:
+                        category = int(category)
+                    except (TypeError, ValueError):
+                        category = 0
+                    geometry = incident.get("geometry")
+                    if not isinstance(geometry, dict):
+                        geometry = {}
+                    coords = geometry.get("coordinates")
+                    point = coords[0] if geometry.get("type") == "LineString" and isinstance(coords, list) and coords else coords
+                    if not isinstance(point, (list, tuple)) or len(point) < 2 or not isinstance(point[0], (int, float)) or not isinstance(point[1], (int, float)):
+                        unlocated += 1
+                        continue
+                    ilon, ilat = point[0], point[1]
+                    matched_hub = next((name for name, bounds in bounds_by_hub
+                                        if bounds[0] <= ilon <= bounds[2] and bounds[1] <= ilat <= bounds[3]), None)
+                    if not matched_hub:
+                        continue
+                    road_numbers = props.get("roadNumbers") or []
+                    if not isinstance(road_numbers, (list, tuple)):
+                        road_numbers = []
+                    road = ", ".join(str(x) for x in road_numbers) if road_numbers else None
+                    magnitude = props.get("magnitudeOfDelay") or 0
+                    try:
+                        magnitude = float(magnitude)
+                    except (TypeError, ValueError):
+                        magnitude = 0
+                    found.append({
+                        "area_hub": matched_hub,
+                        "source_city": str(source_city),
+                        "type": type_names.get(category, "Incident"),
+                        "description": event.get("description") or type_names.get(category, "Incident"),
+                        "severe": category in severe_categories or magnitude >= 3,
+                        "delay_seconds": props.get("delay"),
+                        "length_meters": props.get("length"),
+                        "from": props.get("from") or road,
+                        "to": props.get("to"),
+                        "road": road,
+                        "latitude": ilat,
+                        "longitude": ilon,
+                    })
+
             unique = {}
             for item in found:
                 marker = (item["type"], item["description"], item["from"], item["to"])
@@ -320,10 +353,12 @@ For public research results, clearly label them as leads and not verified facts;
                 "refresh_note": "The 423.news traffic service refreshes its TomTom snapshot approximately hourly; this is not second-by-second traffic flow.",
                 "incident_count": len(incidents),
                 "unlocated_incidents_omitted": unlocated,
+                "malformed_records_omitted": malformed,
                 "incidents": incidents[:30],
                 "important_limit": "A zero incident count means no incidents were returned in the selected hub radius; it does not prove every road is clear.",
             }, ensure_ascii=False)
         except Exception as exc:
+            logger.exception("Claudia traffic lookup failed")
             return _safe_error("423.news TomTom traffic service", exc)
 
     @function_tool()
