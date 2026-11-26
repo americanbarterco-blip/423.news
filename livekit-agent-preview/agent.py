@@ -676,11 +676,26 @@ For public research results, clearly label them as leads and not verified facts;
 
 @server.rtc_session(agent_name="claudia-green-preview")
 async def claudia_green(ctx: agents.JobContext):
-    # No hosted LLM: Claudia routes transcripts locally and speaks through the configured TTS.
+    # Fail clearly before an authenticated provider call if the server secret is absent.
+    # Never print, return, or otherwise expose the credential.
+    if not os.getenv("INWORLD_API_KEY", "").strip():
+        raise RuntimeError(
+            "INWORLD_API_KEY is missing. Configure it in the LiveKit preview agent Secrets "
+            "or repository Actions secrets, then redeploy the preview agent."
+        )
+
+    # The official LiveKit Inworld plugin handles provider authentication and streaming.
+    # LiveKit consumes audio frames rather than an HTTP base64-MP3 response; the plugin
+    # adapts Inworld audio to LiveKit's audio pipeline. Omitting language enables detection.
     session = AgentSession(
         stt=deepgram.STT(model="nova-3", language="multi"),
         llm=None,
-        tts=inworld.TTS(model="inworld-tts-2", voice="Ashley"),
+        tts=inworld.TTS(
+            model="inworld-tts-2",
+            voice="Sarah",
+            speaking_rate=1.0,
+            delivery_mode="BALANCED",
+        ),
     )
     assistant = ClaudiaGreen()
     await session.start(room=ctx.room, agent=assistant)
