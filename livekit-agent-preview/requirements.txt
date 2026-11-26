@@ -1,1 +1,1 @@
-livekit-agents[openai,deepgram,inworld]>=1.8.12,<2.0
+livekit-agents[google,deepgram,inworld]>=1.8.12,<2.0
