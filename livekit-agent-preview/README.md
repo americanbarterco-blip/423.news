@@ -6,7 +6,7 @@ This directory is a separate LiveKit agent build for testing Claudia's determini
 - Region: `us-east`
 - Conversation logic: local Python intent routing; no hosted LLM or LLM API key
 - Deepgram STT: `nova-3`, multilingual mode
-- Inworld TTS: `inworld-tts-2`, voice `Ashley`
+- Inworld TTS: `inworld-tts-2`, voice `Sarah`, speaking rate `1.0`, delivery mode `BALANCED`; language detection enabled by leaving the language unset
 
 Claudia recognizes a defined set of intents and routes them to existing 423.news services: published headlines, local weather and official NWS alerts, TomTom traffic snapshots, published road alerts, sports scores, scanner configuration metadata, public-source research leads, and public-site health. Greetings and common capability questions are answered locally. Unrecognized questions receive an honest prompt to use a supported request.
 
