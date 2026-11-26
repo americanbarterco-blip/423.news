@@ -140,41 +140,56 @@ function parseHamiltonCad(html) {
   const rows = [...String(html || "").matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)];
   let columns = null;
   const incidents = [];
-  const knownAreas = new Set(["Collegedale", "Chattanooga", "East Ridge", "Hamilton County", "Red Bank", "Signal Mountain", "Soddy-Daisy"]);
-  const knownAgencies = new Set([
-    "Collegedale Police Department", "Chattanooga Police Department", "East Ridge Police Department",
-    "Hamilton County Sheriff's Office", "Red Bank Police Department", "Signal Mountain Police Department",
-    "Chattanooga Fire Department", "East Ridge Fire Department", "Red Bank Fire Department",
-    "Hamilton County (Volunteer) Fire & Rescue", "Signal Mountain Fire Department",
-    "Hamilton County EMS", "Soddy-Daisy Fire Department", "Soddy-Daisy Police Department"
+  const headerKey = value => String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const statusMap = {
+    R: "Reported", REPORTED: "Reported",
+    E: "Enroute", ENROUTE: "Enroute", "EN ROUTE": "Enroute",
+    OS: "On Scene", ONSCENE: "On Scene", "ON SCENE": "On Scene",
+    T: "Transporting", TRANSPORTING: "Transporting",
+    H: "At Hospital", "AT HOSPITAL": "At Hospital"
+  };
+  const agencyAliases = new Map([
+    ["chattanooga pd", "Chattanooga Police Department"],
+    ["chattanooga police department", "Chattanooga Police Department"],
+    ["soddy daisy fd", "Soddy-Daisy Fire Department"],
+    ["soddy daisy fire department", "Soddy-Daisy Fire Department"],
+    ["soddy daisy police department", "Soddy-Daisy Police Department"],
+    ["soddy daisy pd", "Soddy-Daisy Police Department"],
+    ["east ridge pd", "East Ridge Police Department"],
+    ["east ridge fd", "East Ridge Fire Department"],
+    ["red bank pd", "Red Bank Police Department"],
+    ["red bank fd", "Red Bank Fire Department"]
   ]);
-  const statusMap = { R: "Reported", E: "Enroute", OS: "On Scene", T: "Transporting", H: "At Hospital" };
   for (const match of rows) {
     const cells = [...match[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(m => decodeCadText(m[1]));
     if (!cells.length) continue;
-    const normalized = cells.map(x => x.toLowerCase());
+    const normalized = cells.map(headerKey);
     if (normalized.includes("type") && normalized.includes("status") && normalized.includes("agency")) {
       columns = {};
-      normalized.forEach((name, i) => { if (["type", "status", "time created", "agency", "area"].includes(name)) columns[name] = i; });
+      normalized.forEach((name, i) => {
+        if (["type", "status", "time created", "agency", "area", "event", "incident", "call type", "description"].includes(name)) columns[name] = i;
+      });
       continue;
     }
     if (!columns || cells.length <= Math.max(columns.type ?? 0, columns.status ?? 0, columns.agency ?? 0)) continue;
     const rawType = cells[columns.type] || "";
     const rawStatus = cells[columns.status] || "";
     const rawAgency = cells[columns.agency] || "";
-    const rawArea = cells[columns.area] || "";
-    const type = ["Law", "Fire", "EMS", "Road Closure"].find(x => x.toLowerCase() === rawType.toLowerCase());
+    const rawArea = columns.area == null ? "" : (cells[columns.area] || "");
+    const typeKey = headerKey(rawType);
+    const type = ({ law: "Law", police: "Law", fire: "Fire", ems: "EMS", "road closure": "Road Closure" })[typeKey];
     const status = statusMap[rawStatus.toUpperCase()] || ["Reported", "Enroute", "On Scene", "Transporting", "At Hospital"].find(x => x.toLowerCase() === rawStatus.toLowerCase());
-    const agency = [...knownAgencies].find(x => x.toLowerCase() === rawAgency.toLowerCase());
-    const area = [...knownAreas].find(x => x.toLowerCase() === rawArea.toLowerCase());
+    const agencyKey = headerKey(rawAgency);
+    const agency = agencyAliases.get(agencyKey) || rawAgency.trim().slice(0, 100);
+    const eventColumn = ["event", "incident", "call type", "description"].find(key => columns[key] != null);
+    const event = eventColumn == null ? "" : (cells[columns[eventColumn]] || "").slice(0, 160);
     const created = columns["time created"] != null ? (cells[columns["time created"]] || "").slice(0, 40) : "";
     if (!type || !status || !agency) continue;
-    incidents.push({ type, status, agency, area: area || "", created });
+    incidents.push({ type, status, agency, area: rawArea.trim().slice(0, 80), event, created });
     if (incidents.length >= 150) break;
   }
   return { header_found: !!columns, incidents };
 }
-
 async function hamiltonCad(request) {
   if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405);
   const sourceUrl = "https://www.hamiltontn911.gov/active-incidents.php";
@@ -192,10 +207,15 @@ async function hamiltonCad(request) {
       source_url: sourceUrl, fetched_at: new Date().toISOString()
     }, 502);
     const html = await upstream.text();
+    if (/sorry for the interruption|limited session time|continue viewing/i.test(html)) return jsonResponse({
+      source_available: false,
+      message: "Hamilton County 9-1-1 returned its 15-minute session interstitial instead of the incident list. No incidents were inferred.",
+      source_url: sourceUrl, fetched_at: new Date().toISOString(), incidents: []
+    }, 503);
     const parsed = parseHamiltonCad(html);
     if (!parsed.header_found) return jsonResponse({
       source_available: false,
-      message: "The official page did not expose a readable incident table. It may be showing a session gate or changing its page format.",
+      message: "The official page did not expose a readable incident table. Its page format or access session may have changed.",
       source_url: sourceUrl, fetched_at: new Date().toISOString(), incidents: []
     }, 503);
     return jsonResponse({
