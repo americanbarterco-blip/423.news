@@ -31,11 +31,12 @@ h1{font-size:clamp(19px,3vw,26px);margin:0}.sub,.muted{color:var(--muted);font-s
    <div class="stat"><b id="law">—</b><span>Law</span></div>
    <div class="stat"><b id="fire">—</b><span>Fire</span></div>
    <div class="stat"><b id="ems">—</b><span>EMS</span></div>
+   <div class="stat"><b id="other">—</b><span>Other</span></div>
   </div>
   <div class="controls">
-   <select id="type"><option value="">All types</option><option>Law</option><option>Fire</option><option>EMS</option><option>Road Closure</option></select>
+   <select id="type"><option value="">All types</option><option>Law</option><option>Fire</option><option>EMS</option><option>Road Closure</option><option>Other</option></select>
    <select id="area"><option value="">All areas</option></select>
-   <select id="statusFilter"><option value="">All statuses</option><option>Reported</option><option>Enroute</option><option>On Scene</option><option>Transporting</option><option>At Hospital</option></select>
+   <select id="statusFilter"><option value="">All statuses</option><option>Queued</option><option>Stacked</option><option>Reported</option><option>Enroute</option><option>On Scene</option><option>Transporting</option><option>At Hospital</option></select>
    <button id="refresh">↻ Refresh</button>
   </div>
   <div class="sub" id="updated" style="margin-top:10px">Waiting for source response…</div>
@@ -67,6 +68,7 @@ h1{font-size:clamp(19px,3vw,26px);margin:0}.sub,.muted{color:var(--muted);font-s
    $("law").textContent=records.filter(x=>x.type==="Law").length;
    $("fire").textContent=records.filter(x=>x.type==="Fire").length;
    $("ems").textContent=records.filter(x=>x.type==="EMS").length;
+   $("other").textContent=records.filter(x=>x.type==="Other").length;
    const areas=[...new Set(records.map(x=>x.area).filter(Boolean))].sort();
    const current=$("area").value;
    $("area").innerHTML='<option value="">All areas</option>'+areas.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join("");
@@ -78,7 +80,7 @@ h1{font-size:clamp(19px,3vw,26px);margin:0}.sub,.muted{color:var(--muted);font-s
    $("state").innerHTML='<i class="dot"></i> SOURCE UNAVAILABLE';
    $("updated").textContent=String(err.message||err);
    $("incidents").innerHTML='<div class="empty">Could not retrieve a readable incident list. The official page may be temporarily unavailable or restricting automated access. No incidents are being inferred.</div>';
-   $("total").textContent="—";$("law").textContent="—";$("fire").textContent="—";$("ems").textContent="—";
+   $("total").textContent="—";$("law").textContent="—";$("fire").textContent="—";$("ems").textContent="—";$("other").textContent="—";
   }finally{$("refresh").disabled=false}
  }
  ["type","area","statusFilter"].forEach(id=>$(id).addEventListener("change",render));
