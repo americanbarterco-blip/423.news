@@ -222,7 +222,7 @@ async function hamiltonCad(request) {
       .filter(item => item && typeof item === "object" && String(item.type || "").toUpperCase() !== "PERBURN")
       .map(item => {
         const agencyType = String(item.agency_type || "").trim();
-        const type = ({ Law: "Law", Fire: "Fire", EMS: "EMS", HC911: "Law" })[agencyType] || "Law";
+        const type = ({ Law: "Law", Fire: "Fire", EMS: "EMS", HC911: "Other" })[agencyType] || "Other";
         const created = String(item.creation || "").slice(0, 40);
         const status = String(item.status || "Status unavailable").slice(0, 40);
         const agency = String(item.jurisdiction || "Agency not listed").slice(0, 100);
