@@ -10,7 +10,7 @@ on:
         options:
           - create
           - deploy
-        default: create
+        default: deploy
 
 permissions:
   contents: write
