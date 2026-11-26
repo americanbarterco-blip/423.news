@@ -8,6 +8,8 @@ This directory is a separate LiveKit agent build for testing Claudia's determini
 - Deepgram STT: `nova-3`, multilingual mode
 - Inworld TTS: `inworld-tts-2`, voice `Sarah`, speaking rate `1.0`, delivery mode `BALANCED`; language detection enabled by leaving the language unset
 
+The official LiveKit Inworld plugin reads `INWORLD_API_KEY` from the server-side environment and handles provider authentication; the key is not embedded in source or logged. The agent checks that the variable exists before starting the authenticated TTS integration. Leaving `language` unset allows Inworld's automatic language detection. LiveKit's TTS plugin supplies audio frames to the LiveKit pipeline; it does not expose the raw HTTP API's base64-MP3 response as the agent output format.
+
 Claudia recognizes a defined set of intents and routes them to existing 423.news services: published headlines, local weather and official NWS alerts, TomTom traffic snapshots, published road alerts, sports scores, scanner configuration metadata, public-source research leads, and public-site health. Greetings and common capability questions are answered locally. Unrecognized questions receive an honest prompt to use a supported request.
 
 This is not an open-ended generative language model. Its response quality and intent coverage depend on the rules in `agent.py`; new capabilities must be deliberately implemented and tested. Public research results remain unverified leads, scanner configuration is not proof of live audio, and a zero-incident traffic result does not prove roads are clear.
