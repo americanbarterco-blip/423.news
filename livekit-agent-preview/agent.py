@@ -13,16 +13,14 @@ from typing import Any
 
 from livekit import agents
 from livekit.agents import Agent, AgentServer, AgentSession, RunContext, function_tool
-from livekit.plugins import deepgram, inworld, openai
+from livekit.plugins import deepgram, google, inworld
 from claudia_memory import recall as memory_recall, save_memory as memory_save
 from claudia_public_search import search_sources as public_source_search
 
 server = AgentServer()
 
-# Optional model override for evaluation. Default preserves the currently deployed model.
-CLAUDIA_LLM_MODEL = os.getenv("CLAUDIA_LLM_MODEL", "gpt-4.1-mini").strip() or "gpt-4.1-mini"
-# Preserve compatibility with the former LiveKit Inference model ID if this variable is already set.
-CLAUDIA_LLM_MODEL = CLAUDIA_LLM_MODEL.removeprefix("openai/")
+# Gemini Developer API free-tier model. No paid OpenAI API dependency.
+CLAUDIA_GEMINI_MODEL = os.getenv("CLAUDIA_GEMINI_MODEL", "gemini-3.5-flash").strip() or "gemini-3.5-flash"
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://kdiwehqtezlhecxsoysj.supabase.co").rstrip("/")
 # This is the public anon key already used by the 423.news website. RLS remains in force.
@@ -567,11 +565,11 @@ For public research results, clearly label them as leads and not verified facts;
 
 @server.rtc_session(agent_name="claudia-green-preview")
 async def claudia_green(ctx: agents.JobContext):
-    # Direct provider plugins bill the owner's provider accounts, not LiveKit Inference.
-    # Required LiveKit Agent secrets: OPENAI_API_KEY, DEEPGRAM_API_KEY, INWORLD_API_KEY.
+    # Gemini Developer API free tier is used for the LLM; no OpenAI key is required.
+    # Required LiveKit Agent secrets: GOOGLE_API_KEY, DEEPGRAM_API_KEY, INWORLD_API_KEY.
     session = AgentSession(
         stt=deepgram.STT(model="nova-3", language="multi"),
-        llm=openai.responses.LLM(model=CLAUDIA_LLM_MODEL),
+        llm=google.LLM(model=CLAUDIA_GEMINI_MODEL),
         tts=inworld.TTS(model="inworld-tts-2", voice="Ashley"),
     )
     assistant = ClaudiaGreen()
