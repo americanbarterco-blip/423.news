@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'livekit-token/**'
+      - '.github/workflows/deploy-claudia-token-worker.yml'
+      - '.github/workflows/claudia-admin-voice-tests.yml'
       - 'livekit-agent/agent.py'
       - 'claudia-livekit.js'
       - 'docs/CLAUDIA-PLATFORM-AUTONOMY.md'
@@ -24,6 +26,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Install token Worker dependencies
+        run: npm install --prefix livekit-token --no-audit --no-fund
+      - name: Validate token Worker bundle and Durable Object binding
+        run: ./livekit-token/node_modules/.bin/wrangler deploy --dry-run --config livekit-token/wrangler.toml
       - name: Test administrator session verification
         working-directory: livekit-token
         run: npm test
