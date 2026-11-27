@@ -1,0 +1,36 @@
+name: Claudia administrator voice security tests
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'livekit-token/**'
+      - 'livekit-agent/agent.py'
+      - 'claudia-livekit.js'
+      - 'docs/CLAUDIA-PLATFORM-AUTONOMY.md'
+  push:
+    branches: [claudia/admin-voice-access]
+    paths:
+      - 'livekit-token/**'
+      - 'livekit-agent/agent.py'
+      - 'claudia-livekit.js'
+      - 'docs/CLAUDIA-PLATFORM-AUTONOMY.md'
+permissions:
+  contents: read
+jobs:
+  admin-voice-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Test administrator session verification
+        working-directory: livekit-token
+        run: npm test
+      - name: Check JavaScript syntax
+        run: |
+          node --check livekit-token/server.js
+          node --check livekit-token/admin-session.js
+          node --check claudia-livekit.js
+      - name: Check Python syntax
+        run: python -m py_compile livekit-agent/agent.py
