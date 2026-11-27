@@ -1,2 +1,2 @@
-livekit-agents[google]>=1.8.12,<2.0
+livekit-agents[openai,deepgram,inworld]>=1.8.12,<2.0
 httpx>=0.27,<1.0
