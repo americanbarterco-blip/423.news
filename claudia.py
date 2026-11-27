@@ -53,7 +53,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-DEFAULT_CONFIG = ROOT / "config.json"
+DEFAULT_CONFIG = ROOT / "scanner" / "config.json"
 UA = "Mozilla/5.0 (compatible; ClaudiaGreen/1.0; +https://423.news)"
 
 
@@ -73,7 +73,7 @@ def load_config(path: Path) -> dict:
 
 
 def data_path(cfg: dict) -> Path:
-    p = Path(cfg.get("data_path", "../data/feed.json"))
+    p = Path(cfg.get("data_path", "data/feed.json"))
     return p if p.is_absolute() else (ROOT / p).resolve()
 
 
@@ -107,7 +107,7 @@ def write_feed(cfg: dict, feed: dict) -> None:
 
 
 def work_dir(cfg: dict) -> Path:
-    p = Path(cfg.get("work_dir", "../work/scanner"))
+    p = Path(cfg.get("work_dir", "work/scanner"))
     p = p if p.is_absolute() else (ROOT / p).resolve()
     p.mkdir(parents=True, exist_ok=True)
     return p
@@ -414,7 +414,7 @@ def cmd_doctor(cfg: dict) -> int:
     print(f"  data file        {data_path(cfg)}  {'ok' if data_path(cfg).exists() else 'MISSING'}")
     print(f"  ffmpeg           {shutil.which('ffmpeg') or 'NOT FOUND'}")
     key = os.environ.get("BROADCASTIFY_API_KEY", "")
-    print(f"  API key          {'set (' + key[:4] + '…)' if key else 'NOT SET — page mode only'}")
+    print(f"  API key          {'set (value hidden)' if key else 'NOT SET — page mode only'}")
     print(f"  status endpoint  {cfg.get('status_endpoint') or '(none)'}")
     for f in cfg.get("feeds", []):
         has_stream = bool(f.get("stream_url"))
