@@ -5,8 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'livekit-agent/agent.py'
-      - 'livekit-agent/livekit.toml'
+      - 'livekit-agent/**'
 
 concurrency:
   group: claudia-green-livekit-production
