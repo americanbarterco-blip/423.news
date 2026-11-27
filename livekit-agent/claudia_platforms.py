@@ -90,7 +90,7 @@ def list_managed_platforms(env: Mapping[str, str] | None = None) -> list[dict]:
             "name": item["name"],
             "database_connected": bool(url and key),
             "repository_registered": bool(repo),
-            "github_access_available": bool(repo and _first(env, "CLAUDIA_GITHUB_TOKEN")),
+            "github_access_available": bool(platform_id == "423.news" and repo and _first(env, "CLAUDIA_GITHUB_TOKEN")),
             "readable_table_count": len(tables) if url and key else 0,
             "status": "connected" if url and key else "not_configured",
         })
