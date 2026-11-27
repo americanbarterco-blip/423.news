@@ -50,12 +50,45 @@ def parse_youtube(payload):
         rows.append({"source":"YouTube search API","publisher":snip.get("channelTitle") or "Channel unavailable","title":title,"url":"https://www.youtube.com/watch?v="+ident,"summary":strip_html(snip.get("description","")),"published":snip.get("publishedAt")})
     return rows[:5]
 
-def search_sources(query,area="423 region",youtube_api_key=None):
+
+
+def parse_x_search(payload):
+    rows=[]
+    for post in payload.get("data",[]):
+        ident=post.get("id"); title=strip_html(post.get("text",""))
+        if not ident or not title: continue
+        rows.append({
+            "source":"X", "publisher":"X post", "title":title[:300],
+            "url":"https://x.com/i/web/status/"+str(ident), "summary":title,
+            "published":post.get("created_at"),
+            "public_metrics":post.get("public_metrics") or {}, "source_type":"social",
+        })
+    return rows[:10]
+
+def search_x(query, area, bearer_token):
+    params=urllib.parse.urlencode({
+        "query": f'({query} "{area}") -is:retweet'[:450],
+        "max_results": 10,
+        "tweet.fields": "created_at,public_metrics,lang",
+    })
+    payload=json.loads(fetch_text("https://api.x.com/2/tweets/search/recent?"+params,{
+        "Authorization":"Bearer "+bearer_token, "Accept":"application/json",
+    }))
+    return parse_x_search(payload)
+
+def search_sources(query,area="423 region",youtube_api_key=None,x_bearer_token=None):
     query=(query or "").strip()[:140]
     area=(area or "423 region").strip()[:100]
     if not query:return {"query":"","area":area,"retrieved_at":datetime.now(timezone.utc).isoformat(),"results":[],"source_status":{},"note":"Provide a topic to search."}
     q=f"{query} {area}".strip()
     results=[];status={}
+    # X is checked first when an API bearer token is configured.
+    if x_bearer_token:
+        try:
+            results.extend(search_x(query, area, x_bearer_token))
+            status["X"]="ok"
+        except Exception as exc: status["X"]="unavailable: "+type(exc).__name__
+    else: status["X"]="not configured (X_API_BEARER_TOKEN missing)"
     news_url="https://news.google.com/rss/search?"+urllib.parse.urlencode({"q":q,"hl":"en-US","gl":"US","ceid":"US:en"})
     try:
         results.extend(parse_google_news(fetch_text(news_url)))
