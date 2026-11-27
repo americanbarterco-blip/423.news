@@ -44,7 +44,7 @@ jobs:
           LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
           LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
           LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
-          SECRET_LIST: GOOGLE_API_KEY=${{ secrets.GEMINI_API_KEY }},DEEPGRAM_API_KEY=${{ secrets.DEEPGRAM_API_KEY }},INWORLD_API_KEY=${{ secrets.INWORLD_API_KEY }}
+          SECRET_LIST: GOOGLE_API_KEY=${{ secrets.GEMINI_API_KEY }}
         with:
           OPERATION: create
           REGION: us-east
@@ -96,7 +96,7 @@ jobs:
           LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
           LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
           LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
-          SECRET_LIST: GOOGLE_API_KEY=${{ secrets.GEMINI_API_KEY }},DEEPGRAM_API_KEY=${{ secrets.DEEPGRAM_API_KEY }},INWORLD_API_KEY=${{ secrets.INWORLD_API_KEY }}
+          SECRET_LIST: GOOGLE_API_KEY=${{ secrets.GEMINI_API_KEY }}
         with:
           OPERATION: deploy
           WORKING_DIRECTORY: livekit-agent-preview
