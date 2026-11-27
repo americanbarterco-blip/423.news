@@ -1,6 +1,8 @@
 import { AccessToken } from "livekit-server-sdk";
 import { RoomAgentDispatch, RoomConfiguration } from "@livekit/protocol";
 import { verifyAdminSession } from "./admin-session.js";
+import { ClaudiaScriptAuth } from "./script-auth.js";
+export { ClaudiaScriptAuth };
 
 const ALLOWED_ORIGINS = new Set(["https://423.news", "https://www.423.news", "https://claudia.423.news"]);
 
@@ -31,11 +33,37 @@ export default {
     if (url.pathname === "/health" && request.method === "GET") {
       return json({ ok: true, service: "423.news Claudia token worker" }, 200, origin);
     }
-    if (url.pathname !== "/getToken" || request.method !== "POST") {
-      return json({ error: "Not found" }, 404, origin);
-    }
     if (!origin || !ALLOWED_ORIGINS.has(origin)) {
       return json({ error: "Origin not allowed" }, 403);
+    }
+
+    if (url.pathname === "/script/start" || url.pathname === "/script/step") {
+      if (request.method !== "POST") return json({ ok: false, fallback: true }, 200, origin);
+      if (!env.CLAUDIA_SCRIPT_AUTH) return json({ ok: false, fallback: true }, 200, origin);
+      let body = {};
+      try { body = await request.json(); } catch { return json({ ok: false, fallback: true }, 200, origin); }
+      const action = url.pathname.endsWith("/start") ? "start" : "step";
+      let sessionId = "";
+      if (action === "start") {
+        sessionId = crypto.randomUUID();
+      } else {
+        sessionId = String(body.session_id || "");
+        if (!/^[0-9a-f-]{36}$/i.test(sessionId)) return json({ ok: false, fallback: true }, 200, origin);
+      }
+      const id = env.CLAUDIA_SCRIPT_AUTH.idFromName(sessionId);
+      const stub = env.CLAUDIA_SCRIPT_AUTH.get(id);
+      const result = await stub.fetch("https://claudia-script-auth.internal/" + action, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, answer: typeof body.answer === "string" ? body.answer : "" })
+      });
+      const payload = await result.json().catch(() => ({ ok: false, fallback: true }));
+      if (!payload.ok) return json({ ok: false, fallback: true }, 200, origin);
+      return json(action === "start" ? { ...payload, session_id: sessionId } : payload, 200, origin);
+    }
+
+    if (url.pathname !== "/getToken" || request.method !== "POST") {
+      return json({ error: "Not found" }, 404, origin);
     }
     if (!env.LIVEKIT_URL || !env.LIVEKIT_API_KEY || !env.LIVEKIT_API_SECRET) {
       return json({ error: "Voice service is not configured yet." }, 503, origin);

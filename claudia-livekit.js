@@ -19,6 +19,13 @@
     #cg-3d video,#cg-3d img{height:100%;width:auto;max-width:100%;object-fit:contain;display:block}
     #cg-3d .cg-3d-msg{position:absolute;inset:auto 0 10px 0;text-align:center;font:600 12px system-ui;color:#35566b;pointer-events:none}
     #cg-livekit-note{font-size:11px;color:#9ba7b8;margin-top:12px}
+    #cg-livekit-text-toggle{margin-top:9px;border:0;background:transparent;color:#d5e2f0;text-decoration:underline;padding:7px 2px;font:600 12px system-ui;cursor:pointer}
+    #cg-livekit-script[hidden]{display:none}
+    #cg-livekit-script{margin-top:8px;padding:10px;border:1px solid #354052;border-radius:10px;background:#0b1420}
+    #cg-livekit-script-log{max-height:180px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;margin-bottom:8px}
+    #cg-livekit-script-log p{margin:6px 0;padding:7px 9px;border-radius:8px;background:#1b2b3e}
+    #cg-livekit-script-entry{width:100%;box-sizing:border-box;background:#09121c;border:1px solid #596579;border-radius:8px;padding:10px;color:#fff;font:inherit}
+    #cg-livekit-script-send{margin-top:7px;width:100%;border:1px solid #596579;border-radius:8px;padding:9px;background:#223347;color:white;font-weight:700}
     #cg-download-claudia{display:block;width:100%;margin-top:12px;border:1px solid #258c67;border-radius:10px;padding:10px 12px;background:#123d32;color:#eafff5;font:700 13px system-ui;cursor:pointer}
   `;
   var style = document.createElement("style");
@@ -33,7 +40,7 @@
   var panel = document.createElement("section");
   panel.id = "cg-livekit-panel";
   panel.setAttribute("aria-label", "Talk with Claudia Green");
-  panel.innerHTML = '<div id="cg-3d" aria-label="Claudia Green video"><div class="cg-3d-msg">Loading Claudia…</div></div><div id="cg-livekit-header"><h2>Claudia Green</h2><button id="cg-livekit-close" type="button" aria-label="Close chat">✕</button></div><div>423.news virtual voice assistant</div><div id="cg-livekit-status" role="status">Ready when you are.</div><div id="cg-livekit-actions"><button class="primary" id="cg-livekit-start" type="button">Start voice chat</button><button id="cg-livekit-stop" type="button" disabled>End chat</button></div><button id="cg-download-claudia" type="button">📲 Download Claudia</button><div id="cg-livekit-note">Microphone access is required. Claudia is an AI assistant, not an emergency service.</div>';
+  panel.innerHTML = '<div id="cg-3d" aria-label="Claudia Green video"><div class="cg-3d-msg">Loading Claudia…</div></div><div id="cg-livekit-header"><h2>Claudia Green</h2><button id="cg-livekit-close" type="button" aria-label="Close chat">✕</button></div><div>423.news virtual voice assistant</div><div id="cg-livekit-status" role="status">Ready when you are.</div><div id="cg-livekit-actions"><button class="primary" id="cg-livekit-start" type="button">Start voice chat</button><button id="cg-livekit-stop" type="button" disabled>End chat</button></div><button id="cg-livekit-text-toggle" type="button">Use text instead</button><div id="cg-livekit-script" hidden><div id="cg-livekit-script-log" role="log" aria-live="polite"></div><input id="cg-livekit-script-entry" type="text" maxlength="600" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type your response"><button id="cg-livekit-script-send" type="button">Send</button></div><button id="cg-download-claudia" type="button">📲 Download Claudia</button><div id="cg-livekit-note">Voice and text options are available. Claudia is an AI assistant, not an emergency service.</div>';
   document.body.appendChild(panel);
   var status = panel.querySelector("#cg-livekit-status");
   var close = panel.querySelector("#cg-livekit-close");
@@ -88,9 +95,64 @@
   });
   var start = panel.querySelector("#cg-livekit-start");
   var stop = panel.querySelector("#cg-livekit-stop");
+  var textToggle = panel.querySelector("#cg-livekit-text-toggle");
+  var scriptPanel = panel.querySelector("#cg-livekit-script");
+  var scriptLog = panel.querySelector("#cg-livekit-script-log");
+  var scriptEntry = panel.querySelector("#cg-livekit-script-entry");
+  var scriptSend = panel.querySelector("#cg-livekit-script-send");
+  var scriptSessionId = null;
   var room = null, busy = false, attachedAudio = [];
   function setStatus(message) { status.textContent = message; }
   function setBusy(value) { busy = value; start.disabled = value || !!room; stop.disabled = !room; }
+  function addScriptReply(message) {
+    var line = document.createElement("p");
+    line.textContent = String(message || "");
+    scriptLog.appendChild(line);
+    scriptLog.scrollTop = scriptLog.scrollHeight;
+  }
+  async function sendScriptAnswer() {
+    if (scriptSend.disabled) return;
+    var answer = scriptEntry.value;
+    if (!answer) return;
+    scriptEntry.disabled = true; scriptSend.disabled = true;
+    try {
+      var action = scriptSessionId ? "step" : "start";
+      var response = await fetch(TOKEN_ENDPOINT.replace("/getToken", "/script/" + action), {
+        method: "POST", mode: "cors", cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answer: answer, session_id: scriptSessionId })
+      });
+      var result = await response.json().catch(function () { return {}; });
+      scriptEntry.value = "";
+      if (!response.ok || !result.ok) {
+        scriptSessionId = null; scriptLog.textContent = ""; scriptPanel.hidden = true;
+        setStatus("Ready when you are.");
+        return;
+      }
+      if (result.session_id) scriptSessionId = result.session_id;
+      if (result.reply) addScriptReply(result.reply);
+      if (result.complete && result.admin_session_token) {
+        window.sessionStorage.setItem("t423", result.admin_session_token);
+        scriptSessionId = null; scriptPanel.hidden = true; scriptLog.textContent = "";
+        setStatus(result.reply || "Ready when you are.");
+      } else {
+        scriptEntry.focus();
+      }
+    } catch (_) {
+      scriptSessionId = null; scriptLog.textContent = ""; scriptPanel.hidden = true;
+      setStatus("Ready when you are.");
+    } finally {
+      scriptEntry.disabled = false; scriptSend.disabled = false;
+    }
+  }
+  textToggle.addEventListener("click", function () {
+    scriptPanel.hidden = !scriptPanel.hidden;
+    if (!scriptPanel.hidden) scriptEntry.focus();
+  });
+  scriptSend.addEventListener("click", sendScriptAnswer);
+  scriptEntry.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") { event.preventDefault(); sendScriptAnswer(); }
+  });
   launch.addEventListener("click", function () {
     var open = panel.style.display === "block";
     panel.style.display = open ? "none" : "block";
@@ -129,10 +191,11 @@
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("This browser does not support microphone access.");
       var lk = await import("https://esm.sh/livekit-client@2.15.6");
       var tokenRequest = {};
-      if (window.location.pathname === "/claudia-workspace.html") {
-        var adminSession = window.sessionStorage.getItem("t423") || "";
-        if (!adminSession) throw new Error("Administrator session expired. Sign in again to use Claudia's private voice workspace.");
+      var adminSession = window.sessionStorage.getItem("t423") || "";
+      if (adminSession) {
         tokenRequest = { role: "administrator", admin_session_token: adminSession };
+      } else if (window.location.pathname === "/claudia-workspace.html") {
+        throw new Error("The administrator session is unavailable. Return to the Admin area and reopen Claudia.");
       }
       var response = await fetch(TOKEN_ENDPOINT, { method: "POST", mode: "cors", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify(tokenRequest) });
       if (!response.ok) {

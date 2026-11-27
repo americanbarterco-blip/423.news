@@ -9,3 +9,11 @@ custom_domain = true
 
 [vars]
 LIVEKIT_URL = "wss://project-423-news-rsv1bch2.livekit.cloud"
+
+[[durable_objects.bindings]]
+name = "CLAUDIA_SCRIPT_AUTH"
+class_name = "ClaudiaScriptAuth"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ClaudiaScriptAuth"]

@@ -11,3 +11,12 @@ export async function verifyAdminSession(token, secret, now = Date.now()) {
   for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ (parts[1].toLowerCase().charCodeAt(i) || 0);
   return diff === 0;
 }
+
+export async function createAdminSessionToken(secret, now = Date.now(), ttlMs = 12 * 60 * 60 * 1000) {
+  if (!secret) throw new Error("Administrator session signing secret is unavailable.");
+  const expiry = String(now + Math.max(60_000, Math.min(12 * 60 * 60 * 1000, ttlMs)));
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const signature = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(expiry)));
+  const hex = [...signature].map(byte => byte.toString(16).padStart(2, "0")).join("");
+  return expiry + "." + hex;
+}
