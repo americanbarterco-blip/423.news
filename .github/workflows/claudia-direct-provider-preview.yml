@@ -1,6 +1,12 @@
 name: Claudia Green - isolated direct-provider preview
 
 on:
+  push:
+    branches:
+      - preview/claudia-direct-provider-migration
+    paths:
+      - livekit-agent-preview/**
+      - .github/workflows/claudia-direct-provider-preview.yml
   workflow_dispatch:
     inputs:
       operation:
@@ -76,7 +82,7 @@ jobs:
           TIMEOUT: 5m
 
   deploy-preview-update:
-    if: github.event.inputs.operation == 'deploy'
+    if: github.event_name == 'push' || github.event.inputs.operation == 'deploy'
     runs-on: ubuntu-latest
     steps:
       - name: Check out the selected preview branch
