@@ -1,0 +1,9 @@
+{
+  "status_endpoint": "",
+  "data_path": "data/feed.json",
+  "work_dir": "work/scanner",
+  "capture_seconds": 45,
+  "capture_cooldown": 300,
+  "hot_threshold": 40,
+  "feeds": []
+}
