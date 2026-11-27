@@ -1,6 +1,12 @@
 name: Claudia Green - isolated direct-provider preview
 
 on:
+  push:
+    branches:
+      - preview/claudia-direct-provider-migration
+    paths:
+      - livekit-agent-preview/**
+      - .github/workflows/claudia-direct-provider-preview.yml
   workflow_dispatch:
     inputs:
       operation:
@@ -38,7 +44,7 @@ jobs:
           LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
           LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
           LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
-          SECRET_LIST: DEEPGRAM_API_KEY=${{ secrets.DEEPGRAM_API_KEY }},INWORLD_API_KEY=${{ secrets.INWORLD_API_KEY }}
+          SECRET_LIST: GOOGLE_API_KEY=${{ secrets.GEMINI_API_KEY }},DEEPGRAM_API_KEY=${{ secrets.DEEPGRAM_API_KEY }},INWORLD_API_KEY=${{ secrets.INWORLD_API_KEY }}
         with:
           OPERATION: create
           REGION: us-east
@@ -76,7 +82,7 @@ jobs:
           TIMEOUT: 5m
 
   deploy-preview-update:
-    if: github.event.inputs.operation == 'deploy'
+    if: github.event_name == 'push' || github.event.inputs.operation == 'deploy'
     runs-on: ubuntu-latest
     steps:
       - name: Check out the selected preview branch
@@ -90,7 +96,7 @@ jobs:
           LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
           LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
           LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
-          SECRET_LIST: DEEPGRAM_API_KEY=${{ secrets.DEEPGRAM_API_KEY }},INWORLD_API_KEY=${{ secrets.INWORLD_API_KEY }}
+          SECRET_LIST: GOOGLE_API_KEY=${{ secrets.GEMINI_API_KEY }},DEEPGRAM_API_KEY=${{ secrets.DEEPGRAM_API_KEY }},INWORLD_API_KEY=${{ secrets.INWORLD_API_KEY }}
         with:
           OPERATION: deploy
           WORKING_DIRECTORY: livekit-agent-preview
