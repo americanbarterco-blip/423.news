@@ -42,7 +42,7 @@ jobs:
               -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
               -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
               -H "Accept: application/json" |
-              python -c 'import json,sys; rows=json.load(sys.stdin); print(rows[0].get("secret", "") if rows else "", end="")')"
+              python -c 'import json,sys; rows=json.load(sys.stdin); print(rows[0].get("secret", "") if rows else "", end="")' || true)"
           fi
           if [ -n "$signing_secret" ]; then
             printf '%s' "$signing_secret" | ./livekit-token/node_modules/.bin/wrangler secret put CLAUDIA_ADMIN_SESSION_SECRET --config livekit-token/wrangler.toml
