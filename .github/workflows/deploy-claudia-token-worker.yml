@@ -25,17 +25,32 @@ jobs:
           test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo 'Missing CLOUDFLARE_ACCOUNT_ID' && exit 1)
       - name: Install token Worker dependencies
         run: npm install --prefix livekit-token --no-audit --no-fund
-      - name: Configure administrator session verifier (optional until secret is set)
+      - name: Configure administrator session verifier from protected Supabase secret
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLAUDIA_ADMIN_SESSION_SECRET: ${{ secrets.CLAUDIA_ADMIN_SESSION_SECRET }}
+          SUPABASE_URL: https://kdiwehqtezlhecxsoysj.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+        shell: bash
         run: |
-          if [ -n "$CLAUDIA_ADMIN_SESSION_SECRET" ]; then
-            printf '%s' "$CLAUDIA_ADMIN_SESSION_SECRET" | ./livekit-token/node_modules/.bin/wrangler secret put CLAUDIA_ADMIN_SESSION_SECRET --config livekit-token/wrangler.toml
-          else
-            echo "::warning::CLAUDIA_ADMIN_SESSION_SECRET is not configured; public voice remains available and administrator voice will fail closed."
+          set -euo pipefail
+          set +x
+          signing_secret="${SESSION_SECRET:-}"
+          if [ -z "$signing_secret" ] && [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+            signing_secret="$(curl --fail --silent --show-error --retry 2 "$SUPABASE_URL/rest/v1/admin_auth?id=eq.1&select=secret" \
+              -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Accept: application/json" |
+              python -c 'import json,sys; rows=json.load(sys.stdin); print(rows[0].get("secret", "") if rows else "", end="")')"
           fi
+          if [ -n "$signing_secret" ]; then
+            printf '%s' "$signing_secret" | ./livekit-token/node_modules/.bin/wrangler secret put CLAUDIA_ADMIN_SESSION_SECRET --config livekit-token/wrangler.toml
+            echo "Administrator session verifier configured from protected secret storage."
+          else
+            echo "::warning::No administrator session signing secret was available; public voice remains available and administrator voice fails closed."
+          fi
+          unset signing_secret
       - name: Deploy token Worker
         uses: cloudflare/wrangler-action@v4
         with:
