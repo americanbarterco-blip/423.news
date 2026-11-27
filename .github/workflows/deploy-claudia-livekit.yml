@@ -2,6 +2,15 @@ name: Deploy Claudia Green LiveKit Agent
 
 on:
   workflow_dispatch:
+    inputs:
+      operation:
+        description: "Create the missing production agent, or deploy an existing configured agent"
+        required: true
+        type: choice
+        options:
+          - create
+          - deploy
+        default: create
   push:
     branches: [main]
     paths:
@@ -12,17 +21,74 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
+  actions: read
 
 jobs:
-  deploy:
-    name: Deploy existing Claudia agent
+  create-production-agent:
+    if: github.event_name == 'workflow_dispatch' && inputs.operation == 'create'
+    name: Create Claudia production agent and propose its config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+
+      - name: Create production agent in LiveKit Cloud
+        uses: livekit/deploy-action@v2
+        env:
+          LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
+          LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
+          LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
+          SECRET_LIST: ${{ secrets.SECRET_LIST }}
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          OPERATION: create
+          WORKING_DIRECTORY: livekit-agent
+
+      - name: Open a configuration-only pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ github.token }}
+          add-paths: livekit-agent/livekit.toml
+          branch: claudia-production-livekit-config-${{ github.run_id }}
+          delete-branch: false
+          base: main
+          title: "Add Claudia production LiveKit agent configuration"
+          commit-message: "Add generated Claudia production LiveKit agent configuration"
+          body: |
+            LiveKit created the production agent and generated its agent configuration.
+            Review the generated agent ID and project subdomain before merging.
+            This PR contains configuration only; it does not change the website or token worker.
+
+      - name: Check out generated configuration branch
+        uses: actions/checkout@v4
+        with:
+          ref: claudia-production-livekit-config-${{ github.run_id }}
+          token: ${{ github.token }}
+
+      - name: Confirm production agent is running
+        uses: livekit/deploy-action@v2
+        env:
+          LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
+          LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
+          LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
+        with:
+          OPERATION: status-retry
+          WORKING_DIRECTORY: livekit-agent
+          TIMEOUT: 5m
+
+  deploy-production-agent:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.operation == 'deploy')
+    name: Deploy configured Claudia production agent
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Deploy existing LiveKit agent to production
+      - name: Deploy configured production agent
         uses: livekit/deploy-action@v2
         env:
           LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
@@ -33,7 +99,7 @@ jobs:
           OPERATION: deploy
           WORKING_DIRECTORY: livekit-agent
 
-      - name: Confirm agent is running
+      - name: Confirm production agent is running
         uses: livekit/deploy-action@v2
         env:
           LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
