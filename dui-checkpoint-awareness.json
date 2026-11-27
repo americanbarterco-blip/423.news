@@ -1,12 +1,8 @@
 {
-  "updated": "2026-11-27T00:34:12.408017+00:00",
+  "updated": "2026-11-27T13:50:32.887720+00:00",
   "source": "Tennessee Highway Patrol monthly checkpoint bulletins",
   "scope": "Statewide monthly count; no checkpoint dates or locations",
   "months": [
-    {
-      "month": "2026-10",
-      "announced_count": 25
-    },
     {
       "month": "2026-11",
       "announced_count": 25
