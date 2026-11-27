@@ -5,6 +5,7 @@ on:
     paths:
       - 'livekit-token/**'
       - '.github/workflows/deploy-claudia-token-worker.yml'
+      - '.github/workflows/claudia-admin-voice-tests.yml'
       - 'livekit-agent/agent.py'
       - 'claudia-livekit.js'
       - 'docs/CLAUDIA-PLATFORM-AUTONOMY.md'
