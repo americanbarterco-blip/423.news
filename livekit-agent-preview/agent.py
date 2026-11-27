@@ -636,14 +636,16 @@ For public research results, clearly label them as leads and not verified facts;
 
 @server.rtc_session(agent_name="claudia-green-preview")
 async def claudia_green(ctx: agents.JobContext):
+    llm_backends = [inference.LLM(model=CLAUDIA_LLM_MODEL)]
+    if os.getenv("CLAUDIA_GEMINI_FALLBACK_ENABLED", "false").strip().lower() == "true":
+        llm_backends.append(google.LLM(model=CLAUDIA_GEMINI_FALLBACK_MODEL))
+        logger.info("Claudia LLM fallback enabled: GPT primary, Gemini secondary.")
+    else:
+        logger.warning("Gemini fallback not validated or not configured; GPT primary remains active.")
+
     session = AgentSession(
         stt=inference.STT(model="deepgram/nova-3", language="multi"),
-        llm=llm_api.FallbackAdapter(
-            [
-                inference.LLM(model=CLAUDIA_LLM_MODEL),
-                google.LLM(model=CLAUDIA_GEMINI_FALLBACK_MODEL),
-            ],
-        ),
+        llm=llm_api.FallbackAdapter(llm_backends),
         tts=inference.TTS(model="inworld/inworld-tts-2", voice="Sarah"),
     )
     assistant = ClaudiaGreen()
