@@ -7,6 +7,8 @@ on:
       - '.github/workflows/deploy-claudia-token-worker.yml'
       - '.github/workflows/claudia-admin-voice-tests.yml'
       - 'livekit-agent/agent.py'
+      - 'livekit-agent/claudia_platforms.py'
+      - 'livekit-agent/test_claudia_platforms.py'
       - 'claudia-livekit.js'
       - 'docs/CLAUDIA-PLATFORM-AUTONOMY.md'
   push:
@@ -40,4 +42,7 @@ jobs:
           node --check livekit-token/script-auth.js
           node --check claudia-livekit.js
       - name: Check Python syntax
-        run: python -m py_compile livekit-agent/agent.py
+        run: python -m py_compile livekit-agent/agent.py livekit-agent/claudia_platforms.py
+      - name: Test managed-platform tenant isolation
+        working-directory: livekit-agent
+        run: python -m unittest -v test_claudia_platforms.py
