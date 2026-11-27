@@ -24,9 +24,9 @@ Never place LiveKit API secrets, Supabase service keys, GitHub tokens, or the HM
 
 Configure these in the relevant service secret stores; do not commit values:
 
-- GitHub repository secret `CLAUDIA_ADMIN_SESSION_SECRET`: the exact same signing secret used by the Supabase `admin` Edge Function. The token-Worker deployment workflow copies it into the Cloudflare Worker as a server-side secret. If this repository secret is absent, public voice remains available and administrator voice fails closed.
+- The token-Worker deployment workflow retrieves the existing signing secret from the protected Supabase `admin_auth` record using the repository's server-side `SUPABASE_SERVICE_ROLE_KEY` secret (or uses the `SESSION_SECRET` repository secret when configured), then installs it in Cloudflare as `CLAUDIA_ADMIN_SESSION_SECRET`. The value is never printed or committed.
 - LiveKit agent runtime: `CLAUDIA_GITHUB_TOKEN` with repository Contents read/write, Pull requests read/write, Checks read, and Actions write; `CLAUDIA_ADMIN_SUPABASE_KEY` (service-role/secret key, server-side only); `CLAUDIA_MEMORY_SUPABASE_URL` and `CLAUDIA_MEMORY_SERVICE_KEY`; plus provider keys for only the integrations that are actually enabled (for example `GEMINI_API_KEY` for transcription or `BROADCASTIFY_API_KEY` where the feed provider authorizes it).
-- The `CLAUDIA_ADMIN_SESSION_SECRET` value must be exactly the same signing secret used by the Supabase `admin` Edge Function. If the admin function currently reads the value from the `admin_auth` table rather than its `SESSION_SECRET` environment override, set a dedicated matching secret in the GitHub repository secret store and the Supabase Edge Function environment before enabling administrator voice.
+- The Worker verifier must use exactly the same signing secret used by the Supabase `admin` Edge Function. The automated deployment step reads the `admin_auth.secret` value through the protected service-role connection when `SESSION_SECRET` is not provided as a repository secret. If Supabase uses a separate `SESSION_SECRET` environment override, that exact value must be available to the deployment workflow as the GitHub `SESSION_SECRET` secret.
 
 The LiveKit agent's Supabase service key is used only by administrator-gated server tools. Public mode must continue to use the public anon key and RLS-protected reads.
 
