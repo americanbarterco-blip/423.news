@@ -611,6 +611,13 @@ async def claudia_green(ctx: agents.JobContext):
         llm=google.realtime.RealtimeModel(
             model="gemini-3.8-live",
             voice="Aoede",
+            # Force the Google AI Studio Gemini API path. LiveKit's Google
+            # plugin otherwise honors GOOGLE_GENAI_USE_VERTEXAI if it is
+            # present in the agent environment, which can route this preview
+            # away from the supplied GEMINI_API_KEY.
+            vertexai=False,
+            # Use the documented Gemini Developer API Live endpoint version.
+            api_version="v1beta",
         ),
     )
     assistant = ClaudiaGreen()
