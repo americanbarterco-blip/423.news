@@ -14,14 +14,14 @@ from typing import Any
 
 from livekit import agents
 from livekit.agents import Agent, AgentServer, AgentSession, RunContext, function_tool
-from livekit.plugins import deepgram, inworld, google
+from livekit.plugins import google
 from claudia_memory import recall as memory_recall, save_memory as memory_save
 from claudia_public_search import search_sources as public_source_search
 
 server = AgentServer()
 logger = logging.getLogger("claudia.preview.traffic")
 
-# Preview uses the existing Google Gemini API (AI Studio), Deepgram STT, and Inworld TTS.
+# Preview uses Google's Gemini Live API (AI Studio) for realtime speech-to-speech.
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://kdiwehqtezlhecxsoysj.supabase.co").rstrip("/")
 # This is the public anon key already used by the 423.news website. RLS remains in force.
@@ -599,31 +599,18 @@ For public research results, clearly label them as leads and not verified facts;
 
 @server.rtc_session(agent_name="claudia-green-preview")
 async def claudia_green(ctx: agents.JobContext):
-    # Fail clearly before provider calls when a required server-side key is absent.
-    # Never print, return, or otherwise expose credential values.
-    missing = [
-        name for name in ("GOOGLE_API_KEY", "DEEPGRAM_API_KEY", "INWORLD_API_KEY")
-        if not os.getenv(name, "").strip()
-    ]
-    if missing:
+    # Gemini Live handles speech input, reasoning, and speech output in one
+    # realtime model. The preview needs only the existing Gemini API key.
+    if not os.getenv("GOOGLE_API_KEY", "").strip():
         raise RuntimeError(
-            "Missing required preview provider secret(s): " + ", ".join(missing)
-            + ". Configure the existing Gemini API key as GOOGLE_API_KEY in GitHub Actions / LiveKit agent Secrets, then redeploy preview."
+            "Missing required preview provider secret: GOOGLE_API_KEY. "
+            "Map the existing GitHub GEMINI_API_KEY secret to GOOGLE_API_KEY, then redeploy preview."
         )
 
-    # The official LiveKit Inworld plugin handles provider authentication and streaming.
-    # LiveKit consumes audio frames rather than an HTTP base64-MP3 response; the plugin
-    # adapts Inworld audio to LiveKit's audio pipeline. Omitting language enables detection.
     session = AgentSession(
-        stt=deepgram.STT(model="nova-3", language="multi"),
-        llm=google.LLM(
-            model=os.getenv("CLAUDIA_LLM_MODEL", "gemini-3.8-flash").strip() or "gemini-3.8-flash",
-        ),
-        tts=inworld.TTS(
-            model="inworld-tts-2",
-            voice="Ashley",
-            speaking_rate=1.0,
-            delivery_mode="BALANCED",
+        llm=google.realtime.RealtimeModel(
+            model="gemini-3.8-live",
+            voice="Aoede",
         ),
     )
     assistant = ClaudiaGreen()
