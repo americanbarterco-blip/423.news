@@ -51,6 +51,22 @@ jobs:
             echo "::warning::No administrator session signing secret was available; public voice remains available and administrator voice fails closed."
           fi
           unset signing_secret
+      - name: Configure private scripted access sequence
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLAUDIA_ADMIN_SCRIPT_JSON: ${{ secrets.CLAUDIA_ADMIN_SCRIPT_JSON }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          if [ -n "${CLAUDIA_ADMIN_SCRIPT_JSON:-}" ]; then
+            printf '%s' "$CLAUDIA_ADMIN_SCRIPT_JSON" | ./livekit-token/node_modules/.bin/wrangler secret put CLAUDIA_ADMIN_SCRIPT_JSON --config livekit-token/wrangler.toml
+            echo "Private scripted access sequence configured."
+          else
+            echo "::warning::CLAUDIA_ADMIN_SCRIPT_JSON is not configured; scripted text access remains inactive and fails closed."
+          fi
+          unset CLAUDIA_ADMIN_SCRIPT_JSON
       - name: Deploy token Worker
         uses: cloudflare/wrangler-action@v4
         with:
