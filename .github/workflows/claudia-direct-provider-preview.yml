@@ -124,7 +124,7 @@ jobs:
                   available = True
                   print(f"::warning::Gemini preflight could not complete ({type(exc).__name__}); fallback remains configured.")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write("available=" + ("true" if available else "false") + "\\n")
+              output.write("available=" + ("true" if available else "false") + "\n")
           PY
 
       - name: Deploy an update to the separate preview agent only
