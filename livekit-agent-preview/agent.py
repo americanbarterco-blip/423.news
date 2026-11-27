@@ -154,6 +154,29 @@ def _safe_repo_path(path: str) -> str:
     return normalized
 
 
+def _safe_repo_read_path(path: str) -> str:
+    """Allow source, docs, workflows and schema inspection while excluding secret-bearing files."""
+    normalized = (path or "").strip().strip("/")
+    parts = normalized.split("/") if normalized else []
+    blocked_parts = {".git", "node_modules", "vendor", "__pycache__", ".wrangler", "secrets"}
+    blocked_names = {".env", ".env.local", ".env.production", "wrangler.toml", "livekit.toml", "id_rsa", "id_ed25519"}
+    if (not normalized or len(normalized) > 220
+            or any(p in {"", ".", ".."} for p in parts)
+            or any(p.lower() in blocked_parts for p in parts)
+            or any(p.lower().startswith(".env") for p in parts)
+            or parts[-1].lower() in blocked_names
+            or any(word in normalized.lower() for word in ("service-role", "private-key", "credentials.json"))):
+        raise ValueError("This path may contain secrets or is outside the readable repository scope.")
+    suffix = os.path.splitext(normalized)[1].lower()
+    if suffix not in {".html", ".js", ".css", ".md", ".py", ".mjs", ".ts", ".tsx", ".jsx", ".json", ".sql", ".yml", ".yaml", ".toml", ".txt", ".svg"}:
+        raise ValueError("This file type is not available for repository inspection.")
+    return normalized
+
+
+def _repo_read_ref(path: str) -> str:
+    return "preview/claudia-direct-provider-migration" if path.split("/", 1)[0] == "livekit-agent-preview" else "main"
+
+
 class ClaudiaGreen(Agent):
     def __init__(self) -> None:
         super().__init__(
@@ -499,12 +522,45 @@ For public research results, clearly label them as leads and not verified facts;
                          "findings": findings}, ensure_ascii=False)
 
     @function_tool()
-    async def read_423_repository_file(self, context: RunContext, path: str) -> str:
-        """Read public 423.news source files before diagnosing. Sensitive/admin/config paths are blocked."""
+    async def list_423_repository_files(self, context: RunContext, directory: str = "", include_tests: bool = True) -> str:
+        """Discover source files in the 423.news repository. Lists paths only; secret-bearing files and generated dependencies are omitted."""
         try:
-            safe = _safe_repo_path(path)
+            prefix = (directory or "").strip().strip("/")
+            if prefix:
+                _safe_repo_read_path(prefix + "/index.html")
+            ref = _repo_read_ref(prefix) if prefix else "main"
+            api_path = "/repos/americanbarterco-blip/423.news/git/trees/" + urllib.parse.quote(ref, safe="") + "?recursive=1"
+            result = await asyncio.to_thread(_github_api, "GET", api_path, os.getenv("CLAUDIA_GITHUB_TOKEN", "").strip() or None)
+            if result.get("status") != 200:
+                return json.dumps({"ok": False, "status": result.get("status"), "message": "Repository tree is temporarily unavailable."})
+            tree = result.get("data", {}).get("tree", [])
+            rows = []
+            for item in tree:
+                name = item.get("path", "")
+                if item.get("type") != "blob" or (prefix and not name.startswith(prefix + "/")):
+                    continue
+                try:
+                    safe = _safe_repo_read_path(name)
+                except ValueError:
+                    continue
+                if not include_tests and ("test" in safe.lower() or safe.lower().endswith(("_test.py", ".spec.js"))):
+                    continue
+                rows.append({"path": safe, "size": item.get("size")})
+            rows.sort(key=lambda x: x["path"])
+            return json.dumps({"ok": True, "branch": ref, "directory": prefix or "/", "count": len(rows),
+                               "truncated": bool(result.get("data", {}).get("truncated")) or len(rows) > 250,
+                               "files": rows[:250]}, ensure_ascii=False)
+        except Exception as exc:
+            return "I couldn't safely list repository files: " + type(exc).__name__
+
+    @function_tool()
+    async def read_423_repository_file(self, context: RunContext, path: str) -> str:
+        """Read approved 423.news source, admin UI, workflow, documentation, and schema files. Secret-bearing files are blocked."""
+        try:
+            safe = _safe_repo_read_path(path)
+            ref = _repo_read_ref(safe)
             token = os.getenv("CLAUDIA_GITHUB_TOKEN")
-            api_path = "/repos/americanbarterco-blip/423.news/contents/" + urllib.parse.quote(safe, safe="/") + "?ref=preview%2Fclaudia-direct-provider-migration"
+            api_path = "/repos/americanbarterco-blip/423.news/contents/" + urllib.parse.quote(safe, safe="/") + "?ref=" + urllib.parse.quote(ref, safe="")
             result = await asyncio.to_thread(_github_api, "GET", api_path, token)
             if result.get("status") != 200:
                 return json.dumps({"ok": False, "status": result.get("status"), "message": "Repository file not found or API access unavailable."})
@@ -512,7 +568,7 @@ For public research results, clearly label them as leads and not verified facts;
             content = base64.b64decode(file_data.get("content", "")).decode("utf-8", "replace")
             if len(content) > 24000:
                 content = content[:24000] + "\n[content truncated; ask for a narrower range]"
-            return json.dumps({"ok": True, "path": safe, "branch": "preview/claudia-direct-provider-migration", "sha": file_data.get("sha"), "content": content}, ensure_ascii=False)
+            return json.dumps({"ok": True, "path": safe, "branch": ref, "sha": file_data.get("sha"), "content": content}, ensure_ascii=False)
         except Exception as exc:
             return "I couldn't safely read that repository file: " + type(exc).__name__
 
