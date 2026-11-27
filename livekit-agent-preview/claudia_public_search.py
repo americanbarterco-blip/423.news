@@ -65,15 +65,46 @@ def parse_x_search(payload):
         })
     return rows[:10]
 
+def _x_error_detail(exc):
+    """Return a bounded, sanitized X API diagnostic; never include request headers or tokens."""
+    status=getattr(exc,"code",None)
+    raw=""
+    try:
+        raw=exc.read(6000).decode("utf-8","replace")
+    except Exception:
+        pass
+    detail=""
+    try:
+        payload=json.loads(raw) if raw else {}
+        errors=payload.get("errors") or []
+        if errors:
+            detail="; ".join(str(item.get("message") or item.get("detail") or item.get("title") or "") for item in errors[:2])
+        if not detail:
+            detail=str(payload.get("detail") or payload.get("title") or payload.get("error") or "")
+    except Exception:
+        detail=""
+    detail=" ".join(detail.split())[:260]
+    if status:
+        return f"HTTP {status}" + (f": {detail}" if detail else "")
+    return detail or type(exc).__name__
+
 def search_x(query, area, bearer_token):
+    # Keep operators valid and bound user-supplied query length.
+    terms=" ".join((query or "").replace('"', " ").split())[:180]
+    location=" ".join((area or "").replace('"', " ").split())[:100]
+    x_query=f'({terms}) "{location}" -is:retweet'
     params=urllib.parse.urlencode({
-        "query": f'({query} "{area}") -is:retweet'[:450],
+        "query": x_query[:450],
         "max_results": 10,
         "tweet.fields": "created_at,public_metrics,lang",
     })
-    payload=json.loads(fetch_text("https://api.x.com/2/tweets/search/recent?"+params,{
-        "Authorization":"Bearer "+bearer_token, "Accept":"application/json",
-    }))
+    try:
+        raw=fetch_text("https://api.x.com/2/tweets/search/recent?"+params,{
+            "Authorization":"Bearer "+bearer_token, "Accept":"application/json",
+        })
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(_x_error_detail(exc)) from None
+    payload=json.loads(raw)
     return parse_x_search(payload)
 
 def search_sources(query,area="423 region",youtube_api_key=None,x_bearer_token=None):
@@ -87,7 +118,7 @@ def search_sources(query,area="423 region",youtube_api_key=None,x_bearer_token=N
         try:
             results.extend(search_x(query, area, x_bearer_token))
             status["X"]="ok"
-        except Exception as exc: status["X"]="unavailable: "+type(exc).__name__
+        except Exception as exc: status["X"]="unavailable: "+str(exc)[:300]
     else: status["X"]="not configured (X_API_BEARER_TOKEN missing)"
     news_url="https://news.google.com/rss/search?"+urllib.parse.urlencode({"q":q,"hl":"en-US","gl":"US","ceid":"US:en"})
     try:
