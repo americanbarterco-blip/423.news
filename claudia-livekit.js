@@ -128,7 +128,13 @@
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("This browser does not support microphone access.");
       var lk = await import("https://esm.sh/livekit-client@2.15.6");
-      var response = await fetch(TOKEN_ENDPOINT, { method: "POST", mode: "cors", cache: "no-store", headers: { "Content-Type": "application/json" }, body: "{}" });
+      var tokenRequest = {};
+      if (window.location.pathname === "/claudia-workspace.html") {
+        var adminSession = window.sessionStorage.getItem("t423") || "";
+        if (!adminSession) throw new Error("Administrator session expired. Sign in again to use Claudia's private voice workspace.");
+        tokenRequest = { role: "administrator", admin_session_token: adminSession };
+      }
+      var response = await fetch(TOKEN_ENDPOINT, { method: "POST", mode: "cors", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify(tokenRequest) });
       if (!response.ok) {
         var issue = await response.json().catch(function () { return {}; });
         throw new Error(issue.error || "Voice service is not ready yet.");
