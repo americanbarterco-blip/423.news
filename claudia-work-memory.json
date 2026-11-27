@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "run_count": 1,
+  "tasks": {
+    "editorial-research": {
+      "status": "pending",
+      "created_at": "2026-11-27T21:46:24+00:00",
+      "updated_at": "2026-11-27T21:46:24+00:00",
+      "last_seen_run": 1
+    },
+    "spanish-queue": {
+      "status": "pending",
+      "created_at": "2026-11-27T21:46:24+00:00",
+      "updated_at": "2026-11-27T21:46:24+00:00",
+      "last_seen_run": 1
+    },
+    "seo-indexing": {
+      "status": "pending",
+      "created_at": "2026-11-27T21:46:24+00:00",
+      "updated_at": "2026-11-27T21:46:24+00:00",
+      "last_seen_run": 1
+    },
+    "maintenance": {
+      "status": "pending",
+      "created_at": "2026-11-27T21:46:24+00:00",
+      "updated_at": "2026-11-27T21:46:24+00:00",
+      "last_seen_run": 1
+    },
+    "audience-growth": {
+      "status": "pending",
+      "created_at": "2026-11-27T21:46:24+00:00",
+      "updated_at": "2026-11-27T21:46:24+00:00",
+      "last_seen_run": 1
+    }
+  },
+  "updated_at": "2026-11-27T21:46:24+00:00"
+}
