@@ -36,6 +36,9 @@ jobs:
         with:
           token: ${{ github.token }}
 
+      - name: Remove placeholder config so LiveKit can create the agent
+        run: rm -f livekit-agent/livekit.toml
+
       - name: Create production agent in LiveKit Cloud
         uses: livekit/deploy-action@v2
         env:
