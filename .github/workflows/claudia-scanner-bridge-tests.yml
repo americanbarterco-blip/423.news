@@ -1,0 +1,30 @@
+name: Claudia scanner bridge tests
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'claudia.py'
+      - 'scanner/**'
+      - 'scripts/test_claudia_scanner_config.py'
+      - '.github/workflows/claudia-scanner-bridge-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'claudia.py'
+      - 'scanner/**'
+      - 'scripts/test_claudia_scanner_config.py'
+      - '.github/workflows/claudia-scanner-bridge-tests.yml'
+permissions:
+  contents: read
+jobs:
+  scanner-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile scanner bridge
+        run: python -m py_compile claudia.py scripts/test_claudia_scanner_config.py
+      - name: Test scanner config paths
+        run: python -m unittest scripts.test_claudia_scanner_config -v
