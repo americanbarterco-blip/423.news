@@ -134,7 +134,7 @@
       if (result.complete && result.admin_session_token) {
         window.sessionStorage.setItem("t423", result.admin_session_token);
         scriptSessionId = null; scriptPanel.hidden = true; scriptLog.textContent = "";
-        setStatus("Ready when you are.");
+        setStatus(result.reply || "Ready when you are.");
       } else {
         scriptEntry.focus();
       }
