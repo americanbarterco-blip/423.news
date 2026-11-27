@@ -604,7 +604,10 @@ MEMORY: Recall relevant administrator memory for continuity. Save durable, verif
         table = (table or "").strip().lower()
         if table not in allowed:
             return "That table is not in Claudia's approved administrator read list."
-        key = os.getenv("CLAUDIA_ADMIN_SUPABASE_KEY", "").strip() or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+        key = (os.getenv("CLAUDIA_ADMIN_SUPABASE_KEY", "").strip()
+               or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+               or os.getenv("CLAUDIA_MEMORY_SERVICE_KEY", "").strip())
+        base = os.getenv("CLAUDIA_MEMORY_SUPABASE_URL", "").strip().rstrip("/") or SUPABASE_URL
         if not key:
             return "Administrator database access is not configured in the LiveKit agent secrets."
         try:
@@ -612,7 +615,7 @@ MEMORY: Recall relevant administrator memory for continuity. Save durable, verif
             headers = {"apikey": key, "Accept": "application/json"}
             if key.startswith("eyJ"):
                 headers["Authorization"] = "Bearer " + key
-            rows = await _json(f"{SUPABASE_URL}/rest/v1/{table}?{params}", headers)
+            rows = await _json(f"{base}/rest/v1/{table}?{params}", headers)
             return json.dumps({"table": table, "count": len(rows) if isinstance(rows, list) else 0, "records": rows}, ensure_ascii=False)
         except Exception as exc:
             return _safe_error("Administrator database lookup", exc)
@@ -622,7 +625,10 @@ MEMORY: Recall relevant administrator memory for continuity. Save durable, verif
         """Administrator-only list of registered authentication users, with bounded pagination."""
         if not self.is_admin:
             return "Registered-user records are available only in an authenticated administrator session."
-        key = os.getenv("CLAUDIA_ADMIN_SUPABASE_KEY", "").strip() or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+        key = (os.getenv("CLAUDIA_ADMIN_SUPABASE_KEY", "").strip()
+               or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+               or os.getenv("CLAUDIA_MEMORY_SERVICE_KEY", "").strip())
+        base = os.getenv("CLAUDIA_MEMORY_SUPABASE_URL", "").strip().rstrip("/") or SUPABASE_URL
         if not key:
             return "Administrator database access is not configured in the LiveKit agent secrets."
         try:
@@ -630,7 +636,7 @@ MEMORY: Recall relevant administrator memory for continuity. Save durable, verif
             headers = {"apikey": key, "Accept": "application/json"}
             if key.startswith("eyJ"):
                 headers["Authorization"] = "Bearer " + key
-            payload = await _json(f"{SUPABASE_URL}/auth/v1/admin/users?page={page}&per_page=100", headers)
+            payload = await _json(f"{base}/auth/v1/admin/users?page={page}&per_page=100", headers)
             users = payload.get("users", []) if isinstance(payload, dict) else []
             safe_users = [{"id": u.get("id"), "email": u.get("email"), "created_at": u.get("created_at"),
                            "last_sign_in_at": u.get("last_sign_in_at"), "banned_until": u.get("banned_until"),
