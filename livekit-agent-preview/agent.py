@@ -13,7 +13,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Any
 
 from livekit import agents
-from livekit.agents import Agent, AgentServer, AgentSession, RunContext, function_tool
+from livekit.agents import Agent, AgentServer, AgentSession, RunContext, function_tool, room_io
 from livekit.plugins import google
 from claudia_memory import recall as memory_recall, save_memory as memory_save
 from claudia_public_search import search_sources as public_source_search
@@ -621,8 +621,26 @@ async def claudia_green(ctx: agents.JobContext):
         ),
     )
     assistant = ClaudiaGreen()
-    await session.start(room=ctx.room, agent=assistant)
-    await session.say("Hello, I'm Claudia Green, the 423.news virtual voice assistant. I can help with local news, weather, traffic, road alerts, sports, and public-source research. What can I look up for you?")
+    await session.start(
+        room=ctx.room,
+        agent=assistant,
+        room_options=room_io.RoomOptions(
+            audio_input=True,
+            audio_output=True,
+            text_input=True,
+            text_output=True,
+        ),
+    )
+    # Realtime Gemini generates its own audio. session.say() requires a
+    # separate TTS provider, so use generate_reply() for the opening greeting.
+    await session.generate_reply(
+        instructions=(
+            "Greet the visitor aloud as Claudia Green, the 423.news virtual voice assistant. "
+            "Briefly say you can help with local news, weather, traffic, road alerts, "
+            "sports, and public-source research, then ask what they would like to look up."
+        ),
+        input_modality="audio",
+    )
 
 
 if __name__ == "__main__":
