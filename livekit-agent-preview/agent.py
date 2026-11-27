@@ -13,7 +13,8 @@ from datetime import datetime, timezone, timedelta
 from typing import Any
 
 from livekit import agents
-from livekit.agents import Agent, AgentServer, AgentSession, RunContext, function_tool, inference, room_io
+from livekit.agents import Agent, AgentServer, AgentSession, RunContext, function_tool, inference, llm as llm_api, room_io
+from livekit.plugins import google
 from claudia_memory import recall as memory_recall, save_memory as memory_save
 from claudia_public_search import search_sources as public_source_search
 
@@ -22,6 +23,7 @@ logger = logging.getLogger("claudia.traffic")
 
 # Optional model override for evaluation. Default preserves the currently deployed model.
 CLAUDIA_LLM_MODEL = os.getenv("CLAUDIA_LLM_MODEL", "openai/gpt-4.1-mini").strip() or "openai/gpt-4.1-mini"
+CLAUDIA_GEMINI_FALLBACK_MODEL = os.getenv("CLAUDIA_GEMINI_FALLBACK_MODEL", "gemini-3.8-flash").strip() or "gemini-3.8-flash"
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://kdiwehqtezlhecxsoysj.supabase.co").rstrip("/")
 # This is the public anon key already used by the 423.news website. RLS remains in force.
@@ -636,8 +638,13 @@ For public research results, clearly label them as leads and not verified facts;
 async def claudia_green(ctx: agents.JobContext):
     session = AgentSession(
         stt=inference.STT(model="deepgram/nova-3", language="multi"),
-        llm=inference.LLM(model=CLAUDIA_LLM_MODEL),
-        tts=inference.TTS(model="inworld/inworld-tts-2", voice="Ashley"),
+        llm=llm_api.FallbackAdapter(
+            [
+                inference.LLM(model=CLAUDIA_LLM_MODEL),
+                google.LLM(model=CLAUDIA_GEMINI_FALLBACK_MODEL),
+            ],
+        ),
+        tts=inference.TTS(model="inworld/inworld-tts-2", voice="Sarah"),
     )
     assistant = ClaudiaGreen()
     await session.start(
