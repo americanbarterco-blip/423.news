@@ -243,9 +243,9 @@ For public research results, clearly label them as leads and not verified facts;
         try:
             key = (area or "cleveland").strip().lower()
             key = re.sub(r"[^a-z ]+", " ", key).strip()
-            key = re.sub(r"\\s+", " ", key)
+            key = re.sub(r"\s+", " ", key)
             # Accept common city/state forms as the same single traffic hub.
-            key = re.sub(r"\\s+(?:and )?(?:tennessee|tn)$", "", key).strip()
+            key = re.sub(r"\s+(?:and )?(?:tennessee|tn)$", "", key).strip()
             if key in {"all", "all 423", "423", "423 area"}:
                 selected = list(TRAFFIC_HUBS.items())
             else:
