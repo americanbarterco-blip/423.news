@@ -108,7 +108,17 @@ def search_sources(query,area="423 region",youtube_api_key=None,x_bearer_token=N
     else:status["YouTube"]="not configured in voice-agent runtime"
     unique={}
     for item in results:unique.setdefault(item["url"],item)
-    return {"query":query,"area":area,"searched_query":q,"retrieved_at":datetime.now(timezone.utc).isoformat(),"source_status":status,"results":list(unique.values())[:20],"note":"Search results are public leads, not verified facts. Open original sources and corroborate before reporting allegations or publishing."}
+    candidates=list(unique.values())
+    area_lower=area.lower()
+    if "cleveland" in area_lower and ("tennessee" in area_lower or " tn" in area_lower):
+        # Prevent same-name Cleveland County results outside Tennessee from being mislabeled as Cleveland, TN.
+        candidates=[item for item in candidates if not (
+            "cleveland county" in (item.get("title","")+" "+item.get("summary","")).lower()
+            and "tennessee" not in (item.get("title","")+" "+item.get("summary","")).lower()
+            and " tn " not in (" "+(item.get("title","")+" "+item.get("summary","")).lower()+" ")
+            and "bradley county" not in (item.get("title","")+" "+item.get("summary","")).lower()
+        )]
+    return {"query":query,"area":area,"searched_query":q,"retrieved_at":datetime.now(timezone.utc).isoformat(),"source_status":status,"results":candidates[:20],"note":"Search results are public leads, not verified facts. Geographic name collisions are filtered where identified; open original sources and corroborate before reporting allegations or publishing."}
 
 if __name__=="__main__":
     print(json.dumps(search_sources("local schools"),ensure_ascii=False,indent=2))
