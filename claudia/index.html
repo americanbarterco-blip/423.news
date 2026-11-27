@@ -49,38 +49,31 @@ html,body{margin:0;min-height:100%;width:100%;background:#080c14}
    navigator.serviceWorker.register("./sw.js",{scope:"./"}).catch(function(){});
   }
   const close=panel.querySelector("#cg-livekit-close");
-  if(close){
-   close.addEventListener("click",function(event){
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  const welcome=document.createElement("main");
+  welcome.id="claudia-welcome";
+  welcome.innerHTML='<section><div class="cg-welcome-mark">CG</div><h1>Claudia Green</h1><p>Your 423.news voice companion is ready.</p><button type="button" id="claudia-open-chat">Open Claudia</button></section>';
+  welcome.style.cssText="position:fixed;inset:0;z-index:10000;display:none;place-items:center;padding:24px;background:#080c14;color:#edf5fb;text-align:center;font:15px/1.5 system-ui,sans-serif";
+  const welcomeStyle=document.createElement("style");
+  welcomeStyle.textContent="#claudia-welcome section{width:min(360px,100%);box-sizing:border-box;background:#101722;border:1px solid #354052;border-radius:20px;padding:28px;box-shadow:0 18px 50px #0009}#claudia-welcome h1{font:700 26px Georgia,serif;margin:12px 0 6px}#claudia-welcome p{color:#b9c4d3;margin:0 0 22px}#claudia-welcome .cg-welcome-mark{width:54px;height:54px;margin:auto;border-radius:50%;display:grid;place-items:center;background:#123d32;color:#eafff5;font-weight:800;font-size:20px}#claudia-welcome button{border:0;border-radius:999px;background:#b72d2a;color:#fff;padding:12px 22px;font:700 15px system-ui;cursor:pointer}";
+  document.head.appendChild(welcomeStyle);
+  document.body.appendChild(welcome);
+  function showWelcome(){
     const stop=panel.querySelector("#cg-livekit-stop");
     if(stop&&!stop.disabled)stop.click();
     panel.style.setProperty("display","none","important");
-    try{window.close();}catch(_){}
-    window.setTimeout(function(){
-     if(!window.closed){
-      const exit=document.getElementById("claudia-exit-screen");
-      if(exit)exit.style.display="grid";
-     }
-    },250);
-   },true);
+    welcome.style.display="grid";
   }
- },50);
- const exit=document.createElement("div");
- exit.id="claudia-exit-screen";
- exit.innerHTML='<section><h2>Claudia is closed</h2><p>Android does not let a webpage force-close every installed app window. Use your phone’s Back or Home control to leave Claudia.</p><button type="button" id="claudia-reopen">Reopen Claudia</button></section>';
- exit.style.cssText="position:fixed;inset:0;z-index:20000;display:none;place-items:center;padding:22px;background:#080c14;color:#edf5fb;font:15px/1.5 system-ui,sans-serif";
- const style=document.createElement("style");
- style.textContent="#claudia-exit-screen section{width:min(360px,100%);box-sizing:border-box;background:#101c29;border:1px solid #34485a;border-radius:18px;padding:22px}#claudia-exit-screen h2{margin:0 0 10px;font-size:20px}#claudia-exit-screen button{border:0;border-radius:999px;background:#16a36a;color:#fff;padding:10px 18px;font-weight:700}";
- document.head.appendChild(style);
- document.addEventListener("DOMContentLoaded",function(){
-  document.body.appendChild(exit);
-  exit.querySelector("#claudia-reopen").addEventListener("click",function(){
-   exit.style.display="none";
-   const panel=document.getElementById("cg-livekit-panel");
-   if(panel)panel.style.setProperty("display","block","important");
+  if(close){
+    close.addEventListener("click",function(event){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      showWelcome();
+    },true);
+  }
+  welcome.querySelector("#claudia-open-chat").addEventListener("click",function(){
+    welcome.style.display="none";
+    panel.style.setProperty("display","block","important");
   });
- });
 })();
 </script>
 </body>
