@@ -23,7 +23,11 @@ logger = logging.getLogger("claudia.traffic")
 
 # Optional model override for evaluation. Default preserves the currently deployed model.
 CLAUDIA_LLM_MODEL = os.getenv("CLAUDIA_LLM_MODEL", "openai/gpt-4.1-mini").strip() or "openai/gpt-4.1-mini"
+# Older direct-provider deployments may have stored the model without its provider prefix.
+if "/" not in CLAUDIA_LLM_MODEL:
+    CLAUDIA_LLM_MODEL = "openai/" + CLAUDIA_LLM_MODEL
 CLAUDIA_GEMINI_FALLBACK_MODEL = os.getenv("CLAUDIA_GEMINI_FALLBACK_MODEL", "gemini-3.8-flash").strip() or "gemini-3.8-flash"
+CLAUDIA_GEMINI_FALLBACK_MODEL = CLAUDIA_GEMINI_FALLBACK_MODEL.removeprefix("google/")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://kdiwehqtezlhecxsoysj.supabase.co").rstrip("/")
 # This is the public anon key already used by the 423.news website. RLS remains in force.
