@@ -590,6 +590,106 @@ MEMORY: Recall relevant administrator memory for continuity. Save durable, verif
             return "Memory save failed unexpectedly (" + type(exc).__name__ + ")."
 
     @function_tool()
+    async def admin_read_platform_table(self, context: RunContext, table: str, limit: int = 25) -> str:
+        """Administrator-only read access to an approved managed-platform data table."""
+        if not self.is_admin:
+            return "Platform records are available only in an authenticated administrator session."
+        allowed = {
+            "news_profiles", "news_posts", "news_comments", "news_streams", "news_reports",
+            "news_scores", "news_headlines", "news_ads", "news_ad_settings", "news_alerts",
+            "news_scanner_tips", "events", "hotspots", "claudia_story_leads", "claudia_story_drafts",
+            "claudia_story_media", "claudia_research_tasks", "claudia_memories",
+            "claudia_workspace_conversations", "claudia_workspace_messages", "claudia_workspace_action_requests"
+        }
+        table = (table or "").strip().lower()
+        if table not in allowed:
+            return "That table is not in Claudia's approved administrator read list."
+        key = os.getenv("CLAUDIA_ADMIN_SUPABASE_KEY", "").strip() or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+        if not key:
+            return "Administrator database access is not configured in the LiveKit agent secrets."
+        try:
+            params = urllib.parse.urlencode({"select": "*", "limit": str(max(1, min(100, int(limit))))})
+            headers = {"apikey": key, "Accept": "application/json"}
+            if key.startswith("eyJ"):
+                headers["Authorization"] = "Bearer " + key
+            rows = await _json(f"{SUPABASE_URL}/rest/v1/{table}?{params}", headers)
+            return json.dumps({"table": table, "count": len(rows) if isinstance(rows, list) else 0, "records": rows}, ensure_ascii=False)
+        except Exception as exc:
+            return _safe_error("Administrator database lookup", exc)
+
+    @function_tool()
+    async def admin_list_registered_users(self, context: RunContext, page: int = 1) -> str:
+        """Administrator-only list of registered authentication users, with bounded pagination."""
+        if not self.is_admin:
+            return "Registered-user records are available only in an authenticated administrator session."
+        key = os.getenv("CLAUDIA_ADMIN_SUPABASE_KEY", "").strip() or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+        if not key:
+            return "Administrator database access is not configured in the LiveKit agent secrets."
+        try:
+            page = max(1, min(100, int(page)))
+            headers = {"apikey": key, "Accept": "application/json"}
+            if key.startswith("eyJ"):
+                headers["Authorization"] = "Bearer " + key
+            payload = await _json(f"{SUPABASE_URL}/auth/v1/admin/users?page={page}&per_page=100", headers)
+            users = payload.get("users", []) if isinstance(payload, dict) else []
+            safe_users = [{"id": u.get("id"), "email": u.get("email"), "created_at": u.get("created_at"),
+                           "last_sign_in_at": u.get("last_sign_in_at"), "banned_until": u.get("banned_until"),
+                           "confirmed_at": u.get("confirmed_at"), "app_metadata": u.get("app_metadata")}
+                          for u in users if isinstance(u, dict)]
+            return json.dumps({"page": page, "count": len(safe_users), "users": safe_users}, ensure_ascii=False)
+        except Exception as exc:
+            return _safe_error("Registered-user lookup", exc)
+
+    @function_tool()
+    async def admin_dispatch_workflow(self, context: RunContext, workflow_file: str) -> str:
+        """Administrator-only dispatch of an approved GitHub Actions workflow on main."""
+        if not self.is_admin:
+            return "Deployment and automation controls require an authenticated administrator session."
+        allowed = {
+            "deploy-claudia-livekit.yml", "deploy-423-news-cloudflare.yml",
+            "claudia-story-discovery.yml", "claudia-manual-research.yml",
+            "claudia-manual-drafts.yml", "claudia-autonomous-health.yml",
+            "claudia-live-incident-tests.yml"
+        }
+        workflow_file = (workflow_file or "").strip()
+        if workflow_file not in allowed:
+            return "That workflow is not on Claudia's approved dispatch list."
+        token = os.getenv("CLAUDIA_GITHUB_TOKEN", "").strip()
+        if not token:
+            return "GitHub workflow dispatch is not connected. Configure CLAUDIA_GITHUB_TOKEN with Actions write permission."
+        context.disallow_interruptions()
+        result = await asyncio.to_thread(_github_api, "POST", "/repos/americanbarterco-blip/423.news/actions/workflows/" + urllib.parse.quote(workflow_file, safe="") + "/dispatches", token, {"ref": "main"})
+        if result.get("status") == 204:
+            return json.dumps({"dispatched": True, "workflow": workflow_file, "ref": "main", "message": "Workflow dispatch accepted. Verify its run before claiming completion."})
+        return json.dumps({"dispatched": False, "workflow": workflow_file, "http_status": result.get("status"), "message": "GitHub did not accept the workflow dispatch."})
+
+    @function_tool()
+    async def admin_merge_pull_request(self, context: RunContext, pull_request_number: int) -> str:
+        """Administrator-only merge of a 423.news maintenance PR after every required check is green."""
+        if not self.is_admin:
+            return "Repository merges require an authenticated administrator session."
+        token = os.getenv("CLAUDIA_GITHUB_TOKEN", "").strip()
+        if not token:
+            return "GitHub merge access is not connected. Configure CLAUDIA_GITHUB_TOKEN with pull-request write and checks read permissions."
+        number = max(1, int(pull_request_number))
+        context.disallow_interruptions()
+        pr = await asyncio.to_thread(_github_api, "GET", f"/repos/americanbarterco-blip/423.news/pulls/{number}", token)
+        if pr.get("status") != 200:
+            return "I couldn't verify that pull request. Nothing was merged."
+        item = pr.get("data", {})
+        if item.get("state") != "open" or item.get("base", {}).get("ref") != "main" or item.get("head", {}).get("repo", {}).get("full_name") != "americanbarterco-blip/423.news":
+            return "That pull request is not an open same-repository change targeting main. Nothing was merged."
+        sha = item.get("head", {}).get("sha")
+        checks = await asyncio.to_thread(_github_api, "GET", f"/repos/americanbarterco-blip/423.news/commits/{sha}/check-runs", token)
+        runs = checks.get("data", {}).get("check_runs", []) if checks.get("status") == 200 else []
+        if not runs or any(run.get("status") != "completed" or run.get("conclusion") not in {"success", "skipped", "neutral"} for run in runs):
+            return json.dumps({"merged": False, "checks_found": len(runs), "message": "CI is missing, still running, or not fully green. Nothing was merged."})
+        merged = await asyncio.to_thread(_github_api, "PUT", f"/repos/americanbarterco-blip/423.news/pulls/{number}/merge", token, {"merge_method": "squash"})
+        if merged.get("status") == 200 and merged.get("data", {}).get("merged"):
+            return json.dumps({"merged": True, "pull_request": number, "merge_sha": merged["data"].get("sha"), "message": "Merged after successful checks. Any production deployment must still be verified separately."})
+        return json.dumps({"merged": False, "http_status": merged.get("status"), "message": "GitHub did not confirm the merge."})
+
+    @function_tool()
     async def get_scanner_status(self, context: RunContext) -> str:
         """Check public scanner-feed configuration metadata in 423.news. This does not listen to scanner audio or verify a live stream."""
         try:
