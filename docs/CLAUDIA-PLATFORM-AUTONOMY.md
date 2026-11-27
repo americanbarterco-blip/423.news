@@ -24,9 +24,9 @@ Never place LiveKit API secrets, Supabase service keys, GitHub tokens, or the HM
 
 Configure these in the relevant service secret stores; do not commit values:
 
-- LiveKit token Worker: `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, and `CLAUDIA_ADMIN_SESSION_SECRET`.
+- GitHub repository secret `CLAUDIA_ADMIN_SESSION_SECRET`: the exact same signing secret used by the Supabase `admin` Edge Function. The token-Worker deployment workflow copies it into the Cloudflare Worker as a server-side secret. If this repository secret is absent, public voice remains available and administrator voice fails closed.
 - LiveKit agent runtime: `CLAUDIA_GITHUB_TOKEN` with repository Contents read/write, Pull requests read/write, Checks read, and Actions write; `CLAUDIA_ADMIN_SUPABASE_KEY` (service-role/secret key, server-side only); `CLAUDIA_MEMORY_SUPABASE_URL` and `CLAUDIA_MEMORY_SERVICE_KEY`; plus provider keys for only the integrations that are actually enabled (for example `GEMINI_API_KEY` for transcription or `BROADCASTIFY_API_KEY` where the feed provider authorizes it).
-- The `CLAUDIA_ADMIN_SESSION_SECRET` value must be exactly the same signing secret used by the Supabase `admin` Edge Function. If the admin function currently reads the value from the `admin_auth` table rather than its `SESSION_SECRET` environment override, set a dedicated matching secret in both services before enabling administrator voice.
+- The `CLAUDIA_ADMIN_SESSION_SECRET` value must be exactly the same signing secret used by the Supabase `admin` Edge Function. If the admin function currently reads the value from the `admin_auth` table rather than its `SESSION_SECRET` environment override, set a dedicated matching secret in the GitHub repository secret store and the Supabase Edge Function environment before enabling administrator voice.
 
 The LiveKit agent's Supabase service key is used only by administrator-gated server tools. Public mode must continue to use the public anon key and RLS-protected reads.
 
