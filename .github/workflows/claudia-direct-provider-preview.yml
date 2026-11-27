@@ -127,13 +127,33 @@ jobs:
               output.write("available=" + ("true" if available else "false") + "\n")
           PY
 
+      - name: Include optional integrations only when configured
+        id: optional-integrations
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          CLAUDIA_GITHUB_TOKEN: ${{ secrets.CLAUDIA_GITHUB_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os
+          pairs = [
+              ("YOUTUBE_API_KEY", os.environ.get("YOUTUBE_API_KEY", "").strip()),
+              ("CLAUDIA_GITHUB_TOKEN", os.environ.get("CLAUDIA_GITHUB_TOKEN", "").strip()),
+          ]
+          configured = [f"{name}={value}" for name, value in pairs if value]
+          suffix = ("," + ",".join(configured)) if configured else ""
+          for name, value in pairs:
+              print(f"{name}: " + ("configured" if value else "not configured; feature remains disabled"))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("suffix=" + suffix + "\\n")
+          PY
+
       - name: Deploy an update to the separate preview agent only
         uses: livekit/deploy-action@v2.12.2
         env:
           LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
           LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
           LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
-          SECRET_LIST: GOOGLE_API_KEY=${{ secrets.GEMINI_API_KEY }},CLAUDIA_GEMINI_FALLBACK_ENABLED=${{ steps.gemini.outputs.available }},CLAUDIA_MEMORY_SUPABASE_URL=${{ secrets.CLAUDIA_MEMORY_SUPABASE_URL }},CLAUDIA_MEMORY_SERVICE_KEY=${{ secrets.CLAUDIA_MEMORY_SERVICE_KEY }},X_API_BEARER_TOKEN=${{ secrets.X_API_BEARER_TOKEN }},YOUTUBE_API_KEY=${{ secrets.YOUTUBE_API_KEY }},CLAUDIA_GITHUB_TOKEN=${{ secrets.CLAUDIA_GITHUB_TOKEN }}
+          SECRET_LIST: GOOGLE_API_KEY=${{ secrets.GEMINI_API_KEY }},CLAUDIA_GEMINI_FALLBACK_ENABLED=${{ steps.gemini.outputs.available }},CLAUDIA_MEMORY_SUPABASE_URL=${{ secrets.CLAUDIA_MEMORY_SUPABASE_URL }},CLAUDIA_MEMORY_SERVICE_KEY=${{ secrets.CLAUDIA_MEMORY_SERVICE_KEY }},X_API_BEARER_TOKEN=${{ secrets.X_API_BEARER_TOKEN }}${{ steps.optional-integrations.outputs.suffix }}
         with:
           OPERATION: deploy
           WORKING_DIRECTORY: livekit-agent-preview
