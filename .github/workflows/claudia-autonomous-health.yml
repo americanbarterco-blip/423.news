@@ -53,7 +53,7 @@ jobs:
       - name: Syntax-check monitor, tests, and LiveKit agent
         run: python -m py_compile scripts/claudia_health.py scripts/test_claudia_health.py scripts/claudia_daily_plan.py scripts/test_claudia_daily_plan.py scripts/claudia_task_memory.py scripts/test_claudia_task_memory.py livekit-agent/agent.py scripts/test_seo_canonical_metadata.py
       - name: Run offline health-monitor and planner tests
-        run: python -m unittest scripts/test_claudia_health.py scripts/test_claudia_daily_plan.py scripts.test_claudia_task_memory.py scripts.test_seo_canonical_metadata
+        run: python -m unittest scripts/test_claudia_health.py scripts/test_claudia_daily_plan.py scripts/test_claudia_task_memory.py scripts.test_seo_canonical_metadata
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
