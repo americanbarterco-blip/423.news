@@ -12,9 +12,8 @@
 <body>
 <div id="authGate" class="card" style="max-width:560px;margin:12vh auto;padding:24px">
   <h1>Private administrator workspace</h1>
-  <p class="muted">This area is available only after signing in through 423.news Admin.</p>
-  <p id="gateStatus" class="status">Checking administrator access…</p>
-  <a href="/admin.html" class="btn primary">Open Admin sign-in</a>
+  <p class="muted">Verifying the existing 423.news Admin session. Access is checked automatically.</p>
+  <p id="gateStatus" class="status" role="status" aria-live="polite">Checking administrator access…</p>
 </div>
 <div id="workspaceApp" style="display:none">
 <header><div><h1>Claudia Green — Private Admin Workspace</h1><small>423.news · Voice, chat, memory, files, tasks and approvals</small></div><div class="row" style="flex:0 0 auto"><a href="/admin.html" class="btn">← Admin</a><button id="voice" class="btn primary">🎙 Talk to Claudia</button></div></header>
@@ -40,15 +39,16 @@ const KEY='423_claudia_workspace_v1', THREAD_KEY='423_claudia_workspace_thread_v
 const API='https://kdiwehqtezlhecxsoysj.supabase.co/functions/v1/claudia-workspace';
 const PUBLIC_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaXdlaHF0ZXpsaGVjeHNveXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NDQzOTEsImV4cCI6MjEwNjIyMDM5MX0.upw9MEq05Gs3czsmnknR1d37I2n3a681XzTJU-MGWwE;
 let data={messages:[],prompts:[],files:[],tasks:''};try{data=Object.assign(data,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
-const token=sessionStorage.getItem('t423')||'';
+let token=sessionStorage.getItem('t423')||'';
 let thread=localStorage.getItem(THREAD_KEY);if(!/^[0-9a-f-]{36}$/i.test(thread||'')){thread=crypto.randomUUID();localStorage.setItem(THREAD_KEY,thread)}
 const $=s=>document.querySelector(s), esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function saveLocal(){localStorage.setItem(KEY,JSON.stringify(data))}
-function api(action,extra={}){return fetch(API,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLIC_KEY,'x-claudia-session':token},body:JSON.stringify({action,thread_id:thread,token,...extra})}).then(async r=>{let j=await r.json().catch(()=>({error:'Bad server response'}));if(!r.ok)throw Error(j.error||'Request failed');return j})}
+function api(action,extra={}){token=sessionStorage.getItem('t423')||'';return fetch(API,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLIC_KEY,'x-claudia-session':token},body:JSON.stringify({action,thread_id:thread,token,...extra})}).then(async r=>{let j=await r.json().catch(()=>({error:'Bad server response'}));if(!r.ok)throw Error(j.error||'Request failed');return j})}
 function showStatus(s){$('#chatStatus').textContent=s}
 function renderChat(messages){const log=$('#chatLog');log.innerHTML=(messages||[]).map(m=>'<div class="bubble '+(m.role==='user'?'user':'assistant')+'"><div class="who">'+(m.role==='user'?'You':'Claudia')+' · '+esc(new Date(m.created_at||Date.now()).toLocaleString())+'</div>'+esc(m.content)+'</div>').join('');log.scrollTop=log.scrollHeight}
 async function loadHistory(){
-  if(!token){$('#gateStatus').textContent='Administrator sign-in required. The private workspace is locked.';return}
+  token=sessionStorage.getItem('t423')||'';
+  if(!token){$('#gateStatus').textContent='The existing Admin session is not available in this browser tab. Return to the Admin area and open Claudia from there.';return}
   $('#gateStatus').textContent='Verifying administrator session…';
   try{
     const r=await api('history');
@@ -58,7 +58,7 @@ async function loadHistory(){
     $('#workspaceApp').style.display='block';
     $('#authGate').style.display='none';
   }catch(e){
-    $('#gateStatus').textContent='Access not confirmed. Sign in through Admin again, then reopen this workspace.';
+    $('#gateStatus').textContent='The existing Admin session could not be verified. Return to the Admin area and reopen Claudia from its workspace link.';
     $('#workspaceApp').style.display='none';
   }
 }
