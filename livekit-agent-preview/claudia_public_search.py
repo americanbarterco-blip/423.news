@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bounded, read-only public news/community search for Claudia Green."""
 from __future__ import annotations
-import html, json, urllib.parse, urllib.request, xml.etree.ElementTree as ET
+import html, json, urllib.error, urllib.parse, urllib.request, xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
 UA="423.news Claudia public search/1.0 (+https://423.news)"
