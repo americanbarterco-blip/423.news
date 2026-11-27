@@ -10,6 +10,8 @@ on:
       - 'scripts/test_claudia_health.py'
       - 'scripts/claudia_daily_plan.py'
       - 'scripts/test_claudia_daily_plan.py'
+      - 'scripts/claudia_task_memory.py'
+      - 'scripts/test_claudia_task_memory.py'
       - 'livekit-agent/agent.py'
       - '_worker.js'
       - 'wrangler.jsonc'
@@ -49,9 +51,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Syntax-check monitor, tests, and LiveKit agent
-        run: python -m py_compile scripts/claudia_health.py scripts/test_claudia_health.py scripts/claudia_daily_plan.py scripts/test_claudia_daily_plan.py livekit-agent/agent.py scripts/test_seo_canonical_metadata.py
+        run: python -m py_compile scripts/claudia_health.py scripts/test_claudia_health.py scripts/claudia_daily_plan.py scripts/test_claudia_daily_plan.py scripts/claudia_task_memory.py scripts/test_claudia_task_memory.py livekit-agent/agent.py scripts/test_seo_canonical_metadata.py
       - name: Run offline health-monitor and planner tests
-        run: python -m unittest scripts/test_claudia_health.py scripts/test_claudia_daily_plan.py scripts.test_seo_canonical_metadata
+        run: python -m unittest scripts/test_claudia_health.py scripts/test_claudia_daily_plan.py scripts.test_claudia_task_memory.py scripts.test_seo_canonical_metadata
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -65,6 +67,9 @@ jobs:
 
   audit:
     if: github.event_name != 'pull_request'
+    permissions:
+      contents: write
+      issues: write
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -80,6 +85,16 @@ jobs:
       - name: Generate Claudia daily work plan
         if: always()
         run: python scripts/claudia_daily_plan.py
+      - name: Update Claudia resumable task memory
+        if: always()
+        run: python scripts/claudia_task_memory.py
+      - name: Commit operational task memory
+        if: always()
+        run: |
+          git config user.name '423news-bot'
+          git config user.email 'bot@users.noreply.github.com'
+          git add claudia-work-memory.json
+          git diff --cached --quiet || (git commit -m 'Update Claudia resumable task memory' && git push)
       - name: Save health report and daily plan
         if: always()
         uses: actions/upload-artifact@v4
@@ -88,6 +103,7 @@ jobs:
           path: |
             claudia-health.*
             claudia-daily-plan.*
+            claudia-work-memory.json
           if-no-files-found: warn
           retention-days: 30
       - name: Update Claudia findings issue
