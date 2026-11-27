@@ -21,6 +21,7 @@ function readScript(raw) {
     if (steps.some(step => !step || typeof step.user !== "string" || !step.user ||
       typeof step.assistant !== "string" || !step.assistant ||
       step.user.length > MAX_ANSWER_LENGTH || step.assistant.length > MAX_ANSWER_LENGTH)) return null;
+    if (new Set(steps.map(step => step.user)).size !== steps.length) return null;
     return steps;
   } catch {
     return null;
