@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 BASE = os.environ.get("CLAUDIA_MEMORY_SUPABASE_URL", "").rstrip("/")
 KEY = os.environ.get("CLAUDIA_MEMORY_SERVICE_KEY", "")
 TABLE = "claudia_memories"
-KINDS = {"fact", "episode", "decision", "lesson", "project", "goal", "research"}
+KINDS = {"fact", "episode", "decision", "lesson", "project", "goal", "research", "preference"}
 MAX_CONTENT, MAX_TAGS = 5000, 16
 
 
