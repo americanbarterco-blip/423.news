@@ -14,7 +14,7 @@ CONFIG=Path(__file__).resolve().parent/"claudia_sources.json"
 UA="423.news-Claudia-Research/1.0 (+https://423.news/)"
 MAX_BYTES=1_200_000
 TIMEOUT=12
-MAX_CANDIDATES=4
+MAX_CANDIDATES=8
 STOP=set("the a an and or to in on for of with from by is are was were be this that local news story article city county school today".split())
 
 def safe_url(url):
