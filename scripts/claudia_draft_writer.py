@@ -4,7 +4,8 @@ from __future__ import annotations
 import json, os, re, time, urllib.parse, urllib.request, urllib.error
 from difflib import SequenceMatcher
 
-MAX_LEADS = 1000
+DEFAULT_BATCH_SIZE = 8
+MAX_BATCH_SIZE = 25
 MIN_DOMAINS = 1
 MAX_EVIDENCE = 8
 MAX_EXCERPT = 1600
@@ -245,7 +246,7 @@ def openai_json(model, key, messages, temperature=0.0, base_url=None):
     payload = {"model": model, "temperature": temperature, "messages": messages}
     endpoint=(base_url or "https://api.openai.com/v1").rstrip("/")+"/chat/completions"
     request = urllib.request.Request(endpoint, data=json.dumps(payload).encode(), headers={"Authorization":"Bearer "+key,"Content-Type":"application/json"}, method="POST")
-    with urllib.request.urlopen(request, timeout=75) as response:
+    with urllib.request.urlopen(request, timeout=45) as response:
         data = json.loads(response.read().decode("utf-8"))
     content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
     if not content:
@@ -398,9 +399,16 @@ def main():
     if not base or not key:
         print("Draft writer skipped: Supabase credentials missing."); return
     # If AI is unavailable, Claudia still publishes source-attributed intake briefs.
-    _, raw = api(base,key,"rest/v1/claudia_story_leads?status=in.(new,researching)&select=id,title,summary,url,source_name,discovered_at&order=discovered_at.desc&limit=1000")
+    try:
+        batch_size = int(os.getenv("CLAUDIA_WRITER_BATCH_SIZE", str(DEFAULT_BATCH_SIZE)))
+    except (TypeError, ValueError):
+        batch_size = DEFAULT_BATCH_SIZE
+    batch_size = max(1, min(batch_size, MAX_BATCH_SIZE))
+    # Drain the oldest queued leads first in small batches. The next 15-minute
+    # schedule continues the queue; new arrivals cannot starve older items.
+    _, raw = api(base,key,"rest/v1/claudia_story_leads?status=in.(new,researching)&select=id,title,summary,url,source_name,discovered_at&order=discovered_at.asc&limit="+str(batch_size))
     leads=leads_with_evidence(base,key,json.loads(raw))
-    print("Writer ingested lead queue: %s" % len(leads))
+    print("Writer selected oldest queued batch: %s lead(s) (batch limit %s)" % (len(leads), batch_size))
     lessons=load_flag_lessons(base,key)
     print("Flag-feedback lessons loaded: %s" % len(lessons))
     classified=[(classify_content(lead),lead) for lead in leads]
@@ -408,7 +416,8 @@ def main():
     # Every ingested lead is processed; ranking controls order, not eligibility.
     selected=classified
     created = 0
-    for classification,lead in selected:
+    for index,(classification,lead) in enumerate(selected,1):
+        print("Processing batch item %s/%s: %s"%(index,len(selected),str(lead.get("title") or "Untitled")[:180]), flush=True)
         try:
             if process_lead(base,key,ai_key,model,lead,classification,lessons,ai_base_url): created += 1
         except urllib.error.HTTPError as exc:
