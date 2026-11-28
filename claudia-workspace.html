@@ -14,6 +14,7 @@
   <h1>Private administrator workspace</h1>
   <p class="muted">Verifying the existing 423.news Admin session. Access is checked automatically.</p>
   <p id="gateStatus" class="status" role="status" aria-live="polite">Checking administrator access…</p>
+  <div class="row" style="margin-top:12px"><button id="retryAuth" class="btn primary" type="button">Retry verification</button><a href="/admin.html" class="btn">Return to Admin sign-in</a></div>
 </div>
 <div id="workspaceApp" style="display:none">
 <header><div><h1>Claudia Green — Private Admin Workspace</h1><small>423.news · Voice, chat, memory, files, tasks and approvals</small></div><div class="row" style="flex:0 0 auto"><a href="/admin.html" class="btn">← Admin</a><button id="voice" class="btn primary">🎙 Talk to Claudia</button></div></header>
@@ -43,13 +44,14 @@ let token=sessionStorage.getItem('t423')||'';
 let thread=localStorage.getItem(THREAD_KEY);if(!/^[0-9a-f-]{36}$/i.test(thread||'')){thread=crypto.randomUUID();localStorage.setItem(THREAD_KEY,thread)}
 const $=s=>document.querySelector(s), esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function saveLocal(){localStorage.setItem(KEY,JSON.stringify(data))}
-function api(action,extra={}){token=sessionStorage.getItem('t423')||'';return fetch(API,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLIC_KEY,'x-claudia-session':token},body:JSON.stringify({action,thread_id:thread,token,...extra})}).then(async r=>{let j=await r.json().catch(()=>({error:'Bad server response'}));if(!r.ok)throw Error(j.error||'Request failed');return j})}
+function api(action,extra={}){token=sessionStorage.getItem('t423')||'';const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),20000);return fetch(API,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLIC_KEY,'x-claudia-session':token},body:JSON.stringify({action,thread_id:thread,token,...extra}),signal:controller.signal}).then(async r=>{let j=await r.json().catch(()=>({error:'Bad server response'}));if(!r.ok){const error=Error(j.error||'Request failed');error.status=r.status;throw error}return j}).catch(e=>{if(e.name==='AbortError')throw Error('Administrator verification timed out after 20 seconds. Check the connection and retry.');throw e}).finally(()=>clearTimeout(timer))}
 function showStatus(s){$('#chatStatus').textContent=s}
 function renderChat(messages){const log=$('#chatLog');log.innerHTML=(messages||[]).map(m=>'<div class="bubble '+(m.role==='user'?'user':'assistant')+'"><div class="who">'+(m.role==='user'?'You':'Claudia')+' · '+esc(new Date(m.created_at||Date.now()).toLocaleString())+'</div>'+esc(m.content)+'</div>').join('');log.scrollTop=log.scrollHeight}
 async function loadHistory(){
   token=sessionStorage.getItem('t423')||'';
-  if(!token){$('#gateStatus').textContent='The existing Admin session is not available in this browser tab. Return to the Admin area and open Claudia from there.';return}
+  if(!token){$('#gateStatus').textContent='No Admin session token was found in this browser tab. Open Admin, sign in, then open Claudia Workspace from the Admin page.';$('#workspaceApp').style.display='none';return}
   $('#gateStatus').textContent='Verifying administrator session…';
+  $('#retryAuth').disabled=true;
   try{
     const r=await api('history');
     renderChat(r.messages);
@@ -58,13 +60,17 @@ async function loadHistory(){
     $('#workspaceApp').style.display='block';
     $('#authGate').style.display='none';
   }catch(e){
-    $('#gateStatus').textContent='The existing Admin session could not be verified. Return to the Admin area and reopen Claudia from its workspace link.';
+    const status=e.status||0;
+    if(status===401) $('#gateStatus').textContent='Admin session rejected or expired. Return to Admin, sign in again, and reopen Claudia Workspace.';
+    else if(status===503) $('#gateStatus').textContent='The server could not verify the Admin session. The workspace remains locked. Retry shortly; if this continues, the session-verification service needs attention.';
+    else $('#gateStatus').textContent=e.message||'Could not verify the Admin session. Check your connection and retry.';
     $('#workspaceApp').style.display='none';
-  }
+  }finally{$('#retryAuth').disabled=false}
 }
 function context(){return{saved_prompts:data.prompts.slice(0,12),task_scratchpad:String(data.tasks||'').slice(0,5000),files:data.files.slice(0,5).map(f=>({name:f.name,type:f.type,excerpt:String(f.text||'').slice(0,5000)}))}}
 async function send(){let text=$('#chatInput').value.trim();if(!text||!token)return;$('#send').disabled=true;showStatus('Claudia is thinking…');try{const r=await api('chat',{message:text,context:context(),title:text.slice(0,80)});$('#chatInput').value='';await loadHistory();showStatus(r.reply||'Reply received.')}catch(e){showStatus(e.message)}finally{$('#send').disabled=false}}
 document.querySelectorAll('[data-pane]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.pane').forEach(p=>p.classList.add('hidden'));$('#'+b.dataset.pane).classList.remove('hidden')});
+$('#retryAuth').onclick=loadHistory;
 $('#send').onclick=send;$('#chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 $('#clearDraft').onclick=()=>{$('#chatInput').value='';$('#chatInput').focus()};
 $('#refreshHistory').onclick=loadHistory;
