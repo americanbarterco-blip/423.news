@@ -246,7 +246,7 @@ def openai_json(model, key, messages, temperature=0.0, base_url=None):
     payload = {"model": model, "temperature": temperature, "messages": messages}
     endpoint=(base_url or "https://api.openai.com/v1").rstrip("/")+"/chat/completions"
     request = urllib.request.Request(endpoint, data=json.dumps(payload).encode(), headers={"Authorization":"Bearer "+key,"Content-Type":"application/json"}, method="POST")
-    with urllib.request.urlopen(request, timeout=45) as response:
+    with urllib.request.urlopen(request, timeout=75) as response:
         data = json.loads(response.read().decode("utf-8"))
     content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
     if not content:
