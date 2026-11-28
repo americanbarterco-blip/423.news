@@ -22,9 +22,9 @@
     #cg-livekit-text-toggle{margin-top:9px;border:0;background:transparent;color:#d5e2f0;text-decoration:underline;padding:7px 2px;font:600 12px system-ui;cursor:pointer}
     #cg-livekit-script[hidden]{display:none}
     #cg-livekit-script{margin-top:8px;padding:10px;border:1px solid #354052;border-radius:10px;background:#0b1420}
-    #cg-livekit-script-log{max-height:180px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;margin-bottom:8px}
+    #cg-livekit-script-log{min-height:48px;max-height:34vh;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;margin-bottom:8px}
     #cg-livekit-script-log p{margin:6px 0;padding:7px 9px;border-radius:8px;background:#1b2b3e}
-    #cg-livekit-script-entry{width:100%;box-sizing:border-box;background:#09121c;border:1px solid #596579;border-radius:8px;padding:10px;color:#fff;font:inherit}
+    #cg-livekit-script-entry{width:100%;min-height:150px;max-height:42vh;resize:vertical;box-sizing:border-box;background:#09121c;border:1px solid #596579;border-radius:8px;padding:12px;color:#fff;font:inherit;line-height:1.5;white-space:pre-wrap}
     #cg-livekit-script-send{margin-top:7px;width:100%;border:1px solid #596579;border-radius:8px;padding:9px;background:#223347;color:white;font-weight:700}
     #cg-download-claudia{display:block;width:100%;margin-top:12px;border:1px solid #258c67;border-radius:10px;padding:10px 12px;background:#123d32;color:#eafff5;font:700 13px system-ui;cursor:pointer}
   `;
@@ -40,7 +40,7 @@
   var panel = document.createElement("section");
   panel.id = "cg-livekit-panel";
   panel.setAttribute("aria-label", "Talk with Claudia Green");
-  panel.innerHTML = '<div id="cg-3d" aria-label="Claudia Green video"><div class="cg-3d-msg">Loading Claudia…</div></div><div id="cg-livekit-header"><h2>Claudia Green</h2><button id="cg-livekit-close" type="button" aria-label="Close chat">✕</button></div><div>423.news virtual voice assistant</div><div id="cg-livekit-status" role="status">Ready when you are.</div><div id="cg-livekit-actions"><button class="primary" id="cg-livekit-start" type="button">Start voice chat</button><button id="cg-livekit-stop" type="button" disabled>End chat</button></div><button id="cg-livekit-text-toggle" type="button">Use text instead</button><div id="cg-livekit-script" hidden><div id="cg-livekit-script-log" role="log" aria-live="polite"></div><input id="cg-livekit-script-entry" type="text" maxlength="600" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type your response"><button id="cg-livekit-script-send" type="button">Send</button></div><button id="cg-download-claudia" type="button">📲 Download Claudia</button><div id="cg-livekit-note">Voice and text options are available. Claudia is an AI assistant, not an emergency service.</div>';
+  panel.innerHTML = '<div id="cg-3d" aria-label="Claudia Green video"><div class="cg-3d-msg">Loading Claudia…</div></div><div id="cg-livekit-header"><h2>Claudia Green</h2><button id="cg-livekit-close" type="button" aria-label="Close chat">✕</button></div><div>423.news virtual voice assistant</div><div id="cg-livekit-status" role="status">Ready when you are.</div><div id="cg-livekit-actions"><button class="primary" id="cg-livekit-start" type="button">Start voice chat</button><button id="cg-livekit-stop" type="button" disabled>End chat</button></div><button id="cg-livekit-text-toggle" type="button">Use text instead</button><div id="cg-livekit-script" hidden><div id="cg-livekit-script-log" role="log" aria-live="polite"></div><textarea id="cg-livekit-script-entry" maxlength="6000" rows="6" autocomplete="off" autocapitalize="sentences" spellcheck="true" aria-label="Message Claudia" placeholder="Write a message to Claudia…"></textarea><button id="cg-livekit-script-send" type="button">Send</button></div><button id="cg-download-claudia" type="button">📲 Download Claudia</button><div id="cg-livekit-note">Voice and text options are available. Claudia is an AI assistant, not an emergency service.</div>';
   document.body.appendChild(panel);
   var status = panel.querySelector("#cg-livekit-status");
   var close = panel.querySelector("#cg-livekit-close");
@@ -101,7 +101,7 @@
   var scriptEntry = panel.querySelector("#cg-livekit-script-entry");
   var scriptSend = panel.querySelector("#cg-livekit-script-send");
   var scriptSessionId = null;
-  var room = null, busy = false, attachedAudio = [];
+  var room = null, busy = false, attachedAudio = [], textMode = false;
   function setStatus(message) { status.textContent = message; }
   function setBusy(value) { busy = value; start.disabled = value || !!room; stop.disabled = !room; }
   function addScriptReply(message) {
@@ -110,48 +110,55 @@
     scriptLog.appendChild(line);
     scriptLog.scrollTop = scriptLog.scrollHeight;
   }
-  async function sendScriptAnswer() {
-    if (scriptSend.disabled) return;
-    var answer = scriptEntry.value;
-    if (!answer) return;
-    scriptEntry.disabled = true; scriptSend.disabled = true;
+  async function ensureTextRoom() {
+    if (room) return;
+    if (busy) return;
+    busy = true; textMode = true; scriptSend.disabled = true; setStatus("Connecting to Claudia…");
     try {
-      var action = scriptSessionId ? "step" : "start";
-      var response = await fetch(TOKEN_ENDPOINT.replace("/getToken", "/script/" + action), {
-        method: "POST", mode: "cors", cache: "no-store",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answer: answer, session_id: scriptSessionId })
+      var lk = await import("https://esm.sh/livekit-client@2.15.6");
+      var adminSession = window.sessionStorage.getItem("t423") || "";
+      var tokenRequest = adminSession ? { role: "administrator", admin_session_token: adminSession } : {};
+      if (window.location.pathname === "/claudia-workspace.html" && !adminSession) throw new Error("Administrator session unavailable. Sign in again.");
+      var response = await fetch(TOKEN_ENDPOINT, { method: "POST", mode: "cors", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify(tokenRequest) });
+      var credentials = await response.json().catch(function () { return {}; });
+      if (!response.ok) throw new Error(credentials.error || "Claudia text chat is unavailable.");
+      room = new lk.Room({ adaptiveStream: true, dynacast: true });
+      room.registerTextStreamHandler("lk.transcription", async function (reader, participantInfo) {
+        try { var message = await reader.readAll(); if (message && participantInfo && participantInfo.identity !== room.localParticipant.identity) addScriptReply("Claudia: " + message); }
+        catch (_) {}
       });
-      var result = await response.json().catch(function () { return {}; });
-      scriptEntry.value = "";
-      if (!response.ok || !result.ok) {
-        scriptSessionId = null; scriptLog.textContent = ""; scriptPanel.hidden = true;
-        setStatus("Ready when you are.");
-        return;
-      }
-      if (result.session_id) scriptSessionId = result.session_id;
-      if (result.reply) addScriptReply(result.reply);
-      if (result.complete && result.admin_session_token) {
-        window.sessionStorage.setItem("t423", result.admin_session_token);
-        scriptSessionId = null; scriptPanel.hidden = true; scriptLog.textContent = "";
-        setStatus(result.reply || "Ready when you are.");
-      } else {
-        scriptEntry.focus();
-      }
-    } catch (_) {
-      scriptSessionId = null; scriptLog.textContent = ""; scriptPanel.hidden = true;
-      setStatus("Ready when you are.");
-    } finally {
-      scriptEntry.disabled = false; scriptSend.disabled = false;
+      room.on(lk.RoomEvent.Disconnected, function () {
+        room = null; textMode = false; scriptSend.disabled = false; setStatus("Chat disconnected. Tap Send to reconnect.");
+      });
+      await room.connect(credentials.server_url, credentials.participant_token);
+      busy = false; scriptSend.disabled = false; setStatus("Text chat connected. Send Claudia a message.");
+    } catch (error) {
+      room = null; busy = false; textMode = false; scriptSend.disabled = false;
+      setStatus(error && error.message ? error.message : "Could not connect to Claudia.");
+      throw error;
     }
+  }
+  async function sendScriptAnswer() {
+    var answer = scriptEntry.value.trim();
+    if (!answer || scriptSend.disabled) return;
+    scriptSend.disabled = true; scriptEntry.disabled = true;
+    try {
+      await ensureTextRoom();
+      if (!room) throw new Error("Text chat is not connected.");
+      addScriptReply("You: " + answer);
+      await room.localParticipant.sendText(answer, { topic: "lk.chat" });
+      scriptEntry.value = "";
+      setStatus("Message sent to Claudia.");
+    } catch (error) { setStatus(error && error.message ? error.message : "Message could not be sent."); }
+    finally { scriptEntry.disabled = false; scriptSend.disabled = false; scriptEntry.focus(); }
   }
   textToggle.addEventListener("click", function () {
     scriptPanel.hidden = !scriptPanel.hidden;
-    if (!scriptPanel.hidden) scriptEntry.focus();
+    if (!scriptPanel.hidden) { scriptEntry.focus(); ensureTextRoom().catch(function () {}); }
   });
   scriptSend.addEventListener("click", sendScriptAnswer);
   scriptEntry.addEventListener("keydown", function (event) {
-    if (event.key === "Enter") { event.preventDefault(); sendScriptAnswer(); }
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) { event.preventDefault(); sendScriptAnswer(); }
   });
   launch.addEventListener("click", function () {
     var open = panel.style.display === "block";
@@ -226,6 +233,6 @@
     var active = room; room = null; setStatus("Ending voice chat…");
     try { await active.disconnect(); } catch (_) {}
     attachedAudio.forEach(function (audio) { audio.remove(); }); attachedAudio = [];
-    setBusy(false); setStatus("Voice chat ended.");
+    setBusy(false); textMode = false; scriptSend.disabled = false; setStatus("Voice chat ended.");
   });
 })();
