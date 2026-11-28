@@ -4,7 +4,7 @@ from __future__ import annotations
 import json, os, re, time, urllib.parse, urllib.request, urllib.error
 from difflib import SequenceMatcher
 
-DEFAULT_BATCH_SIZE = 8
+DEFAULT_BATCH_SIZE = 2
 MAX_BATCH_SIZE = 25
 MIN_DOMAINS = 1
 MAX_EVIDENCE = 8
@@ -162,9 +162,7 @@ def build_prompt(lead, evidence, classification, lessons=None):
         "Use a different headline from source headlines.\n"
         "3. Open with a fact-first, concise lede that answers the most important who/what/when/where/why/how "
         "questions supported by evidence. Put the most useful facts first.\n"
-        "4. Synthesize evidence across sources: combine corroborated facts, attribute material claims, "
-        "and note meaningful disagreements. Never pretend sources independently confirm the same claim "
-        "if they merely repeat one another.\n"
+        "4. Synthesize evidence across sources: prioritize two or more independently reported accounts of the same event whenever available. Combine corroborated facts in your own original wording, attribute material claims, and note meaningful disagreements. Never treat syndicated copies or stories repeating one press release as independent confirmation. If only one independent source is available, be transparent about that limitation.\n"
         "5. Add context only when supported or clearly labeled as basic explanatory context. Explain "
         "impact, relevant background, timelines, and next steps; don't speculate about motives or outcomes.\n"
         "6. Use natural, varied newsroom prose and paragraphs. Avoid templates, repeated phrases, "
@@ -246,7 +244,7 @@ def openai_json(model, key, messages, temperature=0.0, base_url=None):
     payload = {"model": model, "temperature": temperature, "messages": messages}
     endpoint=(base_url or "https://api.openai.com/v1").rstrip("/")+"/chat/completions"
     request = urllib.request.Request(endpoint, data=json.dumps(payload).encode(), headers={"Authorization":"Bearer "+key,"Content-Type":"application/json"}, method="POST")
-    with urllib.request.urlopen(request, timeout=75) as response:
+    with urllib.request.urlopen(request, timeout=300) as response:
         data = json.loads(response.read().decode("utf-8"))
     content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
     if not content:
